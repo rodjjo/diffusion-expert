@@ -35,9 +35,16 @@ class RawImage {
     image_format_t format_;
 };
 
-std::shared_ptr<RawImage> rawImageFromPyDict(PyObject * dict);
+typedef std::shared_ptr<RawImage> image_ptr_t;
 
+image_ptr_t rawImageFromPyDict(PyObject * dict);
 }  // namespace py
+
+typedef dexpert::py::image_ptr_t image_ptr_t;
+typedef dexpert::py::RawImage RawImage;
+
 }  // namespace dexpert
+
+
 
 #endif  // SRC_PYTHON_RAW_IMAGE_H_

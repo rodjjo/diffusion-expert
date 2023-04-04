@@ -30,12 +30,17 @@ def download_python():
 
 
 def main():
+    prefix = []
     if '--build' in sys.argv:
          build.main([])
     if '--copy-stuff' in sys.argv:
         copy_stuff.copy_files()
+    if '--debug' in sys.argv:
+        prefix = [
+            'build/mingw64/bin/gdb.exe'
+        ]
     download_python()
-    subprocess.check_call([
+    subprocess.check_call(prefix + [
         'dexpert/bin/diffusion-exp.exe'
     ])
 

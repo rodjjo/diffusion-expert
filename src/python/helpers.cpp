@@ -127,9 +127,9 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         PyObject *params = PyDict_New();
         std::list<PyObject *> fields;
 
-        fields.push_back(PyUnicode_FromWideChar(config.prompt, -1));
+        fields.push_back(PyUnicode_FromString(config.prompt));
         PyDict_SetItemString(params, "prompt", *fields.rbegin());
-        fields.push_back(PyUnicode_FromWideChar(config.negative, -1));
+        fields.push_back(PyUnicode_FromString(config.negative));
         PyDict_SetItemString(params, "negative", *fields.rbegin());
         fields.push_back(PyUnicode_FromWideChar(config.model, -1));
         PyDict_SetItemString(params, "model", *fields.rbegin());
