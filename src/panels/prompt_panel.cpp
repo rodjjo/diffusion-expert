@@ -10,7 +10,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     this->end();
     positivePrompt_->align(FL_ALIGN_TOP_LEFT);
     negativePrompt_->align(FL_ALIGN_TOP_LEFT);
-    positivePrompt_->value("An astrounaut riding a horse at the moon");
+    positivePrompt_->value("An astronaut riding a horse at the moon");
     negativePrompt_->value("drawing,cartoon,3d,render,rendering");
     alignComponents();
 }

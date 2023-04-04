@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 {
     int result = 0;
     /*
-        It run the gui in a secodary thread to let python to use the main thread.
+        It runs the gui in a secodary thread to let python to use the main thread.
         Python should use the main thread to avoid the app to hang unloading some libraries (ex. PyTorch).
     */
     std::thread gui_thread([&result] {
