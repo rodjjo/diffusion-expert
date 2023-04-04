@@ -12,11 +12,13 @@ def txt2img(params: dict):
     def do_it():
         prompt = params['prompt']
         negative = params['negative']
+        if len(negative or '') < 2:
+            negative = None
         model = params['model']
         print("Loading model")
         pipeline = DiffusionPipeline.from_pretrained('runwayml/stable-diffusion-v1-5', cache_dir=CACHE_DIR)
         pipeline.to("cuda")
-        result = pipeline(prompt).images[0]
+        result = pipeline(prompt, negative_prompt=negative, num_inference_steps=20).images[0]
         return {
                 'data': result.tobytes(),
                 'width': result.width,
