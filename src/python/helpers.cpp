@@ -9,7 +9,7 @@
 namespace dexpert {
 namespace py {
 
-callback_t install_dependencies_helper(status_callback_t status_cb) {
+callback_t install_deps(status_callback_t status_cb) {
     return [status_cb] {
         PyObject *result = NULL;
         PyObject* module = PyImport_ImportModule("dependencies.installer"); 
@@ -26,6 +26,36 @@ callback_t install_dependencies_helper(status_callback_t status_cb) {
             errors = handle_error();
             if (errors) {
                 msg = "There was a failure installing dependencies";
+            }
+        }
+
+        Py_XDECREF(result);
+        Py_XDECREF(module);
+
+        status_cb(errors == false, msg);
+    };
+}
+
+callback_t check_have_deps(status_callback_t status_cb) {
+    return [status_cb] {
+        PyObject *result = NULL;
+        PyObject* module = PyImport_ImportModule("dependencies.installer"); 
+        bool errors = handle_error();
+        const char* msg = NULL;
+
+        if (!module) {
+            msg = "Could not load Python module dependencies.installer";
+            errors = true;
+        }
+
+        if (!errors) {
+            PyObject *result = PyObject_CallMethod(module, "have_dependencies", NULL );
+            errors = handle_error();
+            if (errors) {
+                msg = "There was a failure installing dependencies";
+            } else {
+                msg = NULL;
+                errors = (PyObject_IsTrue(result) != 1);
             }
         }
 

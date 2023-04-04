@@ -28,8 +28,9 @@ typedef std::function<void()> callback_t;
 typedef std::function<void(bool success, const char* message)> status_callback_t;
 typedef std::function<void(bool success, const char* message, std::shared_ptr<RawImage> image)> image_callback_t;
 
+callback_t check_have_deps(status_callback_t status_cb);
+callback_t install_deps(status_callback_t status_cb);
 
-callback_t install_dependencies_helper(status_callback_t status_cb);
 callback_t open_image(const char* path, image_callback_t status_cb);
 callback_t save_image(const char* path, std::shared_ptr<RawImage> image, status_callback_t status_cb);
 callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb); 
