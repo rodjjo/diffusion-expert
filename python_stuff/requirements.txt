@@ -1,0 +1,14 @@
+Pillow
+accelerate
+pytorch_lightning
+numpy
+diffusers
+transformers
+safetensors
+invisible-watermark
+# gfpgan
+# realesrgan
+GitPython
+pytorch_lightning
+torchdiffeq
+tdqm

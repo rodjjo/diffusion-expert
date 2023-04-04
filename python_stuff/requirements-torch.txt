@@ -1,0 +1,4 @@
+-i https://download.pytorch.org/whl/cu117
+torch 
+torchvision 
+torchaudio 
