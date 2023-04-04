@@ -154,10 +154,6 @@ int MainWindow::handle(int event) {
     return Fl_Menu_Window::handle(event);
 }
 
-void MainWindow::installPyDeps(void *cbdata) { 
-    ((MainWindow *) cbdata)->installPyDeps();
-}
-
 void MainWindow::pageChangeCallback(Fl_Widget* widget, void *cbdata) {
     ((MainWindow *) cbdata)->gotoSelectedPage();
 }
@@ -176,32 +172,7 @@ void MainWindow::gotoSelectedPage() {
     selecting_page_ = false;
 }
 
-void MainWindow::installPyDeps() {
-    bool success = false;
-    std::string message = "Unexpected error. Callback did not run!";
-    dexpert::runPyShowConsole("Installing Python dependencies", [&success, &message] {
-        auto installer = dexpert::py::install_dependencies_helper([&success, &message] (bool st, const char *msg) {
-            success = st;
-            if (msg) {
-                message = msg;
-            }
-        });
-        installer();
-    }, [&success, &message] () -> bool {
-        if (!success) {
-            fl_alert("%s", message.c_str());
-        }
-        return success;
-    });
-    
-    if (!success) {
-        this->hide();
-    }
-}
-
 int MainWindow::run() {
-    Fl::add_timeout(0.101, &MainWindow::installPyDeps, this);
-    
     int result = Fl::run();
     return result;
 }

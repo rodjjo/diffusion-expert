@@ -40,9 +40,7 @@ class MainWindow : Fl_Menu_Window {
   void initPagesPanel();
   void initMenu();
   void alignComponents();
-  void installPyDeps();
   void gotoSelectedPage();
-  static void installPyDeps(void *cbdata);
   static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
 
  private:
