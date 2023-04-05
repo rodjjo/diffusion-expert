@@ -1,12 +1,9 @@
 # from safetensors import safe_open
-from diffusers import DiffusionPipeline
-
-import gc 
 import os
 import sys
 
-
-CACHE_DIR = os.path.join(os.path.dirname(sys.executable), '..', 'models', 'stable-diffusion')
+import torch
+from models.models import create_pipeline
 
 def txt2img(params: dict):
     def do_it():
@@ -14,11 +11,15 @@ def txt2img(params: dict):
         negative = params['negative']
         if len(negative or '') < 2:
             negative = None
-        model = params['model']
-        print("Loading model")
-        pipeline = DiffusionPipeline.from_pretrained('runwayml/stable-diffusion-v1-5', cache_dir=CACHE_DIR)
+        seed = params['seed']
+        model = params["model"]
+        print("loading model")
+        pipeline = create_pipeline(model)
         pipeline.to("cuda")
-        result = pipeline(prompt, negative_prompt=negative, num_inference_steps=20).images[0]
+        generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
+        print("Generating Image")
+        result = pipeline(prompt, guidance_scale=7.5, height=512, width=512, negative_prompt=negative, num_inference_steps=100, generator=generator).images[0]
+        print("Completed")
         return {
                 'data': result.tobytes(),
                 'width': result.width,
@@ -26,7 +27,6 @@ def txt2img(params: dict):
                 'mode': result.mode,
             }
     data = do_it()        
-    gc.collect()
     return data
 
     

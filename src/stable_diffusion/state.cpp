@@ -34,13 +34,14 @@ bool StableDiffusionState::generateInputImage() {
     std::string prompt = prompt_;
     std::string negative = negative_prompt_;
 
-    std::wstring model = dexpert::getConfig().sdModelsDir() + L"/model.safetensors";
+    std::wstring model = dexpert::getConfig().sdModelsDir() + L"/model.ckpt";
     const char *message = "Unexpected error. Callback to generate image not called";
     image_ptr_t image;
     dexpert::py::txt2img_config_t cfg;
     cfg.prompt = prompt.c_str();
     cfg.negative = negative.c_str();
     cfg.model = model.c_str();
+    cfg.seed = seed_;
     
     auto cb = dexpert::py::txt2_image(cfg, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
         success = status;
@@ -136,5 +137,12 @@ const char *StableDiffusionState::getNegativePrompt() {
     return negative_prompt_.c_str();
 }
 
+int StableDiffusionState::getSeed() {
+    return seed_;
+}
+
+void StableDiffusionState::setSeed(int value) {
+    seed_ = value;
+}
     
 } // namespace dexpert

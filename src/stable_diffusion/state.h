@@ -30,6 +30,8 @@ class StableDiffusionState {
     void setNegativePrompt(const char *prompt);
     const char *getPrompt();
     const char *getNegativePrompt();
+    int getSeed();
+    void setSeed(int value);
 
     // input images
     bool generateInputImage();
@@ -40,6 +42,7 @@ class StableDiffusionState {
     const char* lastError();
 
 private:
+    int seed_ = -1;
     std::string prompt_;
     std::string negative_prompt_;
     std::string last_error_;
