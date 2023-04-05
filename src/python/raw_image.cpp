@@ -76,8 +76,8 @@ void RawImage::toPyDict(PyObject *dict) {
     Py_XDECREF(po_buffer);
 }
 
-std::shared_ptr<RawImage> rawImageFromPyDict(PyObject * dict) {
-    std::shared_ptr<RawImage> r;
+image_ptr_t rawImageFromPyDict(PyObject * dict) {
+    image_ptr_t r;
 
     PyObject *po_buffer = PyDict_GetItemString(dict, "data");
     PyObject *po_w = PyDict_GetItemString(dict, "width");

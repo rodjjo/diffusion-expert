@@ -15,9 +15,6 @@ class FramePanel : public OpenGlPanel {
 public:
     FramePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     virtual ~FramePanel();
-    bool openFile();
-    bool saveFile();
-    bool generateImage(); // TODO: move this from here
 
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;

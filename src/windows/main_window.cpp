@@ -26,9 +26,10 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     wnd->size_range(MIN_WIDTH, MIN_HEIGHT);
 
     wnd->begin();
-    
+
+    initPagesPanel();
+
     initLeftPanel();
-    initFramePanel();
     initRightPanel();
     initBottomPanel();
     initToolbar();
@@ -51,8 +52,14 @@ void MainWindow::initBottomPanel() {
 
 void MainWindow::initRightPanel() {
     rightPanel_ = new Fl_Group(this->w() - 200, 20, 200, this->h() - 120);
+    rightPanel_->begin();
+    page_browser_ = new Fl_Select_Browser(0, 0, 1, 1);
+    page_browser_->callback(pageChangeCallback, this);
     rightPanel_->end();
     rightPanel_->box(FL_BORDER_BOX);
+    for (int i = 0; i < page_max; ++i) {
+        page_browser_->add(pages_->pageTitle((page_t) i));
+    }
 }
 
 void MainWindow::initLeftPanel() {
@@ -78,17 +85,17 @@ void MainWindow::initMenu() {
     callback_t noCall = []{};
 
     menu_->addItem(noCall, "", "File/New");
-    menu_->addItem([this] { framePanel_->openFile(); }, "", "File/Open");
-    menu_->addItem([this] { framePanel_->saveFile(); }, "", "File/Save");
+    menu_->addItem([this] { pages_->openInputImage(); }, "", "File/Open");
+    menu_->addItem([this] { pages_->saveInputImage(); }, "", "File/Save");
     menu_->addItem(noCall, "", "Edit");
-    menu_->addItem([this] { framePanel_->generateImage(); }, "", "Run/Generate");
+    menu_->addItem([this] { pages_->generateInputImage(); }, "", "Run/Generate");
     menu_->addItem(noCall, "", "Tools");
     menu_->addItem(noCall, "", "Help");
 }
 
-void MainWindow::initFramePanel() {
-    framePanel_ = new FramePanel(200, 20, this->w() - 400, this->h()-120);
-    framePanel_->end();
+void MainWindow::initPagesPanel() {
+    pages_ = new Pages(200, 20, this->w() - 400, this->h()-120);
+    pages_->end();
 }
 
 void MainWindow::alignComponents() {
@@ -107,18 +114,20 @@ void MainWindow::alignComponents() {
     int leftW = 100;
     int rightW = 100;
     int centerW = w - leftW - rightW;
-    
-    framePanel_->position(leftW, topH);
-    framePanel_->size(centerW, centerH);
+
+    pages_->position(leftW, topH);
+    pages_->size(centerW, centerH);
 
     console_->position(leftW, h - bottomH);
     console_->size(centerW, bottomH);
 
-    leftPanel_->position(0, 0);
+    leftPanel_->position(0, topH);
     leftPanel_->size(leftW, leftH);
 
-    rightPanel_->position(leftW + centerW, 0);
+    rightPanel_->position(leftW + centerW, topH);
     rightPanel_->size(leftW, leftH);
+
+    page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
 }
 
 void MainWindow::resize(int x, int y, int w, int h) {
@@ -147,6 +156,25 @@ int MainWindow::handle(int event) {
 
 void MainWindow::installPyDeps(void *cbdata) { 
     ((MainWindow *) cbdata)->installPyDeps();
+}
+
+void MainWindow::pageChangeCallback(Fl_Widget* widget, void *cbdata) {
+    ((MainWindow *) cbdata)->gotoSelectedPage();
+}
+
+void MainWindow::gotoSelectedPage() {
+    if (selecting_page_)
+        return;
+    selecting_page_ = true;
+    int idx = page_browser_->value();
+    if (idx > 0) 
+    {
+        page_browser_->deselect();
+        page_browser_->select(idx);
+        idx -= 1;
+        pages_->goPage((page_t) idx);
+    }
+    selecting_page_ = false;
 }
 
 void MainWindow::installPyDeps() {

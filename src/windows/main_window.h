@@ -16,7 +16,7 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Tabs.H>
 
-#include "src/panels/frame_panel.h"
+#include "src/panels/pages.h"
 #include "src/windows/main_menu.h"
 #include "src/console/console_tabs.h"
 #include "src/python/wrapper.h"
@@ -29,7 +29,7 @@ class MainWindow : Fl_Menu_Window {
     ~MainWindow();
     int run();
  protected:
-  void resize	(int x, int y, int w, int h) override;
+   void resize(int x, int y, int w, int h) override;
    int handle(int event) override;
    
  private:
@@ -37,19 +37,23 @@ class MainWindow : Fl_Menu_Window {
   void initRightPanel();
   void initLeftPanel();
   void initToolbar();
-  void initFramePanel();
+  void initPagesPanel();
   void initMenu();
   void alignComponents();
   void installPyDeps();
+  void gotoSelectedPage();
   static void installPyDeps(void *cbdata);
-  
+  static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
+
  private:
     Fl_Group  *leftPanel_ = NULL;
     Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
     ConsoleTabs *console_ = NULL;
-    FramePanel *framePanel_ = NULL;
+    Pages *pages_ = NULL;
     MainMenu *menu_ = NULL;
+    Fl_Select_Browser *page_browser_;
+    bool selecting_page_ = false;
     std::shared_ptr<dexpert::py::PythonMachine> python_;
 };
 

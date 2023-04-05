@@ -4,6 +4,7 @@ file(GLOB Sources
     "${CMAKE_CURRENT_SOURCE_DIR}/controls/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/windows/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/python/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/stable_diffusion/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/geometry/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dialogs/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/panels/*.cpp"
