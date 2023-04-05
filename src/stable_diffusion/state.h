@@ -24,6 +24,14 @@ class StableDiffusionState {
     virtual ~StableDiffusionState();
     StableDiffusionState (const StableDiffusionState &) = delete;
     StableDiffusionState & operator = (const StableDiffusionState &) = delete;
+
+    // prompts
+    void setPrompt(const char *prompt);
+    void setNegativePrompt(const char *prompt);
+    const char *getPrompt();
+    const char *getNegativePrompt();
+
+    // input images
     bool generateInputImage();
     bool openInputImage(const char *path);
     void setInputImage(image_ptr_t image);
@@ -32,6 +40,8 @@ class StableDiffusionState {
     const char* lastError();
 
 private:
+    std::string prompt_;
+    std::string negative_prompt_;
     std::string last_error_;
     image_ptr_t input_image_;
 };

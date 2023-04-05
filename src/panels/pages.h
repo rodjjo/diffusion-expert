@@ -9,6 +9,7 @@
 #include <FL/Fl_Group.H>
 
 #include "src/panels/frame_panel.h"
+#include "src/panels/prompt_panel.h"
 
 namespace dexpert
 {
@@ -32,6 +33,7 @@ class Pages: public Fl_Group {
     bool isVisible(page_t page);
     int pageCount();
     bool goPage(page_t page);
+    page_t activePage();
     const char *pageTitle(page_t page);
     void openInputImage();
     void saveInputImage();
@@ -50,8 +52,8 @@ class Pages: public Fl_Group {
     Fl_Group *pages_[page_max] = {0,};
     bool visible_pages_[page_max] = {0,};
 
+    PromptPanel *promptPanel_ = NULL;
     FramePanel *inputImage_ = NULL;
-    
     std::string current_open_input_dir_;
 };
     

@@ -7,10 +7,10 @@ namespace  {
     const char *kPAGE_TITLES[page_max] = {
         "Prompt",
         "Input image",
-        "Controlnet 01",
-        "Controlnet 01",
-        "Controlnet 01",
-        "Controlnet 01",
+        "Controlnet 1",
+        "Controlnet 2",
+        "Controlnet 3",
+        "Controlnet 4",
         "Results"
     };
 } 
@@ -34,7 +34,10 @@ Pages::~Pages() {
 }
 
 void Pages::createPromptPage() {
-
+    auto pg = pages_[page_prompts];
+    pg->begin();
+    promptPanel_ = new PromptPanel(0, 0, 1, 1);
+    pg->end();
 }
 
 void Pages::createInputImagePage() {
@@ -57,7 +60,10 @@ void Pages::alignComponents() {
     for (int i = 0; i < page_max; ++i) {
         pages_[i]->resize(x(), y(), w(), h());
     }
-    auto pg = pages_[page_input_image];
+    auto pg = pages_[page_prompts];
+    promptPanel_->position(pg->x(), pg->y());
+    promptPanel_->size(pg->w(), promptPanel_->minimalHeight());
+    pg = pages_[page_input_image];
     inputImage_->resize(pg->x(), pg->y(), pg->w(), pg->h());
 }
 
@@ -91,6 +97,10 @@ bool Pages::goPage(page_t page) {
     return result;
 }
 
+page_t Pages::activePage() {
+    return active_page_;
+}
+
 
 void Pages::openInputImage() {
     std::string path = choose_image_to_open(&current_open_input_dir_);
@@ -116,6 +126,8 @@ void Pages::saveInputImage() {
 }
 
 void Pages::generateInputImage() {
+    get_sd_state()->setPrompt(promptPanel_->getPrompt());
+    get_sd_state()->setNegativePrompt(promptPanel_->getPrompt());
     if (!get_sd_state()->generateInputImage()) {
         show_error(get_sd_state()->lastError());
     } else {

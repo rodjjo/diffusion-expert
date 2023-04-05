@@ -106,7 +106,7 @@ void MainWindow::alignComponents() {
     menu_->position(0, 0);
     menu_->size(w, toolsPanel_->h());
 
-    int topH = menu_->h();
+    int topH = menu_->h() + 2;
     int bottomH = 130;
     int leftH = h;
     int rightH = leftH;
@@ -167,13 +167,12 @@ void MainWindow::gotoSelectedPage() {
         return;
     selecting_page_ = true;
     int idx = page_browser_->value();
-    if (idx > 0) 
-    {
-        page_browser_->deselect();
-        page_browser_->select(idx);
+    if (idx > 0)  {
         idx -= 1;
         pages_->goPage((page_t) idx);
-    }
+    } 
+    page_browser_->deselect();
+    page_browser_->select(pages_->activePage() + 1);
     selecting_page_ = false;
 }
 

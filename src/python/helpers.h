@@ -16,8 +16,8 @@ namespace dexpert {
 namespace py {
 
 typedef struct {
-    const wchar_t *prompt = L"";
-    const wchar_t *negative = L"";
+    const char *prompt = "";
+    const char *negative = "";
     const wchar_t *model = L"";
     int seed = -1;
     size_t width = 512;

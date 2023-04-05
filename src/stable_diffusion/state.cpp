@@ -31,13 +31,15 @@ StableDiffusionState::~StableDiffusionState() {
 bool StableDiffusionState::generateInputImage() {
     bool success = false;
     last_error_  = std::string();
+    std::string prompt = prompt_;
+    std::string negative = negative_prompt_;
 
     std::wstring model = dexpert::getConfig().sdModelsDir() + L"/model.safetensors";
     const char *message = "Unexpected error. Callback to generate image not called";
     image_ptr_t image;
     dexpert::py::txt2img_config_t cfg;
-    cfg.prompt = L"An astrounaut riding a horse at the moon";
-    cfg.negative = L"drawing,cartoon,3d,render,rendering";
+    cfg.prompt = prompt.c_str();
+    cfg.negative = negative.c_str();
     cfg.model = model.c_str();
     
     auto cb = dexpert::py::txt2_image(cfg, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
@@ -116,6 +118,22 @@ RawImage *StableDiffusionState::getInputImage() {
 
 const char* StableDiffusionState::lastError() {
     return last_error_.c_str();
+}
+
+void StableDiffusionState::setPrompt(const char *prompt) {
+    prompt_ = prompt;
+}
+
+void StableDiffusionState::setNegativePrompt(const char *prompt) {
+    negative_prompt_ = prompt;
+}
+
+const char *StableDiffusionState::getPrompt() {
+    return prompt_.c_str();
+}
+
+const char *StableDiffusionState::getNegativePrompt() {
+    return negative_prompt_.c_str();
 }
 
     
