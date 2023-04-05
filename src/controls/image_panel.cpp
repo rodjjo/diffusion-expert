@@ -782,7 +782,7 @@ namespace dexpert
             return images_[image_type_image].get();
         }
         if (images_[image_type_controlnet]) {
-            images_[image_type_controlnet].get();
+            return images_[image_type_controlnet].get();
         }
         return images_[image_type_mask].get();
     }
