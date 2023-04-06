@@ -27,9 +27,14 @@ const std::wstring& executableDir() {
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    /*
+        To redirect python console in diffusion-exp.exe whe have to start the process with a console window.
+        We can't AllocConsole there because the console handles should not change. It should have subsystem -mconsole compiler flag.
+        So we have this process here that allocates a console window, hides it before starting diffusion-exp.exe (we dont want a console window showing there).
+    */
     AllocConsole();
-    std::wstring where = executableDir() + L"/diffusion-exp.exe";
     ShowWindow(GetConsoleWindow(), SW_HIDE);
+    std::wstring where = executableDir() + L"/diffusion-exp.exe";
     PROCESS_INFORMATION info;
     STARTUPINFOW si;
     ZeroMemory( &si, sizeof(si) );
