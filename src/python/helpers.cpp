@@ -179,6 +179,8 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(config.model, -1)));
         PyDict_SetItemString(params, "width", guard(PyLong_FromSize_t(config.width)));
         PyDict_SetItemString(params, "height", guard(PyLong_FromSize_t(config.height)));
+        PyDict_SetItemString(params, "steps", guard(PyLong_FromSize_t(config.steps)));
+        PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(config.cfg)));
         PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(config.seed)));
 
         if (!errors) {
@@ -196,6 +198,56 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         }
 
         status_cb(!errors, msg, img);        
+    };
+}
+
+callback_t list_models(const wchar_t* path, model_callback_t status_cb) {
+    return [path, status_cb] {
+        model_list_t models;
+        bool errors = false;
+        const char* msg = NULL;
+
+        PyObject *result = NULL;
+        PyObject *data = NULL;
+        ObjGuard guard("models.models"); 
+
+        errors = handle_error();
+
+        if (!guard.module()) {
+            msg = "Could not load Python module models.models";
+            errors = true;
+        }
+
+        if (!errors) {
+            result = guard(PyObject_CallMethod(guard.module(), "list_models", "u", path));
+            errors = handle_error();
+            if (errors || result == NULL) {
+                msg = "Fail loading model list";
+            } else {
+                size_t size = PySequence_Fast_GET_SIZE(result);
+                PyObject *element = NULL;
+                for (size_t i = 0; i < size; ++i) {
+                    element = guard(PySequence_Fast_GET_ITEM(result, i));
+                    PyObject *name = PyDict_GetItemString(element, "name");
+                    PyObject *size = PyDict_GetItemString(element, "size");
+                    PyObject *hash = PyDict_GetItemString(element, "hash");
+                    PyObject *path = PyDict_GetItemString(element, "path");
+                    model_t model;
+                    model.name = PyUnicode_AsUTF8(name);
+                    model.hash = PyUnicode_AsUTF8(hash);
+                    
+                    Py_ssize_t sz = 0;
+                    wchar_t *text = PyUnicode_AsWideCharString(path, &sz);
+                    model.path = std::wstring(text, sz);
+                    PyMem_Free(text);
+
+                    model.size = PyLong_AsSize_t(size);
+                    models.push_back(model);
+                }
+            }
+        }
+
+        status_cb(!errors, msg, models);
     };
 }
 

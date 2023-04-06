@@ -1,13 +1,24 @@
+#include <fstream>
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
 #include <FL/Fl.H>
+#include <nlohmann/json.hpp>
+
 #include "src/config/config.h"
 
+using json = nlohmann::json;
+
+
 namespace dexpert {
+namespace {
+const wchar_t *kCONFIG_FILE = L"/dexpert.cfg";
+}
 
 Config::Config() {
+    load();
 }
 
 Config::~Config() {
@@ -81,6 +92,14 @@ const std::wstring& Config::sdModelsDir() {
     return sdModelsDir_;
 }
 
+const std::wstring& Config::getConfigDir() {
+    if (configDir_.empty()) {
+        configDir_ = executableDir() + L"/../config";
+        _wmkdir(configDir_.c_str());
+    }
+    return configDir_;
+}
+
 int Config::windowXPos() {
     return screenWidth() / 2 - windowWidth() / 2;
 }
@@ -90,11 +109,11 @@ int Config::windowYPos() {
 }
 
 int Config::windowWidth() {
-    return 640;
+    return 720;
 }
 
 int Config::windowHeight() {
-    return 480;
+    return 640;
 }
 
 int Config::screenWidth() {
@@ -105,11 +124,57 @@ int Config::screenHeight() {
     return Fl::h();
 }
 
-
 Config &getConfig() {
     static Config cfg;
-
     return cfg;
+}
+
+void Config::setLastSdModel(const std::string& model) {
+    lastSdModelName_ = model;
+}
+
+const char *Config::getLatestSdModel() {
+    return lastSdModelName_.c_str();
+}
+
+bool Config::save() {
+    try {
+        json data;
+        json models;
+        models["last_sd_model"] = lastSdModelName_;
+        data["models"] = models;
+        const std::wstring path = getConfigDir() + kCONFIG_FILE;
+        std::ofstream f(path.c_str());
+        f << data;
+        return true;
+    } catch (json::exception& e) {
+        fprintf(stderr, "Error saving dexpert configuration file: %s", e.what());
+    }
+
+    return false;
+}
+
+bool Config::load() {
+    const std::wstring path = getConfigDir() + kCONFIG_FILE;
+    std::ifstream f(path.c_str());
+    try {
+        if (!f.good()) {
+            fprintf(stderr, "Dexpert configuration file does not exist");
+            return true;
+        }
+        json data = json::parse(f);
+        if (data.contains("models")) {
+            auto models = data["models"];
+            if (models.contains("last_sd_model")) {
+                lastSdModelName_ = models["last_sd_model"].get<std::string>();
+            }
+        }
+        return true;
+    } catch(json::exception& e) {
+        fprintf(stderr, "Error loading dexpert configuration file: %s", e.what());
+    }
+
+    return false;
 }
 
 }  // namespace dexpert

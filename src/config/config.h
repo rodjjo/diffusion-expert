@@ -20,6 +20,7 @@ class Config {
    const std::wstring& pythonMainPy();
    const std::wstring& modelsRootDir();
    const std::wstring& sdModelsDir();
+   const std::wstring& getConfigDir();
 
    int screenWidth();
    int screenHeight();
@@ -29,7 +30,15 @@ class Config {
    int windowWidth();
    int windowHeight();
 
+   void setLastSdModel(const std::string& model);
+   const char *getLatestSdModel();
+   
+   bool save();
+   bool load();
+
  private:
+   // string buffers
+   std::wstring configDir_;
    std::wstring librariesDir_;
    std::wstring executableDir_;
    std::wstring pythonStuffDir_;
@@ -37,6 +46,10 @@ class Config {
    std::wstring pythonMainPy_;
    std::wstring modelsRootDir_;
    std::wstring sdModelsDir_;
+
+ private:
+  // configs
+  std::string lastSdModelName_; // the latest used sd model 
 };
 
 Config &getConfig();
