@@ -13,12 +13,24 @@ def txt2img(params: dict):
             negative = None
         seed = params['seed']
         model = params["model"]
-        print("loading model")
+        cfg = params["cfg"]
+        steps = params["steps"]
+        width = params["width"]
+        height = params["height"]
+        print("Loading the model ...")
         pipeline = create_pipeline(model)
         pipeline.to("cuda")
         generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
         print("Generating Image")
-        result = pipeline(prompt, guidance_scale=7.5, height=512, width=512, negative_prompt=negative, num_inference_steps=100, generator=generator).images[0]
+        result = pipeline(
+            prompt, 
+            guidance_scale=cfg, 
+            height=height, 
+            width=width, 
+            negative_prompt=negative, 
+            num_inference_steps=steps,
+            generator=generator
+        ).images[0]
         print("Completed")
         return {
                 'data': result.tobytes(),

@@ -1,0 +1,4 @@
+- Fix  the model loader to support .safetensors, there is an error loading the model
+- Create the results page
+    - Move the generated image to the results page
+    - Allow to generate multiple images

@@ -9,28 +9,56 @@
 namespace dexpert {
 namespace py {
 
+class ObjGuard {
+  public:
+    ObjGuard(const char* module = NULL) {
+        if (module) {
+            module_ = PyImport_ImportModule(module);
+        }
+    }
+
+    PyObject *guard(PyObject * v) {
+        items_.push_back(v);
+        return v;
+    }
+
+    PyObject *operator () (PyObject *v) {
+        return guard(v);
+    }
+
+    ~ObjGuard() {
+        Py_XDECREF(module_);
+        for (auto it = items_.begin(); it != items_.end(); it++) {
+            Py_XDECREF(*it);
+        }
+    }
+    PyObject *module() {
+        return module_;
+    }
+  private:
+     PyObject* module_ = NULL;
+     std::list<PyObject*> items_;
+};
+
 callback_t install_deps(status_callback_t status_cb) {
     return [status_cb] {
+        ObjGuard guard("dependencies.installer"); 
         PyObject *result = NULL;
-        PyObject* module = PyImport_ImportModule("dependencies.installer"); 
         bool errors = handle_error();
         const char* msg = NULL;
 
-        if (!module) {
+        if (!guard.module()) {
             msg = "Could not load Python module dependencies.installer";
             errors = true;
         }
 
         if (!errors) {
-            PyObject *result = PyObject_CallMethod( module, "install_dependencies", NULL );
+            PyObject *result = guard(PyObject_CallMethod(guard.module(), "install_dependencies", NULL ));
             errors = handle_error();
             if (errors) {
                 msg = "There was a failure installing dependencies";
             }
         }
-
-        Py_XDECREF(result);
-        Py_XDECREF(module);
 
         status_cb(errors == false, msg);
     };
@@ -39,17 +67,17 @@ callback_t install_deps(status_callback_t status_cb) {
 callback_t check_have_deps(status_callback_t status_cb) {
     return [status_cb] {
         PyObject *result = NULL;
-        PyObject* module = PyImport_ImportModule("dependencies.installer"); 
+        ObjGuard guard("dependencies.installer"); 
         bool errors = handle_error();
         const char* msg = NULL;
 
-        if (!module) {
+        if (!guard.module()) {
             msg = "Could not load Python module dependencies.installer";
             errors = true;
         }
 
         if (!errors) {
-            PyObject *result = PyObject_CallMethod(module, "have_dependencies", NULL );
+            PyObject *result = guard(PyObject_CallMethod(guard.module(), "have_dependencies", NULL));
             errors = handle_error();
             if (errors) {
                 msg = "There was a failure installing dependencies";
@@ -58,9 +86,6 @@ callback_t check_have_deps(status_callback_t status_cb) {
                 errors = (PyObject_IsTrue(result) != 1);
             }
         }
-
-        Py_XDECREF(result);
-        Py_XDECREF(module);
 
         status_cb(errors == false, msg);
     };
@@ -73,17 +98,17 @@ callback_t open_image(const char* path, image_callback_t status_cb) {
         std::shared_ptr<RawImage> img;
 
         PyObject *result = NULL;
-        PyObject* module = PyImport_ImportModule("images.filesystem"); 
+        ObjGuard guard("images.filesystem"); 
 
         errors = handle_error();
 
-        if (!module) {
+        if (!guard.module()) {
             msg = "Could not load Python module images.filesystem";
             errors = true;
         }
 
         if (!errors) {
-            result = PyObject_CallMethod(module, "open_image", "s", path);
+            result = guard(PyObject_CallMethod(guard.module(), "open_image", "s", path));
             errors = handle_error();
             if (errors) {
                 msg = "There was a failure loading the image";
@@ -96,9 +121,6 @@ callback_t open_image(const char* path, image_callback_t status_cb) {
             }
         }
 
-        Py_XDECREF(result);
-        Py_XDECREF(module);
-
         status_cb(!errors, msg, img);
     };
 }
@@ -110,28 +132,24 @@ callback_t save_image(const char* path, std::shared_ptr<RawImage> image, status_
 
         PyObject *result = NULL;
         PyObject *data = NULL;
-        PyObject* module = PyImport_ImportModule("images.filesystem"); 
+        ObjGuard guard("images.filesystem"); 
 
         errors = handle_error();
 
-        if (!module) {
+        if (!guard.module()) {
             msg = "Could not load Python module images.filesystem";
             errors = true;
         }
 
         if (!errors) {
-            data = PyDict_New();
+            data = guard(PyDict_New());
             image->toPyDict(data);
-            result = PyObject_CallMethod(module, "save_image", "sO", path, data);
+            result = guard(PyObject_CallMethod(guard.module(), "save_image", "sO", path, data));
             errors = handle_error();
             if (errors) {
                 msg = "Fail saving the image";
             }
         }
-
-        Py_XDECREF(data);
-        Py_XDECREF(result);
-        Py_XDECREF(module);
 
         status_cb(!errors, msg);
     };
@@ -145,33 +163,28 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         std::shared_ptr<RawImage> img;
 
         PyObject *result = NULL;
-        PyObject* module = PyImport_ImportModule("images.txt2img"); 
+        ObjGuard guard("images.txt2img"); 
 
         errors = handle_error();
 
-        if (!module) {
+        if (!guard.module()) {
             msg = "Could not load Python module images.txt2img";
             errors = true;
         }
 
-        PyObject *params = PyDict_New();
-        std::list<PyObject *> fields;
+        PyObject *params = guard(PyDict_New());
 
-        fields.push_back(PyUnicode_FromString(config.prompt));
-        PyDict_SetItemString(params, "prompt", *fields.rbegin());
-        fields.push_back(PyUnicode_FromString(config.negative));
-        PyDict_SetItemString(params, "negative", *fields.rbegin());
-        fields.push_back(PyUnicode_FromWideChar(config.model, -1));
-        PyDict_SetItemString(params, "model", *fields.rbegin());
-        fields.push_back(PyLong_FromSize_t(config.width));
-        PyDict_SetItemString(params, "width", *fields.rbegin());
-        fields.push_back(PyLong_FromSize_t(config.height));
-        PyDict_SetItemString(params, "height", *fields.rbegin());
-        fields.push_back(PyLong_FromLong(config.seed));
-        PyDict_SetItemString(params, "seed", *fields.rbegin());
+        PyDict_SetItemString(params, "prompt", guard(PyUnicode_FromString(config.prompt)));
+        PyDict_SetItemString(params, "negative", guard(PyUnicode_FromString(config.negative)));
+        PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(config.model, -1)));
+        PyDict_SetItemString(params, "width", guard(PyLong_FromSize_t(config.width)));
+        PyDict_SetItemString(params, "height", guard(PyLong_FromSize_t(config.height)));
+        PyDict_SetItemString(params, "steps", guard(PyLong_FromSize_t(config.steps)));
+        PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(config.cfg)));
+        PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(config.seed)));
 
         if (!errors) {
-            result = PyObject_CallMethod(module, "txt2img", "O", params);
+            result = guard(PyObject_CallMethod(guard.module(), "txt2img", "O", params));
             errors = handle_error();
             if (errors) {
                 msg = "There was a failure loading the image";
@@ -184,15 +197,57 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
             }
         }
 
-        for (auto i = fields.begin(); i != fields.end(); i++) {
-            Py_XDECREF(*i);
+        status_cb(!errors, msg, img);        
+    };
+}
+
+callback_t list_models(const wchar_t* path, model_callback_t status_cb) {
+    return [path, status_cb] {
+        model_list_t models;
+        bool errors = false;
+        const char* msg = NULL;
+
+        PyObject *result = NULL;
+        PyObject *data = NULL;
+        ObjGuard guard("models.models"); 
+
+        errors = handle_error();
+
+        if (!guard.module()) {
+            msg = "Could not load Python module models.models";
+            errors = true;
         }
 
-        Py_XDECREF(params);
-        Py_XDECREF(result);
-        Py_XDECREF(module);
+        if (!errors) {
+            result = guard(PyObject_CallMethod(guard.module(), "list_models", "u", path));
+            errors = handle_error();
+            if (errors || result == NULL) {
+                msg = "Fail loading model list";
+            } else {
+                size_t size = PySequence_Fast_GET_SIZE(result);
+                PyObject *element = NULL;
+                for (size_t i = 0; i < size; ++i) {
+                    element = guard(PySequence_Fast_GET_ITEM(result, i));
+                    PyObject *name = PyDict_GetItemString(element, "name");
+                    PyObject *size = PyDict_GetItemString(element, "size");
+                    PyObject *hash = PyDict_GetItemString(element, "hash");
+                    PyObject *path = PyDict_GetItemString(element, "path");
+                    model_t model;
+                    model.name = PyUnicode_AsUTF8(name);
+                    model.hash = PyUnicode_AsUTF8(hash);
+                    
+                    Py_ssize_t sz = 0;
+                    wchar_t *text = PyUnicode_AsWideCharString(path, &sz);
+                    model.path = std::wstring(text, sz);
+                    PyMem_Free(text);
 
-        status_cb(!errors, msg, img);        
+                    model.size = PyLong_AsSize_t(size);
+                    models.push_back(model);
+                }
+            }
+        }
+
+        status_cb(!errors, msg, models);
     };
 }
 

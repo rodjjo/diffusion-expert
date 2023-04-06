@@ -3,7 +3,6 @@
 #include "src/python/wrapper.h"
 #include "src/config/config.h"
 
-
 namespace dexpert {
 namespace {
 
@@ -28,22 +27,77 @@ StableDiffusionState::~StableDiffusionState() {
 
 }
 
+bool StableDiffusionState::reloadSdModelList() {
+    bool success = false;
+    last_error_ = std::string();
+    const char *msg = "Fail retriving model list";
+    std::list<model_info_t> new_list;
+    auto cb = [&success, &msg, &new_list] (bool s, const char *m, const dexpert::py::model_list_t &l) {
+        if (s) {
+            success = true;
+            for (auto it = l.cbegin(); it != l.cend(); it++) {
+                model_info_t el;
+                el.hash = it->hash;
+                el.model_size = it->size;
+                el.name = it->name;
+                el.path = it->path;
+                new_list.push_back(el);
+            }
+        } else {
+            if (m) msg = m;
+        }
+    };
+
+    dexpert::py::get_py()->execute_callback(dexpert::py::list_models(
+        getConfig().sdModelsDir().c_str(),
+        cb
+    ));
+
+    sdModels_ = new_list;
+
+    if (!success) {
+        last_error_ = msg;
+    } else if (currentSdModel_.empty() && !sdModels_.empty()) {
+        setSdModel(sdModels_.rbegin()->name);
+    }
+
+    return success;
+}
+
+const std::list<model_info_t> &StableDiffusionState::getSdModels() const {
+    return sdModels_;
+}
+
+void StableDiffusionState::setSdModel(const std::string& name) {
+    for (auto it = sdModels_.cbegin(); it != sdModels_.cend(); it++) {
+        if (name == it->name) {
+            currentSdModel_ = it->path;
+            getConfig().setLastSdModel(name);
+            getConfig().save();
+            break;
+        }
+    }
+}
+
 bool StableDiffusionState::generateInputImage() {
     bool success = false;
     last_error_  = std::string();
     std::string prompt = prompt_;
     std::string negative = negative_prompt_;
 
-    std::wstring model = dexpert::getConfig().sdModelsDir() + L"/model.ckpt";
     const char *message = "Unexpected error. Callback to generate image not called";
     image_ptr_t image;
-    dexpert::py::txt2img_config_t cfg;
-    cfg.prompt = prompt.c_str();
-    cfg.negative = negative.c_str();
-    cfg.model = model.c_str();
-    cfg.seed = seed_;
+    dexpert::py::txt2img_config_t params;
+    params.prompt = prompt.c_str();
+    params.negative = negative.c_str();
+    params.model = currentSdModel_.c_str();
+    params.seed = seed_;
+    params.steps = steps_;
+    params.cfg = cfg_;
+    params.width = width_;
+    params.height = height_;
     
-    auto cb = dexpert::py::txt2_image(cfg, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
+    auto cb = dexpert::py::txt2_image(params, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
         success = status;
         message = msg;
         image = img;
@@ -141,8 +195,39 @@ int StableDiffusionState::getSeed() {
     return seed_;
 }
 
+void StableDiffusionState::setWidth(int value) {
+    width_ = value;
+}
+
+void StableDiffusionState::setHeight(int value) {
+    height_ = value;
+}
+
+void StableDiffusionState::setSteps(int value) {
+    steps_ = value;
+}
+void StableDiffusionState::setCFG(float value) {
+    cfg_ = value;
+}
+
 void StableDiffusionState::setSeed(int value) {
     seed_ = value;
+}
+
+int StableDiffusionState::getWidth() {
+    return width_;
+}
+
+int StableDiffusionState::getHeight() {
+    return height_;
+}
+
+int StableDiffusionState::getSteps() {
+    return steps_;
+}
+
+float StableDiffusionState::getCFG() {
+    return cfg_;
 }
     
 } // namespace dexpert

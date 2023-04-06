@@ -129,6 +129,11 @@ void Pages::generateInputImage() {
     get_sd_state()->setPrompt(promptPanel_->getPrompt());
     get_sd_state()->setNegativePrompt(promptPanel_->getNegativePrompt());
     get_sd_state()->setSeed(promptPanel_->getSeed());
+    get_sd_state()->setSteps(promptPanel_->getSteps());
+    get_sd_state()->setWidth(promptPanel_->getWidth());
+    get_sd_state()->setHeight(promptPanel_->getHeight());
+    get_sd_state()->setCFG(promptPanel_->getCFG());
+    get_sd_state()->setSdModel(promptPanel_->getSdModel());
     if (!get_sd_state()->generateInputImage()) {
         show_error(get_sd_state()->lastError());
     } else {
