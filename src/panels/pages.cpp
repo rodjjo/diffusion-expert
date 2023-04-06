@@ -128,6 +128,7 @@ void Pages::saveInputImage() {
 void Pages::generateInputImage() {
     get_sd_state()->setPrompt(promptPanel_->getPrompt());
     get_sd_state()->setNegativePrompt(promptPanel_->getNegativePrompt());
+    get_sd_state()->setSeed(promptPanel_->getSeed());
     if (!get_sd_state()->generateInputImage()) {
         show_error(get_sd_state()->lastError());
     } else {

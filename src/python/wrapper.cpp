@@ -57,6 +57,8 @@ void PythonMachine::run_machine() {
     PyList_Append(pathList, pyLibPath);
     Py_XDECREF(pathList); 
 
+    initialize_python_stuff(main);
+
     while (!terminated_) {
         execute_callback_internal();
     }

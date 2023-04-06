@@ -48,3 +48,5 @@ intptr_t h = (intptr_t) (src_type == log_source_stdout ? STD_OUTPUT_HANDLE : STD
 int fd = _open_osfhandle((h), O_TEXT);
 // SetStdHandle(h, (HANDLE) _get_osfhandle(pipefd[1]));
 
+## see
+https://github.com/ratwithacompiler/diffusers_stablediff_conversion/blob/main/convert_original_stable_diffusion_to_diffusers.py

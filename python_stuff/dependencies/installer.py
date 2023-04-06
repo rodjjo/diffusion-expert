@@ -16,6 +16,8 @@ def have_dependencies():
         import torch
         import numpy
         import diffusers
+        import transformers
+        from omegaconf import OmegaConf
         return True
     except ImportError:
         return False

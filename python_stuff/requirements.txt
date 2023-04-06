@@ -1,4 +1,5 @@
 Pillow
+OmegaConf
 accelerate
 pytorch_lightning
 numpy
