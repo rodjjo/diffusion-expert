@@ -38,7 +38,7 @@ class Pages: public Fl_Group {
     const char *pageTitle(page_t page);
     void openInputImage();
     void saveInputImage();
-    void generateInputImage();
+    void textToImage();
 
  protected:
     void resize(int x, int y, int w, int h) override;

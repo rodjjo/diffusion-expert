@@ -7,6 +7,8 @@ namespace dexpert {
 namespace {
 
 const char *kNO_ERROR_MESSAGE = "Error with no error message";
+const int kMAX_RESULT_IMAGES = 4;
+const int kMAX_RESULT_VARIATIONS = 4;
 
 std::shared_ptr<StableDiffusionState> sd_state;
 
@@ -20,7 +22,15 @@ std::shared_ptr<StableDiffusionState> get_sd_state() {
 }
 
 StableDiffusionState::StableDiffusionState() {
-
+    for (int r = 0; r < kMAX_RESULT_IMAGES; ++r) {
+        image_list_t row;
+        row.push_back(image_ptr_t());
+        for (int v = 0; v <kMAX_RESULT_VARIATIONS; ++v)  {
+            row.push_back(image_ptr_t());
+        }
+        result_images_.push_back(row);
+    }
+    generators_.resize(kMAX_RESULT_IMAGES);
 }
 
 StableDiffusionState::~StableDiffusionState() {
@@ -79,42 +89,123 @@ void StableDiffusionState::setSdModel(const std::string& name) {
     }
 }
 
-bool StableDiffusionState::generateInputImage() {
-    bool success = false;
-    last_error_  = std::string();
-    std::string prompt = prompt_;
-    std::string negative = negative_prompt_;
-
-    const char *message = "Unexpected error. Callback to generate image not called";
-    image_ptr_t image;
-    dexpert::py::txt2img_config_t params;
-    params.prompt = prompt.c_str();
-    params.negative = negative.c_str();
-    params.model = currentSdModel_.c_str();
-    params.seed = seed_;
-    params.steps = steps_;
-    params.cfg = cfg_;
-    params.width = width_;
-    params.height = height_;
-    
-    auto cb = dexpert::py::txt2_image(params, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
-        success = status;
-        message = msg;
-        image = img;
-    });
-
-    dexpert::py::get_py()->execute_callback(cb);
-
-    if (!success) {
-        last_error_ = message ? message : kNO_ERROR_MESSAGE;
-    } else if (image) {
-        input_image_ = image;
-        return true;
+std::wstring StableDiffusionState::getSdModelPath(const std::string& name) {
+    for (auto it = sdModels_.cbegin(); it != sdModels_.cend(); it++) {
+        if (name == it->name) {
+            return it->path;
+        }
     }
+    return L"";
+}
 
+void StableDiffusionState::scroll_down_generators() {
+    for (size_t i = generators_.size(); i > 0; --i) {
+        if ((int)i - 1 >= 0) {
+            generators_[i] = generators_[i - 1];
+            result_images_[i] = result_images_[i - 1];
+        }
+    }
+    generators_.begin()->first.reset();
+    generators_.begin()->second = 0;
+    for (size_t i = 0; i < result_images_.begin()->size(); ++i) {
+        result_images_.begin()->at(i).reset();
+    }
+}
+
+void StableDiffusionState::scroll_up_generators() {
+    for (size_t i = 0; i < generators_.size(); ++i) {
+        if (i + 1 < generators_.size()) {
+            generators_[i] = generators_[i + 1];
+            result_images_[i] = result_images_[i + 1];
+        }
+    }
+    generators_.rbegin()->first.reset();
+    generators_.rbegin()->second = 0;
+    for (size_t i = 0; i < result_images_.rbegin()->size(); ++i) {
+        result_images_.rbegin()->at(i).reset();
+    }
+}
+
+int StableDiffusionState::randomSeed() {
+    int any_random = ((size_t) rand()) % INT32_MAX;
+    if (any_random < 10000) 
+        any_random += 10000; // we are going to increment and decrement the seeds
+    return any_random;
+}
+
+generator_cb_t StableDiffusionState::generatorMakeCallback(int index, int variation) {
+    return [this, index, variation] (bool success, const char* msg, image_ptr_t result) {
+        if (!success || !result) {
+            if (msg)
+                last_error_ = msg;
+            else 
+                last_error_ = "Generator failed without error message";
+        } else {
+            result_images_[index][variation] = result;
+        }
+    };
+}
+
+bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator) {
+    last_error_.clear();
+
+    size_t index = 0;
+    for (size_t i = 0; i < generators_.size(); ++i) {
+        index = i;
+        if (!generators_[i].first) {
+            break;
+        }
+    }
+    if (generators_[index].first) {
+        scroll_up_generators();
+    }
+    generators_[index] = std::make_pair(generator, 0);
+    generator->generate(generatorMakeCallback(index, 0), 0, 0, 0);
+
+    return last_error_.empty();
+}
+
+bool StableDiffusionState::generatePreviousImage() {
+    last_error_.clear();
+
+    auto g = generators_[0];
+    if (generators_[0].first) {
+        scroll_down_generators();
+    }
+    g.second -= 1;
+    generators_[0] = g;
+    g.first->generate(generatorMakeCallback(0, 0), g.second, 0, 0);
+
+    return last_error_.empty();
+}
+
+bool StableDiffusionState::generateNextImage() {
+    last_error_.clear();
+
+    int index = generators_.size() - 1;
+    for (int i = 0; i < generators_.size(); ++i) {
+        if (!generators_[i].first) {
+            index = i;
+            break;
+        }
+    }
+    auto g = generators_[index];
+    if (generators_[index].first) {
+        scroll_up_generators();
+    }
+    g.second += 1;
+    generators_[index] = g;
+    g.first->generate(generatorMakeCallback(index, 0), g.second, 0, 0);
+
+    return last_error_.empty();
+}
+
+bool StableDiffusionState::generateVariation(int index, int variation) {
+    last_error_ = "not implemented";
     return false;
 }
 
+/*
 bool StableDiffusionState::openInputImage(const char *path) {
     bool success = false;
     last_error_ = std::string();
@@ -136,8 +227,9 @@ bool StableDiffusionState::openInputImage(const char *path) {
     }
 
     return success;
-}
+} */
 
+/*
 bool StableDiffusionState::saveInputImage(const char *path) {
     if (!input_image_) {
         last_error_ = "no image to save";
@@ -162,72 +254,47 @@ bool StableDiffusionState::saveInputImage(const char *path) {
 
     return success;
 }
+*/
 
-void StableDiffusionState::setInputImage(image_ptr_t image) {
-    input_image_ = image;
+RawImage *StableDiffusionState::getResultsImage(int index, int variation) {
+    if (index >= result_images_.size())
+        return NULL;
+    if (variation >= result_images_[index].size())
+        return NULL;
+    return result_images_[index][variation].get();
 }
-    
-RawImage *StableDiffusionState::getInputImage() {
-    return input_image_.get();
+
+RawImage *StableDiffusionState::getControlNetImage(int index) {
+    return NULL;
+}
+
+int StableDiffusionState::getMaxResultImages() {
+    return result_images_.size();
+}
+
+int StableDiffusionState::getMaxResultVariations() {
+    return result_images_[0].size();
+}
+
+void StableDiffusionState::clearAllResultImages() {
+    for (int i = 0; i < result_images_.size(); ++i) {
+        auto &v = result_images_[i];
+        for (int j = 0; j < v.size(); ++j) {
+            v[j].reset();
+        }
+    }
+}
+
+void StableDiffusionState::clearResult(int index, int variation) {
+    if (index >= result_images_.size())
+        return;
+    if (variation >= result_images_[index].size())
+        return;
+    result_images_[index][variation].reset();
 }
 
 const char* StableDiffusionState::lastError() {
     return last_error_.c_str();
-}
-
-void StableDiffusionState::setPrompt(const char *prompt) {
-    prompt_ = prompt;
-}
-
-void StableDiffusionState::setNegativePrompt(const char *prompt) {
-    negative_prompt_ = prompt;
-}
-
-const char *StableDiffusionState::getPrompt() {
-    return prompt_.c_str();
-}
-
-const char *StableDiffusionState::getNegativePrompt() {
-    return negative_prompt_.c_str();
-}
-
-int StableDiffusionState::getSeed() {
-    return seed_;
-}
-
-void StableDiffusionState::setWidth(int value) {
-    width_ = value;
-}
-
-void StableDiffusionState::setHeight(int value) {
-    height_ = value;
-}
-
-void StableDiffusionState::setSteps(int value) {
-    steps_ = value;
-}
-void StableDiffusionState::setCFG(float value) {
-    cfg_ = value;
-}
-
-void StableDiffusionState::setSeed(int value) {
-    seed_ = value;
-}
-
-int StableDiffusionState::getWidth() {
-    return width_;
-}
-
-int StableDiffusionState::getHeight() {
-    return height_;
-}
-
-int StableDiffusionState::getSteps() {
-    return steps_;
-}
-
-float StableDiffusionState::getCFG() {
-    return cfg_;
 }
     
 } // namespace dexpert

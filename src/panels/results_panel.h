@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include <list>
+#include <vector>
 #include <FL/Fl_Group.H>
 #include "src/panels/frame_panel.h"
 
@@ -25,7 +25,7 @@ class ResultsPanel: public Fl_Group {
     FramePanel *getFrame(int col, int row);
 
  private:
-    std::list<std::list<FramePanel *> > miniatures_;
+    std::vector<std::vector<FramePanel *> > miniatures_;
 };
 
 }  // namespace dexpert

@@ -5,10 +5,12 @@
 #define SRC_STABLE_DIFFUSION_STATE_H_
 
 #include <string>
+#include <vector>
 #include <list>
 #include <memory>
 
 #include "src/python/raw_image.h"
+#include "src/stable_diffusion/generator.h"
 
 namespace dexpert
 {
@@ -22,6 +24,10 @@ typedef struct {
     std::wstring path;
     size_t model_size;
 } model_info_t;
+
+
+typedef std::vector<image_ptr_t> image_list_t;
+typedef std::vector<image_list_t> image_grid_t;
 
 class StableDiffusionState {
  private:
@@ -37,43 +43,43 @@ class StableDiffusionState {
     bool reloadSdModelList();
     const std::list<model_info_t> &getSdModels() const;
     void setSdModel(const std::string& name);
+    std::wstring getSdModelPath(const std::string& name);
 
-    // prompts
-    void setPrompt(const char *prompt);
-    void setNegativePrompt(const char *prompt);
-    const char *getPrompt();
-    const char *getNegativePrompt();
-    int getSeed();
-    int getWidth();
-    int getHeight();
-    int getSteps();
-    float getCFG();
-    void setSeed(int value);
-    void setWidth(int value);
-    void setHeight(int value);
-    void setSteps(int value);
-    void setCFG(float value);
+    // generation
+    bool generatorAdd(std::shared_ptr<GeneratorBase> generator);
+    bool generatePreviousImage();
+    bool generateNextImage();
+    bool generateVariation(int index, int variation);
+
+    generator_cb_t generatorMakeCallback(int index, int variation);
+    
+    int randomSeed();
 
     // input images
-    bool generateInputImage();
-    bool openInputImage(const char *path);
-    void setInputImage(image_ptr_t image);
-    bool saveInputImage(const char *path);
-    RawImage *getInputImage();
+    // bool openInputImage(const char *path);
+    // bool saveInputImage(const char *path);
+
     const char* lastError();
 
+    // get images
+    RawImage *getResultsImage(int index, int variation);
+    RawImage *getControlNetImage(int index);
+
+    int getMaxResultImages();
+    int getMaxResultVariations();
+    void clearAllResultImages();
+    void clearResult(int index, int variation);
+
 private:
-    int seed_ = -1;
-    int width_ = 512;
-    int height_ = 512;
-    int steps_ = 50;
-    float cfg_ = 7.5;
+    void scroll_down_generators();
+    void scroll_up_generators();
+
+private:
     std::list<model_info_t> sdModels_;
     std::wstring currentSdModel_;
-    std::string prompt_;
-    std::string negative_prompt_;
     std::string last_error_;
-    image_ptr_t input_image_;
+    image_grid_t result_images_;
+    std::vector<std::pair<std::shared_ptr<GeneratorBase>, int> > generators_;
 };
     
 } // namespace dexpert

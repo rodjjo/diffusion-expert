@@ -29,32 +29,32 @@ class FramePanel : public OpenGlPanel {
 public:
     FramePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     virtual ~FramePanel();
-    void setGridLocation(int col, int row);
+    void setGridLocation(int index, int variation);
     void enableGrid();
     void enableCache();
 
-    size_t gridRow();
-    size_t gridCol();
+    size_t gridIndex();
+    size_t gridVariation();
     void setImageSource(image_src_t src_type);
 
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;
 
 private:
-    void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int format, size_t version);
+    void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
 
 private:
     bool grid_enabled_ = false;
     bool cache_enabled_ = false;
     size_t cache_version_ = 0;
-    int cache_type_ = 0;
+    int cache_channels_ = 1;
     size_t cache_w_ = 0;
     size_t cache_h_ = 0;
     size_t cache_bytes_ = 0;
     unsigned char *cache_buffer_ = NULL;
 
-    size_t col_ = 0;
-    size_t row_ = 0;
+    size_t variation_ = 0;
+    size_t index_ = 0;
     image_src_t src_type_ = image_src_input;
 private:
     std::string current_open_dir_;

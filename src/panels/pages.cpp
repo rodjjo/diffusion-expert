@@ -1,6 +1,7 @@
 #include "src/panels/pages.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/stable_diffusion/state.h"
+#include "src/stable_diffusion/generator_txt2img.h"
 
 namespace dexpert {
 namespace  {
@@ -113,6 +114,7 @@ page_t Pages::activePage() {
 
 
 void Pages::openInputImage() {
+    /*
     std::string path = choose_image_to_open(&current_open_input_dir_);
     if (!path.empty()) {
         if (!get_sd_state()->openInputImage(path.c_str())) {
@@ -120,10 +122,12 @@ void Pages::openInputImage() {
         } else {
             inputImage_->redraw();
         }
-    }
+    } 
+    */
 }
 
 void Pages::saveInputImage() {
+    /*
     if (!get_sd_state()->getInputImage()) {
         return;
     }
@@ -133,21 +137,30 @@ void Pages::saveInputImage() {
             show_error(get_sd_state()->lastError());
         }
     }
+    */
 }
 
-void Pages::generateInputImage() {
-    get_sd_state()->setPrompt(promptPanel_->getPrompt());
-    get_sd_state()->setNegativePrompt(promptPanel_->getNegativePrompt());
-    get_sd_state()->setSeed(promptPanel_->getSeed());
-    get_sd_state()->setSteps(promptPanel_->getSteps());
-    get_sd_state()->setWidth(promptPanel_->getWidth());
-    get_sd_state()->setHeight(promptPanel_->getHeight());
-    get_sd_state()->setCFG(promptPanel_->getCFG());
+void Pages::textToImage() {
+    int seed = promptPanel_->getSeed();
+    if (seed == -1) 
+        seed = get_sd_state()->randomSeed();
     get_sd_state()->setSdModel(promptPanel_->getSdModel());
-    if (!get_sd_state()->generateInputImage()) {
+
+    auto g = std::make_shared<GeneratorTxt2Image>(
+        promptPanel_->getPrompt(),
+        promptPanel_->getNegativePrompt(),
+        get_sd_state()->getSdModelPath(promptPanel_->getSdModel()),
+        seed,
+        promptPanel_->getWidth(),
+        promptPanel_->getHeight(),
+        promptPanel_->getSteps(),
+        promptPanel_->getCFG()
+    );
+
+    if (!get_sd_state()->generatorAdd(g)) {
         show_error(get_sd_state()->lastError());
     } else {
-        inputImage_->redraw();
+        resultsPanel_->updatePanels();
     }
 }
 
