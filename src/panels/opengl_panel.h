@@ -20,6 +20,7 @@ class OpenGlPanel: public Fl_Gl_Window {
     virtual ~OpenGlPanel();
     virtual void cancel_operations();
     const viewport_t & view_port() const;
+    void resize(int x, int y, int w, int h) override;
 
  protected:
     virtual void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) {};

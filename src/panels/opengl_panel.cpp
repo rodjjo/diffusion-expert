@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <GL/gl.h>
 #include <FL/Fl.H>
 #include <FL/gl.h>
@@ -15,6 +16,7 @@ OpenGlPanel::OpenGlPanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_
     vp_[1] = 0;
     vp_[2] = this->w();
     vp_[3] = this->h();
+    valid(0);
 }
 
 OpenGlPanel::~OpenGlPanel() {
@@ -70,6 +72,13 @@ int OpenGlPanel::handle(int event) {
     return 1;
 }
 
+void OpenGlPanel::resize(int x, int y, int w, int h) {
+    Fl_Gl_Window::resize(x, y, w, h);
+    valid(0);
+    redraw();
+}
+
+
 void OpenGlPanel::draw()  {
     if (!valid()) {
         valid(1);
@@ -96,7 +105,19 @@ void OpenGlPanel::draw()  {
     float pixel_zoom = vp_.raster_zoom(w, h);
     point_t raster = vp_.raster_coords(w, h);
 
-    glRasterPos2f(-1.0 + raster.x, 1.0 - raster.y);
+    float px = -1.0 + raster.x;
+    float py = 1.0 - raster.y;
+
+    if (px < -1.0)
+        px = -1.0;
+    if (py < -1.0)
+        py = -1.0;
+    if (py > 1.0)
+        py = 1.0;
+    if (px > 1.0)
+        px = 1.0;
+
+    glRasterPos2f(px, py);
     glPixelZoom(pixel_zoom, -pixel_zoom);
 
     if (w % 4 == 0)

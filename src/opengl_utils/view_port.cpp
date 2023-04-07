@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2023 by Rodrigo Antonio de Araujo
  */
+#include <stdio.h>
 #include <string.h>
 #include <GL/gl.h>
 
@@ -63,29 +64,29 @@ point_t viewport_t::frame_to_screen_coords(uint32_t video_w, uint32_t video_h, c
 }
 
 float viewport_t::raster_zoom(uint32_t video_w, uint32_t video_h) const {
-    if (vp_[2] < 1 || vp_[3] < 1)
-        return 0;
+    const int& vp_w = vp_[2];
+    const int& vp_h = vp_[3];
+    if (vp_w < 1 || vp_h < 1)
+        return 0.0;
 
     double scale;
     double scale_h;
     double scale_w;
+    double zoom = 1.0;
 
-    scale = vp_[2] / static_cast<double>(video_w);
-    scale_h = vp_[3] / static_cast<double>(video_h);
+    int tmp = video_h;
 
-    if (scale_h < scale)
-        scale = scale_h;
+    scale = vp_w / static_cast<double>(video_w);
 
-    scale_w = video_w * scale;
-    if (scale_w > vp_[2])
-        scale = scale * (1.0 - (scale_w / vp_[2]));
+    zoom *= scale;
+    video_h *= scale;
 
-    scale_h = video_h * scale;
+    if (video_h > vp_h) {
+        scale = vp_h / static_cast<double>(video_h);
+        zoom *= scale;
+    }
 
-    if (scale_h > vp_[3])
-        scale = scale * (1.0 - (scale_h / vp_[3]));
-
-    return scale;
+    return zoom;
 }
 
 point_t viewport_t::raster_coords(uint32_t video_w, uint32_t video_h) const {
@@ -116,12 +117,6 @@ box_t viewport_t::frame_to_screen_coords(uint32_t video_w, uint32_t video_h, con
 }
 
 float viewport_t::fit(uint32_t *w, uint32_t *h) const {
-    /*
-        if (static_cast<int>(*w) <= vp_[2] && static_cast<int>(*h) <= vp_[3]) {
-            return 1.0;
-        }
-    */
-
     float fx = vp_[2];
     float fy = vp_[3];
 

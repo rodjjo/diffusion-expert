@@ -88,7 +88,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { pages_->openInputImage(); }, "", "File/Open");
     menu_->addItem([this] { pages_->saveInputImage(); }, "", "File/Save");
     menu_->addItem(noCall, "", "Edit");
-    menu_->addItem([this] { pages_->generateInputImage(); }, "", "Run/Generate");
+    menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
     menu_->addItem(noCall, "", "Tools");
     menu_->addItem(noCall, "", "Help");
 }
