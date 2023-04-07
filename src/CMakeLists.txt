@@ -25,7 +25,14 @@ if(WIN32)
 add_executable(diffusion-exp-win WIN32 ${SourcesEntry})
 endif(WIN32)
 
-target_link_libraries(diffusion-exp stdc++ ${FLTK_LIBRARIES} ${PYTHON_LIBRARIES} ${nlohmann_json_LIBRARIES_RELEASE})
+target_link_libraries(
+    diffusion-exp 
+    stdc++ 
+    ${FLTK_LIBRARIES} 
+    ${PYTHON_LIBRARIES} 
+    ${nlohmann_json_LIBRARIES_RELEASE}
+    ${cimg_LIBRARIES_RELEASE}
+)
 
 set_target_properties(diffusion-exp
     PROPERTIES

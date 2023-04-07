@@ -10,6 +10,7 @@
 
 #include "src/panels/frame_panel.h"
 #include "src/panels/prompt_panel.h"
+#include "src/panels/results_panel.h"
 
 namespace dexpert
 {
@@ -45,6 +46,7 @@ class Pages: public Fl_Group {
  private:
     void createPromptPage();
     void createInputImagePage();
+    void createResultsPage();
     void alignComponents();
 
  private:
@@ -54,6 +56,7 @@ class Pages: public Fl_Group {
 
     PromptPanel *promptPanel_ = NULL;
     FramePanel *inputImage_ = NULL;
+    ResultsPanel *resultsPanel_ = NULL;
     std::string current_open_input_dir_;
 };
     

@@ -20,6 +20,7 @@ RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_fo
     }
     buffer_ = (unsigned char *)malloc(buffer_len_);
     memcpy(buffer_, buffer, buffer_len_);
+    version_ = (size_t) buffer_; // randomize the version
 }
 
 RawImage::~RawImage() {
@@ -115,6 +116,14 @@ image_ptr_t rawImageFromPyDict(PyObject * dict) {
     }
 
     return r;
+}
+
+size_t RawImage::getVersion() {
+    return version_;
+}
+
+void RawImage::incVersion() {
+    ++version_;
 }
 
 } // namespace py

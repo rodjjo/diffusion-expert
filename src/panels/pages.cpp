@@ -26,6 +26,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     this->end();
     createInputImagePage();
     createPromptPage();
+    createResultsPage();
     alignComponents();
     goPage(page_input_image);
 }
@@ -47,6 +48,13 @@ void Pages::createInputImagePage() {
     pg->end();
 }
 
+void Pages::createResultsPage() {
+    auto pg = pages_[page_results];
+    pg->begin();
+    resultsPanel_ = new ResultsPanel(0, 0, 1, 1);
+    pg->end();
+}
+
 const char *Pages::pageTitle(page_t page) {
     return kPAGE_TITLES[page];
 }
@@ -65,6 +73,8 @@ void Pages::alignComponents() {
     promptPanel_->size(pg->w(), promptPanel_->minimalHeight());
     pg = pages_[page_input_image];
     inputImage_->resize(pg->x(), pg->y(), pg->w(), pg->h());
+    pg = pages_[page_results];
+    resultsPanel_->resize(pg->x(), pg->y(), pg->w(), pg->h());
 }
 
 bool Pages::isVisible(page_t page) {

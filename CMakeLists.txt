@@ -11,6 +11,7 @@ set(FLTK_SKIP_FLUID true)
 
 find_package(FLTK REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(cimg REQUIRED)
 find_package(PythonLibs REQUIRED)
 
 macro(print_all_variables)
@@ -21,7 +22,6 @@ macro(print_all_variables)
     endforeach()
     message(STATUS "print_all_variables------------------------------------------}")
 endmacro()
-
 
 if ($ENV{DEBUG_ENABLED})
     message("Compliling in Debug build type")
@@ -41,7 +41,8 @@ include_directories(DiffusionExpert
                     ${PROJECT_SOURCE_DIR}
                     ${FLTK_INCLUDE_DIR}
                     ${PYTHON_INCLUDE_DIRS}
-                    ${nlohmann_json_INCLUDE_DIRS_RELEASE})
+                    ${nlohmann_json_INCLUDE_DIRS_RELEASE}
+                    ${CImg_INCLUDE_DIRS_RELEASE})
 
 
 add_subdirectory("src")

@@ -14,7 +14,7 @@ using json = nlohmann::json;
 
 namespace dexpert {
 namespace {
-const wchar_t *kCONFIG_FILE = L"/dexpert.cfg";
+const wchar_t *kCONFIG_FILE = L"/dexpert.json";
 }
 
 Config::Config() {
@@ -145,7 +145,7 @@ bool Config::save() {
         data["models"] = models;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
-        f << data;
+        f << std::setw(2) << data << std::endl;
         return true;
     } catch (json::exception& e) {
         fprintf(stderr, "Error saving dexpert configuration file: %s", e.what());

@@ -26,6 +26,8 @@ class RawImage {
     image_format_t format();
     uint32_t h();
     uint32_t w();
+    size_t getVersion();
+    void incVersion();
 
  private:
     unsigned char *buffer_;
@@ -33,6 +35,7 @@ class RawImage {
     uint32_t w_;
     uint32_t h_;
     image_format_t format_;
+    size_t version_;
 };
 
 typedef std::shared_ptr<RawImage> image_ptr_t;
