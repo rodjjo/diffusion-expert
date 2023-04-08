@@ -76,7 +76,7 @@ void RawImage::toPyDict(PyObject *dict) {
 
 image_ptr_t rawImageFromPyDict(PyObject * dict) {
     image_ptr_t r;
-    
+
     // when we get item from dict whe do not inc the ref counter
     PyObject *po_buffer = PyDict_GetItemString(dict, "data");
     PyObject *po_w = PyDict_GetItemString(dict, "width");
@@ -123,6 +123,15 @@ size_t RawImage::getVersion() {
 void RawImage::incVersion() {
     ++version_;
 }
+
+void RawImage::setVariation(int value) {
+    variation_ = value;
+}
+
+int RawImage::getVariation() {
+    return variation_;
+}
+
 
 } // namespace py
 } // namespace dexpert

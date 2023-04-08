@@ -165,10 +165,18 @@ bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator
     return last_error_.empty();
 }
 
-bool StableDiffusionState::generatePreviousImage() {
+bool StableDiffusionState::generatePreviousImage(int index) {
+    last_error_ = "Wrong index";
+    if (index < 0 || index >= result_images_.size())
+        return false;
+    auto g = generators_[index];
+    if (!g.first) {
+        last_error_ = "No Generator";
+        return false;
+    }
+
     last_error_.clear();
 
-    auto g = generators_[0];
     if (generators_[0].first) {
         scroll_down_generators();
     }
@@ -179,20 +187,29 @@ bool StableDiffusionState::generatePreviousImage() {
     return last_error_.empty();
 }
 
-bool StableDiffusionState::generateNextImage() {
-    last_error_.clear();
-
-    int index = generators_.size() - 1;
-    for (int i = 0; i < generators_.size(); ++i) {
-        if (!generators_[i].first) {
-            index = i;
-            break;
-        }
-    }
+bool StableDiffusionState::generateNextImage(int index) {
+    last_error_ = "Wrong index";
+    if (index < 0 || index >= result_images_.size())
+        return false;
     auto g = generators_[index];
+    if (!g.first) {
+        last_error_ = "No Generator";
+        return false;
+    }
+    last_error_.clear();
+    
+    index = generators_.size() - 1;
     if (generators_[index].first) {
         scroll_up_generators();
+    } else {
+        while (index > 0) {
+            if (generators_[index - 1].first) {
+                break;
+            }
+            --index;
+        }
     }
+    
     g.second += 1;
     generators_[index] = g;
     g.first->generate(generatorMakeCallback(index, 0), g.second, 0, 0);
@@ -200,9 +217,87 @@ bool StableDiffusionState::generateNextImage() {
     return last_error_.empty();
 }
 
-bool StableDiffusionState::generateVariation(int index, int variation) {
-    last_error_ = "not implemented";
-    return false;
+void StableDiffusionState::scroll_left(int index) {
+    if (index < 0 || index >= result_images_.size())
+        return;
+    auto &row = result_images_[index];
+    for (size_t i = 1; i < row.size(); ++i) {
+        if (i + 1 < row.size()) {
+            row[i] = row[i + 1];
+        }
+    }
+    row.rbegin()->reset();
+}
+
+void StableDiffusionState::scroll_right(int index) {
+    if (index < 0 || index >= result_images_.size())
+        return;
+    auto &row = result_images_[index];
+    for (size_t i = row.size(); i > 1; --i) {
+        if (i - 1 >= 0) {
+            row[i] = row[i - 1];
+        }
+    }
+    row[1].reset();
+}
+
+bool StableDiffusionState::generatePreviousVariation(int index) {
+    last_error_ = "Wrong index";
+    if (index < 0 || index >= result_images_.size())
+        return false;
+    last_error_ = "";
+    if (result_images_[index][1])
+        scroll_right(index);
+    auto &row = result_images_[index];
+    auto &g = generators_[index];
+    int variation = getMinVariation(index);
+    g.first->generate(generatorMakeCallback(index, 1), g.second, variation, 0.3, true);
+    return last_error_.empty();
+}
+
+bool StableDiffusionState::generateNextVariation(int index) {
+    last_error_ = "Wrong index";
+    if (index < 0 || index >= result_images_.size())
+        return false;
+    last_error_ = "";
+    if (result_images_[index].rbegin()->get())
+        scroll_left(index);
+    auto &row = result_images_[index];
+    int store_var = row.size() - 1;
+    for (size_t i = 1; i < row.size(); ++i) {
+        if (!row[i]) {
+            store_var = i;
+            break;
+        }
+    }
+    auto &g = generators_[index];
+    int variation = getMaxVariation(index);
+    g.first->generate(generatorMakeCallback(index, store_var), g.second, variation, 0.3, true);
+    return last_error_.empty();
+}
+
+int StableDiffusionState::getMinVariation(int index) {
+    if (index < 0 || index >= result_images_.size())
+        return 0;
+    auto &row = result_images_[index];
+    for (size_t i = 1; i < row.size(); ++i) {
+        if (row[i]) {
+            return row[i]->getVariation();
+        }
+    }
+    return 0;
+}
+
+int StableDiffusionState::getMaxVariation(int index) {
+    if (index < 0 || index >= result_images_.size())
+        return 0;
+    auto &row = result_images_[index];
+    for (size_t i = row.size(); i > 1; --i) {
+        if (row[i - 1]) {
+            return row[i]->getVariation();
+        }
+    }
+    return 0;
 }
 
 /*

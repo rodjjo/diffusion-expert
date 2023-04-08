@@ -43,22 +43,25 @@ void PythonMachine::run_machine() {
     Py_Initialize();
     PySys_SetArgvEx(1, argv, 1);
 
-    ObjGuard guard;
-    PyObject *msys = guard(PyImport_ImportModule("sys"));
-    PyObject* main = guard(PyImport_AddModule("__main__")); // hold the main module
+    {  // guard context
+        ObjGuard guard;
+    
+        PyObject *msys = guard(PyImport_ImportModule("sys"));
+        PyObject* main = guard(PyImport_AddModule("__main__")); // hold the main module
 
-    PyObject *pyString = guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
-    PyObject_SetAttrString(msys, "executable", pyString);
-    PyObject_SetAttrString(msys, "_base_executable", pyString);
+        PyObject *pyString = guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
+        PyObject_SetAttrString(msys, "executable", pyString);
+        PyObject_SetAttrString(msys, "_base_executable", pyString);
 
-    PyObject *pyLibPath = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
-    PyObject *pathList = guard(PyObject_GetAttrString(msys, "path"));
-    PyList_Append(pathList, pyLibPath);
+        PyObject *pyLibPath = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pathList = guard(PyObject_GetAttrString(msys, "path"));
+        PyList_Append(pathList, pyLibPath);
 
-    initialize_python_stuff(main);
+        initialize_python_stuff(main);
 
-    while (!terminated_) {
-        execute_callback_internal();
+        while (!terminated_) {
+            execute_callback_internal();
+        }
     }
 
     puts("Finalizing Python");

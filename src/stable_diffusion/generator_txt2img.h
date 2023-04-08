@@ -27,7 +27,8 @@ class GeneratorTxt2Image: public GeneratorBase {
             generator_cb_t cb,
             int seed_index,
             int variation, 
-            float var_factor
+            float var_factor,
+            bool enable_variation = false
         ) override;
 
     private:

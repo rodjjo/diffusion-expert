@@ -25,11 +25,11 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
         pages_[i]->hide();
     }
     this->end();
+    createResultsPage();
     createInputImagePage();
     createPromptPage();
-    createResultsPage();
     alignComponents();
-    goPage(page_input_image);
+    goPage(page_prompts);
 }
 
 Pages::~Pages() {

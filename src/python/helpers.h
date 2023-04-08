@@ -37,6 +37,7 @@ struct prompt_config {
     float cfg = 7.5;
     int variation = 0;
     float var_step = 0.01;
+    RawImage *var_ref = NULL;
 };
 
 typedef struct prompt_config txt2img_config_t;

@@ -21,7 +21,7 @@ namespace dexpert
 
 }
 
-void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int variation,  float var_factor) {
+void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int variation, float var_factor, bool enable_variation) {
     bool success = false;
 
     const char *message = "Unexpected error. Callback to generate image not called";
@@ -31,14 +31,15 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int variati
     params.negative = negative_.c_str();
     params.model = model_.c_str();
     params.seed = seed_ + seed_index;
-    params.variation = 0;
+    params.variation = variation;
     params.var_step = var_factor;
-
     params.steps = steps_;
     params.cfg = cfg_;
     params.width = width_;
     params.height = height_;
-    
+    if (image_ && enable_variation) {
+        params.var_ref = image_.get();
+    }
     auto gen_cb = dexpert::py::txt2_image(params, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
         success = status;
         message = msg;

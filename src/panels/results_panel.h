@@ -21,9 +21,9 @@ class ResultsPanel: public Fl_Group {
     void resize(int x, int y, int w, int h) override;
 
  private:
-    void alignComponents();
-    FramePanel *getFrame(int col, int row);
-
+   void alignComponents();
+   FramePanel *getFrame(int col, int row);
+   void take_action(FramePanel *w, int id);
  private:
     std::vector<std::vector<FramePanel *> > miniatures_;
 };

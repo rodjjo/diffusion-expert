@@ -47,9 +47,13 @@ class StableDiffusionState {
 
     // generation
     bool generatorAdd(std::shared_ptr<GeneratorBase> generator);
-    bool generatePreviousImage();
-    bool generateNextImage();
-    bool generateVariation(int index, int variation);
+    bool generatePreviousImage(int index);
+    bool generateNextImage(int index);
+    bool generateNextVariation(int index);
+    bool generatePreviousVariation(int index);
+
+    int getMinVariation(int index);
+    int getMaxVariation(int index);
 
     generator_cb_t generatorMakeCallback(int index, int variation);
     
@@ -73,7 +77,8 @@ class StableDiffusionState {
 private:
     void scroll_down_generators();
     void scroll_up_generators();
-
+    void scroll_left(int index);
+    void scroll_right(int index);
 private:
     std::list<model_info_t> sdModels_;
     std::wstring currentSdModel_;
