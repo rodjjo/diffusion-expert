@@ -39,6 +39,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         size_t height_ = 512;
         size_t steps_ = 50;
         float cfg_ = 7.5;
+        image_ptr_t image_;
 };
 
 

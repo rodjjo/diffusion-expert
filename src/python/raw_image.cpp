@@ -1,6 +1,7 @@
 #include <string>
 #include <exception>
 #include "src/python/raw_image.h"
+#include "src/python/guard.h"
 
 namespace dexpert {
 namespace py {
@@ -61,25 +62,22 @@ void RawImage::toPyDict(PyObject *dict) {
         break;
     }
 
-    PyObject *po_buffer = PyBytes_FromStringAndSize((const char *)buffer_, buffer_len_);
-    PyObject *po_w = PyLong_FromSize_t(w_);
-    PyObject *po_h = PyLong_FromSize_t(h_);
-    PyObject* po_mode = PyUnicode_FromWideChar(img_type.c_str(), -1);
+    ObjGuard guard;
+    PyObject *po_buffer = guard(PyBytes_FromStringAndSize((const char *)buffer_, buffer_len_));
+    PyObject *po_w = guard(PyLong_FromSize_t(w_));
+    PyObject *po_h = guard(PyLong_FromSize_t(h_));
+    PyObject* po_mode = guard(PyUnicode_FromWideChar(img_type.c_str(), -1));
 
     PyDict_SetItemString(dict, "width", po_w);
     PyDict_SetItemString(dict, "height", po_h);
     PyDict_SetItemString(dict, "mode", po_mode);
     PyDict_SetItemString(dict, "data", po_buffer);
-
-    Py_XDECREF(po_w);
-    Py_XDECREF(po_h);
-    Py_XDECREF(po_mode);
-    Py_XDECREF(po_buffer);
 }
 
 image_ptr_t rawImageFromPyDict(PyObject * dict) {
     image_ptr_t r;
-
+    
+    // when we get item from dict whe do not inc the ref counter
     PyObject *po_buffer = PyDict_GetItemString(dict, "data");
     PyObject *po_w = PyDict_GetItemString(dict, "width");
     PyObject *po_h = PyDict_GetItemString(dict, "height");

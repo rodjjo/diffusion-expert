@@ -47,6 +47,10 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int variati
 
     dexpert::py::get_py()->execute_callback(gen_cb);
     
+    if (!image_) {
+        image_ = image; // keep the image for variation purpose
+    }
+
     cb(success, message, image);
 }
 

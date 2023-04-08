@@ -4,41 +4,11 @@
 #include "src/python/error_handler.h"
 
 #include "src/python/helpers.h"
+#include "src/python/guard.h"
 
 
 namespace dexpert {
 namespace py {
-
-class ObjGuard {
-  public:
-    ObjGuard(const char* module = NULL) {
-        if (module) {
-            module_ = PyImport_ImportModule(module);
-        }
-    }
-
-    PyObject *guard(PyObject * v) {
-        items_.push_back(v);
-        return v;
-    }
-
-    PyObject *operator () (PyObject *v) {
-        return guard(v);
-    }
-
-    ~ObjGuard() {
-        Py_XDECREF(module_);
-        for (auto it = items_.begin(); it != items_.end(); it++) {
-            Py_XDECREF(*it);
-        }
-    }
-    PyObject *module() {
-        return module_;
-    }
-  private:
-     PyObject* module_ = NULL;
-     std::list<PyObject*> items_;
-};
 
 callback_t install_deps(status_callback_t status_cb) {
     return [status_cb] {
