@@ -8,7 +8,7 @@ namespace dexpert
 {
 
 ConsoleViewer::ConsoleViewer(const char *title) {
-    window_ = new EscapeDisabledWindow(0, 0, 720, 380, title);
+    window_ = new EscapeDisabledWindow(0, 0, 1024, 480, title);
     consoles_ = new ConsoleTabs(0, 0, window_->w(), window_->h() - 60);
     btnClose_.reset(new Button(xpm::image(xpm::button_stop), [this] {
         window_->hide();
@@ -60,11 +60,11 @@ void ConsoleViewer::showConsole(bool first_stdout) {
     window_->show();
     while (true) {
         if (callback_) {
-            if (!btnClose_->enabled() && !window_->shown()) {
+            if (!btnClose_->enabled() && !window_->visible_r()) {
                 window_->show();
             }
         }
-        if (!window_->shown()) {
+        if (!window_->visible_r()) {
             break;
         }
         Fl::wait();

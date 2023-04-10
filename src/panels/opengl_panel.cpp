@@ -74,8 +74,6 @@ int OpenGlPanel::handle(int event) {
 
 void OpenGlPanel::resize(int x, int y, int w, int h) {
     Fl_Gl_Window::resize(x, y, w, h);
-    valid(0);
-    redraw();
 }
 
 

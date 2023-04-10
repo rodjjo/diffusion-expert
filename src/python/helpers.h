@@ -36,7 +36,7 @@ struct prompt_config {
     size_t steps = 50;
     float cfg = 7.5;
     int variation = 0;
-    float var_step = 0.01;
+    float var_stren = 0.01;
 };
 
 typedef struct prompt_config txt2img_config_t;

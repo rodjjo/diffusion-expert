@@ -22,7 +22,6 @@ class PromptPanel: public Fl_Group {
     const char *getPrompt();
     const char *getNegativePrompt();
     const char *getSdModel();
-    int minimalHeight();
     int getSeed();
     int getSteps();
     int getWidth();

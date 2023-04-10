@@ -17,6 +17,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     height_ = new Fl_Int_Input(0, 0, 1, 1, "Height");
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
     this->end();
+
     positivePrompt_->align(FL_ALIGN_TOP_LEFT);
     negativePrompt_->align(FL_ALIGN_TOP_LEFT);
     seed_->align(FL_ALIGN_TOP_LEFT);
@@ -25,13 +26,16 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     width_->align(FL_ALIGN_TOP_LEFT);
     height_->align(FL_ALIGN_TOP_LEFT);
     models_->align(FL_ALIGN_TOP_LEFT);
+
     positivePrompt_->value("An astronaut riding a horse at the moon");
     negativePrompt_->value("drawing,cartoon,3d,render,rendering");
+
     seed_->value("-1");
     steps_->value("50");
     guidance_->value("7.5");
     width_->value("512");
     height_->value("512");
+
     alignComponents();
     refreshModels();
 }
@@ -159,10 +163,6 @@ void PromptPanel::alignComponents() {
 void PromptPanel::resize(int x, int y, int w, int h) {
     Fl_Group::resize(x, y, w, h);
     alignComponents();
-}
-
-int PromptPanel::minimalHeight() {
-    return models_->y() + models_->h() + 10;
 }
 
 void PromptPanel::refreshModels() {

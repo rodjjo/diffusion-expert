@@ -8,6 +8,7 @@
 #include "src/config/config.h"
 #include "src/python/wrapper.h"
 #include "src/python/python_stuff.h"
+#include "src/python/guard.h"
 
 namespace dexpert {
 namespace py {
@@ -42,30 +43,29 @@ void PythonMachine::run_machine() {
     Py_Initialize();
     PySys_SetArgvEx(1, argv, 1);
 
-
-    PyObject *msys = PyImport_ImportModule("sys");
-
-    PyObject* main = PyImport_AddModule("__main__"); // hold the main module
-
-    PyObject *pyString = PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1);
-    PyObject_SetAttrString(msys, "executable", pyString);
-    PyObject_SetAttrString(msys, "_base_executable", pyString);
-    Py_XDECREF(pyString); 
-
-    PyObject *pyLibPath = PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1);
-    PyObject *pathList = PyObject_GetAttrString(msys, "path");
-    PyList_Append(pathList, pyLibPath);
-    Py_XDECREF(pathList); 
-
-    initialize_python_stuff(main);
-
-    while (!terminated_) {
-        execute_callback_internal();
-    }
+    {  // guard context
+        ObjGuard guard;
     
-    Py_XDECREF(pathList);
-    Py_XDECREF(msys);
-    Py_XDECREF(main);
+        PyObject *msys = guard(PyImport_ImportModule("sys"));
+        PyObject* main = guard(PyImport_AddModule("__main__")); // hold the main module
+
+        PyObject *pyString = guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
+        PyObject_SetAttrString(msys, "executable", pyString);
+        PyObject_SetAttrString(msys, "_base_executable", pyString);
+
+        PyObject *pyLibPath = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pyAuto111Path = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pathList = guard(PyObject_GetAttrString(msys, "path"));
+        
+        PyList_Append(pathList, pyLibPath);
+        PyList_Append(pathList, pyAuto111Path);
+
+        initialize_python_stuff(main);
+
+        while (!terminated_) {
+            execute_callback_internal();
+        }
+    }
 
     puts("Finalizing Python");
     if (Py_FinalizeEx() < 0) {

@@ -115,7 +115,16 @@ void FramePanel::update_cache(const unsigned char **buffer, uint32_t *w, uint32_
     *buffer = cache_buffer_;
     *w = cache_w_;
     *h = cache_h_;
-    
+}
+
+void FramePanel::addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm_t image, frame_btn_cb_t cb) {
+    frame_button_t btn;
+    btn.id = id;
+    btn.cb = cb;
+    btn.image = dexpert::xpm::image(image);
+    btn.x = xcoord;
+    btn.y = ycoord;
+    buttons_.push_back(btn);
 }
 
 void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) {
@@ -170,5 +179,103 @@ void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t 
 
     update_cache(buffer, w, h, channels, img->getVersion());
 }
+
+void FramePanel::get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h) {
+    float &bx = *x;
+    float &by = *y;
+    int &bw = *w;
+    int &bh = *h;
+    bx = b->x;
+    by = b->y;
+    bx += 1.0;
+    by = 1.0 - by;
+    bw = b->image->w();
+    bh = b->image->h();
+    float sx = ((2.0 / (float) this->w()) * bw) / 2.0;
+    float sy = ((2.0 / (float) this->h()) * bh) / 2.0;
+    bx -= sx;
+    by -= sy;
+    sx *= 2;
+    sy *= 2;
+    if (bx < 0.0)
+        bx = 0;
+    if (by < 0.0)
+        by = 0;
+    if (bx + sx > 2.0)
+        bx = 2.0 - sx;
+    if (by + sy > 2.0)
+        by = 2.0 - sy;
+    bx -= 1.0;
+    by = 1.0 - by;
+}
+
+frame_button_t *FramePanel::get_button_mouse(int x, int y) {
+    float sx = (2.0 / (float) this->w());
+    float sy = (2.0 / (float) this->h());
+    float cx = (sx * x);
+    float cy = (sy * y) ;
+    float bx, by;
+    int bw, bh;
+    for (size_t i = 0; i < buttons_.size(); ++i) {
+        auto &b = buttons_[i];
+        get_button_coords(&b, &bx, &by, &bw, &bh);
+        bx += 1.0;
+        by = 1.0 - by;
+        if (cx >= bx && cy >= by) {
+            bx += (bw * sx);
+            by += (bh * sy);
+            if (cx <= bx && cy <= by) {
+                return &b;
+            }
+        }
+    }
+    return NULL;
+}
+
+void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
+    frame_button_t * b = get_button_mouse(up_x, up_y);
+    if (b) {
+        b->cb(this, b->id);
+    }
+}
+
+
+frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
+    return NULL;
+}
+
+
+void FramePanel::draw_next() {
+    float x;
+    float y;
+    int w;
+    int h;
+    int format;
+    glPixelZoom(1.0, -1.0);
+    
+    for (size_t i = 0; i < buttons_.size(); ++i) {
+        auto &b = buttons_[i];
+        get_button_coords(&b, &x, &y, &w, &h);
+        glRasterPos2f(x, y);
+
+        if (w % 4 == 0)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        else
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        
+        int format = GL_LUMINANCE;
+        if (b.image->d() == 3) {
+            format = GL_RGB;
+        } else if (b.image->d() == 4) {
+            format = GL_RGBA;
+        }
+
+        glDrawPixels(w, h, format, GL_UNSIGNED_BYTE, b.image->data()[0]);
+    }
+    
+    glRasterPos2f(0.0f, 0.0f);
+    glPixelZoom(1.0f, 1.0f);
+}
+
 
 }  // namespace dexpert

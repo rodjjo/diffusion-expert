@@ -28,8 +28,11 @@ class RawImage {
     uint32_t w();
     size_t getVersion();
     void incVersion();
+    void setVariation(int value);
+    int getVariation();
 
  private:
+    int variation_ = 0;
     unsigned char *buffer_;
     size_t buffer_len_;
     uint32_t w_;

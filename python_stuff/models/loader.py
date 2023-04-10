@@ -7,7 +7,7 @@ from diffusers import (
     PNDMScheduler,
     UNet2DConditionModel,
 )
-from transformers import CLIPTextModel, CLIPTokenizer
+from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPVisionConfig
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR
 
@@ -508,8 +508,12 @@ def convert_ldm_vae_checkpoint(checkpoint, config):
     conv_attn_to_linear(new_checkpoint)
     return new_checkpoint
 
+def report(message):
+    print(f'ModelLoader - {message}')
 
 def load_stable_diffusion_model(model_path: str):
+    report(f"loading {model_path}")
+
     if model_path.endswith('.safetensors'):
         checkpoint = safetensors.torch.load_file(model_path, device="cpu")
     else:
@@ -517,13 +521,17 @@ def load_stable_diffusion_model(model_path: str):
     if "state_dict" in checkpoint:
         checkpoint = ["state_dict"]
 
-    print("model loaded")
+    report("model loaded")
 
-    config = OmegaConf.load(os.path.join(CONFIG_DIR, 'v1-inference.yaml'))
+    inference_path = os.path.join(CONFIG_DIR, 'v1-inference.yaml')
+    report(f"loading {inference_path}")
+    config = OmegaConf.load(inference_path)
     unet_config = create_unet_diffusers_config(config)
     num_train_timesteps = config.model.params.timesteps
     beta_start = config.model.params.linear_start
     beta_end = config.model.params.linear_end
+    report(f"inference config loaded")
+
 
     scheduler = PNDMScheduler(
         beta_end=beta_end,
@@ -534,40 +542,41 @@ def load_stable_diffusion_model(model_path: str):
     )
 
     # Convert the UNet2DConditionModel model.
+    report("converting UNet2DConditionModel model (unet-config)")
     unet_config = create_unet_diffusers_config(config)
     converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
-    print("unet converted")
+    report("unet config created")
 
     unet = UNet2DConditionModel(**unet_config)
     unet.load_state_dict(converted_unet_checkpoint)
     del converted_unet_checkpoint
-
-    print("unet loaded dict")
+    report("unet loaded config")
 
     # Convert the VAE model.
+    report("converting VAE model")
     vae_config = create_vae_diffusers_config(config)
     converted_vae_checkpoint = convert_ldm_vae_checkpoint(checkpoint, vae_config)
-
-    print("vae converted")
+    report("VAE converted")
 
     vae = AutoencoderKL(**vae_config)
     vae.load_state_dict(converted_vae_checkpoint)
     del converted_vae_checkpoint
 
-    print("vae loaded")
+    report("VAE loaded")
 
     text_model_type = config.model.params.cond_stage_config.target.split(".")[-1]
     if text_model_type == "FrozenCLIPEmbedder":
-        print("converting clip")
+        report("converting ldm clip")
         text_model = convert_ldm_clip_checkpoint(checkpoint)
         del checkpoint
-        print("converting clip done")
+        report("converting clip done")
         tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-        print("safety checker")
+        # report("safety checker")
         safety_checker = None # StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker")
-        print("feature extractor")
+        # report("feature extractor")
         feature_extractor = None # AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker")
-        print("pipe")
+    else:
+         report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
     return {
         'vae': vae,
         'text_encoder': text_model,
@@ -578,3 +587,6 @@ def load_stable_diffusion_model(model_path: str):
         'feature_extractor': feature_extractor,
         'requires_safety_checker': False
     }
+
+
+

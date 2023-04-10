@@ -25,6 +25,11 @@ typedef struct {
     size_t model_size;
 } model_info_t;
 
+typedef struct {
+    int seed_increment = 0;
+    std::shared_ptr<GeneratorBase> g;
+} generator_t;
+
 
 typedef std::vector<image_ptr_t> image_list_t;
 typedef std::vector<image_list_t> image_grid_t;
@@ -47,11 +52,12 @@ class StableDiffusionState {
 
     // generation
     bool generatorAdd(std::shared_ptr<GeneratorBase> generator);
-    bool generatePreviousImage();
-    bool generateNextImage();
-    bool generateVariation(int index, int variation);
+    bool generatePreviousImage(int index);
+    bool generateNextImage(int index);
+    bool generateNextVariation(int index);
+    bool generatePreviousVariation(int index);
 
-    generator_cb_t generatorMakeCallback(int index, int variation);
+    generator_cb_t generatorMakeCallback();
     
     int randomSeed();
 
@@ -73,13 +79,11 @@ class StableDiffusionState {
 private:
     void scroll_down_generators();
     void scroll_up_generators();
-
 private:
     std::list<model_info_t> sdModels_;
     std::wstring currentSdModel_;
     std::string last_error_;
-    image_grid_t result_images_;
-    std::vector<std::pair<std::shared_ptr<GeneratorBase>, int> > generators_;
+    std::vector<generator_t> generators_;
 };
     
 } // namespace dexpert

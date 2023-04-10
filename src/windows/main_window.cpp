@@ -43,6 +43,8 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     this->show();
 
     alignComponents();
+
+    Fl::add_timeout(0.01, &MainWindow::gotoPromptPage, this);
 }
 
 void MainWindow::initBottomPanel() {
@@ -156,6 +158,11 @@ int MainWindow::handle(int event) {
 
 void MainWindow::pageChangeCallback(Fl_Widget* widget, void *cbdata) {
     ((MainWindow *) cbdata)->gotoSelectedPage();
+}
+
+void MainWindow::gotoPromptPage(void *cbdata) {
+    ((MainWindow*) cbdata)->page_browser_->select(1);
+    ((MainWindow*) cbdata)->pages_->goPage(page_prompts);
 }
 
 void MainWindow::gotoSelectedPage() {

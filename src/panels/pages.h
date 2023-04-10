@@ -44,9 +44,6 @@ class Pages: public Fl_Group {
     void resize(int x, int y, int w, int h) override;
 
  private:
-    void createPromptPage();
-    void createInputImagePage();
-    void createResultsPage();
     void alignComponents();
 
  private:

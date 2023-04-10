@@ -4,41 +4,11 @@
 #include "src/python/error_handler.h"
 
 #include "src/python/helpers.h"
+#include "src/python/guard.h"
 
 
 namespace dexpert {
 namespace py {
-
-class ObjGuard {
-  public:
-    ObjGuard(const char* module = NULL) {
-        if (module) {
-            module_ = PyImport_ImportModule(module);
-        }
-    }
-
-    PyObject *guard(PyObject * v) {
-        items_.push_back(v);
-        return v;
-    }
-
-    PyObject *operator () (PyObject *v) {
-        return guard(v);
-    }
-
-    ~ObjGuard() {
-        Py_XDECREF(module_);
-        for (auto it = items_.begin(); it != items_.end(); it++) {
-            Py_XDECREF(*it);
-        }
-    }
-    PyObject *module() {
-        return module_;
-    }
-  private:
-     PyObject* module_ = NULL;
-     std::list<PyObject*> items_;
-};
 
 callback_t install_deps(status_callback_t status_cb) {
     return [status_cb] {
@@ -183,7 +153,7 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(config.cfg)));
         PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(config.seed)));
         PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(config.variation)));
-        PyDict_SetItemString(params, "var_step", guard(PyFloat_FromDouble(config.var_step)));
+        PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(config.var_stren)));
 
         if (!errors) {
             result = guard(PyObject_CallMethod(guard.module(), "txt2img", "O", params));
