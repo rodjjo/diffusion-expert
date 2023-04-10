@@ -20,17 +20,19 @@ class GeneratorTxt2Image: public GeneratorBase {
             size_t width = 512,
             size_t height = 512,
             size_t steps = 50,
-            float cfg = 7.5
+            float cfg = 7.5,
+            float var_stren = 0.1
         );
 
         void generate(
             generator_cb_t cb,
             int seed_index,
-            int variation, 
-            float var_factor,
-            bool enable_variation = false
+            int enable_variation = 0
         ) override;
 
+        
+        std::shared_ptr<GeneratorBase> duplicate();
+        
     private:
         std::string prompt_;
         std::string negative_;
@@ -40,7 +42,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         size_t height_ = 512;
         size_t steps_ = 50;
         float cfg_ = 7.5;
-        image_ptr_t image_;
+        float var_strenght_ = 0.1;
 };
 
 

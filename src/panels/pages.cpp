@@ -17,43 +17,34 @@ namespace  {
 } 
 
 Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
-    this->begin();
-    for (int i = 0; i < page_max; ++i) {
+    for (int i = 0; i < page_max; ++i)  {
         visible_pages_[i] = true;
+        pages_[i] =  NULL; 
+    }
+
+    this->begin();
+
+    resultsPanel_ = new ResultsPanel(0, 0, 1, 1);
+    pages_[page_results] = resultsPanel_;
+    promptPanel_ = new PromptPanel(0, 0, 1, 1);
+    pages_[page_prompts] = promptPanel_;
+    inputImage_ = new FramePanel(0, 0, 1, 1);
+    pages_[page_input_image] = inputImage_;
+
+    for (int i = 0; i < page_max; ++i) {
+        if (pages_[i]) {
+            pages_[i]->hide();
+            continue;
+        }
         pages_[i] = new Fl_Group(0, 0, 1, 1, "");
-        pages_[i]->end();
         pages_[i]->hide();
     }
     this->end();
-    createResultsPage();
-    createInputImagePage();
-    createPromptPage();
     alignComponents();
-    goPage(page_prompts);
+    goPage(page_results);
 }
 
 Pages::~Pages() {
-}
-
-void Pages::createPromptPage() {
-    auto pg = pages_[page_prompts];
-    pg->begin();
-    promptPanel_ = new PromptPanel(0, 0, 1, 1);
-    pg->end();
-}
-
-void Pages::createInputImagePage() {
-    auto pg = pages_[page_input_image];
-    pg->begin();
-    inputImage_ = new FramePanel(0, 0, 1, 1);
-    pg->end();
-}
-
-void Pages::createResultsPage() {
-    auto pg = pages_[page_results];
-    pg->begin();
-    resultsPanel_ = new ResultsPanel(0, 0, 1, 1);
-    pg->end();
 }
 
 const char *Pages::pageTitle(page_t page) {
@@ -69,13 +60,6 @@ void Pages::alignComponents() {
     for (int i = 0; i < page_max; ++i) {
         pages_[i]->resize(x(), y(), w(), h());
     }
-    auto pg = pages_[page_prompts];
-    promptPanel_->position(pg->x(), pg->y());
-    promptPanel_->size(pg->w(), promptPanel_->minimalHeight());
-    pg = pages_[page_input_image];
-    inputImage_->resize(pg->x(), pg->y(), pg->w(), pg->h());
-    pg = pages_[page_results];
-    resultsPanel_->resize(pg->x(), pg->y(), pg->w(), pg->h());
 }
 
 bool Pages::isVisible(page_t page) {

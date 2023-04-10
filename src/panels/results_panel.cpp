@@ -24,6 +24,7 @@ namespace dexpert
             std::vector<FramePanel *> row;
             for (int j = 0; j < get_sd_state()->getMaxResultVariations(); j++)
             {
+                this->begin();
                 row.push_back(new FramePanel(0, 0, 1, 1));
                 FramePanel *fp = *row.rbegin();
                 fp->setGridLocation(i, j);
@@ -41,7 +42,7 @@ namespace dexpert
 
         this->end();
 
-        updatePanels();
+        alignComponents();
     }
 
     ResultsPanel::~ResultsPanel()
@@ -60,7 +61,9 @@ namespace dexpert
                 if (get_sd_state()->getResultsImage(r, c))
                 {
                     max_row = r;
-                    max_col = c;
+                    if (max_col < c) {
+                        max_col = c;
+                    }
                 }
             }
         }

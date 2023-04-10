@@ -153,13 +153,7 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
         PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(config.cfg)));
         PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(config.seed)));
         PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(config.variation)));
-        PyDict_SetItemString(params, "var_step", guard(PyFloat_FromDouble(config.var_step)));
-
-        if (config.var_ref) {
-            PyObject *img = guard(PyDict_New());
-            config.var_ref->toPyDict(img);
-            PyDict_SetItemString(params, "var_ref", img);
-        }
+        PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(config.var_stren)));
 
         if (!errors) {
             result = guard(PyObject_CallMethod(guard.module(), "txt2img", "O", params));

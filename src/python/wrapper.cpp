@@ -54,8 +54,11 @@ void PythonMachine::run_machine() {
         PyObject_SetAttrString(msys, "_base_executable", pyString);
 
         PyObject *pyLibPath = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pyAuto111Path = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
         PyObject *pathList = guard(PyObject_GetAttrString(msys, "path"));
+        
         PyList_Append(pathList, pyLibPath);
+        PyList_Append(pathList, pyAuto111Path);
 
         initialize_python_stuff(main);
 

@@ -42,7 +42,7 @@ class MainWindow : Fl_Menu_Window {
   void alignComponents();
   void gotoSelectedPage();
   static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
-
+  static void gotoPromptPage(void *cbdata);
  private:
     Fl_Group  *leftPanel_ = NULL;
     Fl_Group  *rightPanel_ = NULL;

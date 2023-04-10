@@ -47,9 +47,9 @@ const std::wstring& Config::executableDir() {
 
 const std::wstring& Config::librariesDir() {
     if (librariesDir_.empty()) {
-        librariesDir_ = executableDir() + L"\\Lib";
+        librariesDir_ = executableDir() + L"/Lib";
         _wmkdir(librariesDir_.c_str());
-        librariesDir_ += L"\\site-packages";
+        librariesDir_ += L"/site-packages";
         _wmkdir(librariesDir_.c_str());
     }
     return librariesDir_;
@@ -57,21 +57,21 @@ const std::wstring& Config::librariesDir() {
 
 const std::wstring& Config::pythonStuffDir() {
     if (pythonStuffDir_.empty()) {
-        pythonStuffDir_ = executableDir() + L"\\..\\python_stuff";
+        pythonStuffDir_ = executableDir() + L"/../python_stuff";
     }
     return pythonStuffDir_;
 }
 
 const std::wstring& Config::pythonMainPy() {
     if (pythonStuffDir_.empty()) {
-        pythonMainPy_ = pythonStuffDir() + L"\\main.py";
+        pythonMainPy_ = pythonStuffDir() + L"/main.py";
     }
     return pythonMainPy_;
 }
 
 const std::wstring& Config::pyExePath() {
     if (pyExePath_.empty()) {
-        pyExePath_ = executableDir() + L"\\python.exe";
+        pyExePath_ = executableDir() + L"/python.exe";
     }
     return pyExePath_;
 }

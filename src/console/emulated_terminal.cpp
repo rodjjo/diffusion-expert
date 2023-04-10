@@ -1005,12 +1005,12 @@ namespace dexpert
         std::string contents;
         int sz = 0;
         int j = 0;
-        for (int i = 0; i < size_y; i++)
+        for (int i = 0; i < LINE_COUNT; i++)
         {
             j = line[i];
             sz = line[i + 1] - j;
             if (sz > 0) {
-                contents += std::string(&buff[j], sz);
+                contents += std::string(&buff[j], sz) + "\n";
             }
         }
         if (!contents.empty()) {
