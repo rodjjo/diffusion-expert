@@ -124,12 +124,10 @@ void RawImage::incVersion() {
     ++version_;
 }
 
-void RawImage::setVariation(int value) {
-    variation_ = value;
-}
-
-int RawImage::getVariation() {
-    return variation_;
+std::shared_ptr<RawImage> RawImage::duplicate() {
+    return std::make_shared<RawImage>(
+        buffer_, w_, h_, format_
+    );
 }
 
 

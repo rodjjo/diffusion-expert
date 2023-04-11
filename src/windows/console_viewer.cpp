@@ -8,7 +8,7 @@ namespace dexpert
 {
 
 ConsoleViewer::ConsoleViewer(const char *title) {
-    window_ = new EscapeDisabledWindow(0, 0, 1024, 480, title);
+    window_ = new ModalWindow(0, 0, 1024, 480, title);
     consoles_ = new ConsoleTabs(0, 0, window_->w(), window_->h() - 60);
     btnClose_.reset(new Button(xpm::image(xpm::button_stop), [this] {
         window_->hide();

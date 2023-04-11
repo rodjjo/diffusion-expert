@@ -22,7 +22,12 @@ int abs_i(int v) {
 }
 
 FramePanel::FramePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): OpenGlPanel(x, y, w, h) {
+    src_type_ = image_src_input;
+}
 
+FramePanel::FramePanel(image_ptr_t image, uint32_t x, uint32_t y, uint32_t w, uint32_t h) : OpenGlPanel(x, y, w, h) {
+    image_ = image;
+    src_type_ = image_src_self;
 }
 
 FramePanel::~FramePanel() {
@@ -130,6 +135,9 @@ void FramePanel::addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm
 void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) {
     RawImage *img = NULL;
     switch (src_type_) {
+        case image_src_self:
+            img = image_.get();
+            break;
         case image_src_input:
             //img = get_sd_state()->getInputImage();
             break;

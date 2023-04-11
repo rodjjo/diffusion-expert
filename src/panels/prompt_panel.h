@@ -27,6 +27,7 @@ class PromptPanel: public Fl_Group {
     int getWidth();
     int getHeight();
     float getCFG();
+    float getVariationStrength();
 
  private:
     void alignComponents();
@@ -41,6 +42,7 @@ class PromptPanel: public Fl_Group {
    Fl_Int_Input *seed_;
    Fl_Int_Input *steps_;
    Fl_Float_Input *guidance_;
+   Fl_Float_Input *var_strength_;
    Fl_Int_Input *width_;
    Fl_Int_Input *height_;
    Fl_Choice *models_;

@@ -28,7 +28,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_results] = resultsPanel_;
     promptPanel_ = new PromptPanel(0, 0, 1, 1);
     pages_[page_prompts] = promptPanel_;
-    inputImage_ = new FramePanel(0, 0, 1, 1);
+    inputImage_ = new PantingPanel(0, 0, 1, 1);
     pages_[page_input_image] = inputImage_;
 
     for (int i = 0; i < page_max; ++i) {
@@ -89,6 +89,9 @@ bool Pages::goPage(page_t page) {
             pages_[i]->hide();
         }
     }
+    if (active_page_ == page_results) {
+        resultsPanel_->updatePanels();
+    }
     return result;
 }
 
@@ -96,33 +99,6 @@ page_t Pages::activePage() {
     return active_page_;
 }
 
-
-void Pages::openInputImage() {
-    /*
-    std::string path = choose_image_to_open(&current_open_input_dir_);
-    if (!path.empty()) {
-        if (!get_sd_state()->openInputImage(path.c_str())) {
-            show_error(get_sd_state()->lastError());
-        } else {
-            inputImage_->redraw();
-        }
-    } 
-    */
-}
-
-void Pages::saveInputImage() {
-    /*
-    if (!get_sd_state()->getInputImage()) {
-        return;
-    }
-    std::string path = choose_image_to_save(&current_open_input_dir_);
-    if (!path.empty()) {
-        if (!get_sd_state()->saveInputImage(path.c_str())) {
-            show_error(get_sd_state()->lastError());
-        }
-    }
-    */
-}
 
 void Pages::textToImage() {
     int seed = promptPanel_->getSeed();
@@ -138,12 +114,13 @@ void Pages::textToImage() {
         promptPanel_->getWidth(),
         promptPanel_->getHeight(),
         promptPanel_->getSteps(),
-        promptPanel_->getCFG()
+        promptPanel_->getCFG(),
+        promptPanel_->getVariationStrength()
     );
 
     if (!get_sd_state()->generatorAdd(g)) {
         show_error(get_sd_state()->lastError());
-    } else {
+    } else if (active_page_ == page_results) {
         resultsPanel_->updatePanels();
     }
 }

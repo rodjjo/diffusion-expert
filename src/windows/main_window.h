@@ -35,7 +35,6 @@ class MainWindow : Fl_Menu_Window {
  private:
   void initBottomPanel();
   void initRightPanel();
-  void initLeftPanel();
   void initToolbar();
   void initPagesPanel();
   void initMenu();
@@ -44,7 +43,6 @@ class MainWindow : Fl_Menu_Window {
   static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
   static void gotoPromptPage(void *cbdata);
  private:
-    Fl_Group  *leftPanel_ = NULL;
     Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
     ConsoleTabs *console_ = NULL;

@@ -17,6 +17,7 @@ namespace dexpert
 class FramePanel;
 
 typedef enum {
+    image_src_self,
     image_src_input,
     image_src_results,
     image_src_input_mask,
@@ -43,6 +44,7 @@ typedef struct {
 class FramePanel : public OpenGlPanel {
 public:
     FramePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+    FramePanel(image_ptr_t image, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     virtual ~FramePanel();
     void setGridLocation(int index, int variation);
     void enableGrid();

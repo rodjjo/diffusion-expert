@@ -128,6 +128,9 @@ def build_envs():
 
 def build(args):
     envs = build_envs()
+    if '--debug' in args:
+        envs["DEBUG_ENABLED"] = "ON"
+
     additionalArgs = []
 
     if 'clean-first' in args:

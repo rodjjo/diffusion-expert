@@ -61,9 +61,9 @@ class StableDiffusionState {
     
     int randomSeed();
 
-    // input images
-    // bool openInputImage(const char *path);
-    // bool saveInputImage(const char *path);
+    // image disk operations
+    image_ptr_t openImage(const char *path);
+    bool saveImage(const char *path, RawImage *image);
 
     const char* lastError();
 

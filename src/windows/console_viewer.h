@@ -13,38 +13,13 @@
 
 #include "src/console/console_tabs.h"
 #include "src/controls/button.h"
+#include "src/windows/modal_window.h"
 
 namespace dexpert
 {
 
 typedef std::function<void()> callback_t;
 typedef std::function<bool()> status_callback_t;
-
-class EscapeDisabledWindow : public Fl_Window  {
- public:
-  EscapeDisabledWindow(int xx, int yy, int ww, int hh, const char* title ): Fl_Window(xx, yy, ww, hh, title) {}
-
- protected:
-  int handle(int event) override {
-    switch (event) {
-        case FL_KEYUP: {
-            if (Fl::event_key() == FL_Escape) {
-                return  1;
-            }
-        }
-        break;
-        case FL_KEYDOWN: {
-            if (Fl::event_key() == FL_Escape) {
-                return 1;
-            }
-        }
-        break;
-    }
-
-    return Fl_Window::handle(event);
-  }
-
-};
 
 class ConsoleViewer {
   public:
@@ -60,7 +35,7 @@ class ConsoleViewer {
     bool callback_completed_ = false;
     callback_t callback_;
     status_callback_t status_cb_;
-    EscapeDisabledWindow *window_;
+    ModalWindow *window_;
     ConsoleTabs *consoles_;
     Fl_Group *bottomPanel_;
     std::unique_ptr<Button> btnClose_;

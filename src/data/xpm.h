@@ -70,6 +70,11 @@ typedef enum {
     unlock_16x16,
     up_down_16x16,
     yellow_pin_16x16,
+    // new 
+    arrow_down_16x16,
+    arrow_up_16x16,
+    arrow_left_16x16,
+    arrow_right_16x16,
     // keep no_image at the end
     no_image
 } xpm_t;

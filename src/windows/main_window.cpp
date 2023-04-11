@@ -27,13 +27,11 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     wnd->begin();
 
-    initPagesPanel();
-
-    initLeftPanel();
     initRightPanel();
     initBottomPanel();
     initToolbar();
-    
+    initPagesPanel();
+
     wnd->end();
 
     alignComponents();
@@ -64,12 +62,6 @@ void MainWindow::initRightPanel() {
     }
 }
 
-void MainWindow::initLeftPanel() {
-    leftPanel_ = new Fl_Group(0, 20, 200, this->h() - 120);
-    leftPanel_->end();
-    leftPanel_->box(FL_BORDER_BOX);
-}
-
 void MainWindow::initToolbar() {
     toolsPanel_ = new Fl_Group(0, 20, this->w(), 20);
     toolsPanel_->end();
@@ -87,8 +79,8 @@ void MainWindow::initMenu() {
     callback_t noCall = []{};
 
     menu_->addItem(noCall, "", "File/New");
-    menu_->addItem([this] { pages_->openInputImage(); }, "", "File/Open");
-    menu_->addItem([this] { pages_->saveInputImage(); }, "", "File/Save");
+    // menu_->addItem([this] {  }, "", "File/Open");
+    // menu_->addItem([this] {  }, "", "File/Save");
     menu_->addItem(noCall, "", "Edit");
     menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
     menu_->addItem(noCall, "", "Tools");
@@ -113,7 +105,7 @@ void MainWindow::alignComponents() {
     int leftH = h;
     int rightH = leftH;
     int centerH = h - topH - bottomH;
-    int leftW = 100;
+    int leftW = 0;
     int rightW = 100;
     int centerW = w - leftW - rightW;
 
@@ -121,13 +113,10 @@ void MainWindow::alignComponents() {
     pages_->size(centerW, centerH);
 
     console_->position(leftW, h - bottomH);
-    console_->size(centerW, bottomH);
-
-    leftPanel_->position(0, topH);
-    leftPanel_->size(leftW, leftH);
+    console_->size(w, bottomH);
 
     rightPanel_->position(leftW + centerW, topH);
-    rightPanel_->size(leftW, leftH);
+    rightPanel_->size(rightW, centerH);
 
     page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
 }
