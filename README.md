@@ -5,7 +5,10 @@ This project is on early status of Development. Expect more updates.
 It will be a fast interface for drawing with help of the stable diffusion.  
 It uses a interface written in C++ with a embedded Python interpreter.  
 
+*Prompt*
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha.jpg)
+*Images x Variations*
+![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-2.jpg)
 
 ## Build and run 
 
