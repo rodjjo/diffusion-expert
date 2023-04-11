@@ -95,7 +95,13 @@ std::string choose_image_to_open(std::string* current_dir) {
 std::string choose_image_to_save(std::string* current_dir) {
     Fl_Native_File_Chooser dialog(Fl_Native_File_Chooser::BROWSE_FILE);
     configure_chooser(&dialog, kIMAGE_FILES_FILTER, "Save the image", true);
-    return execute_file_choose(&dialog, current_dir, ".png");
+    std::string result = execute_file_choose(&dialog, current_dir, ".png");
+    if (!result.empty() && path_exists(result.c_str())) {
+        if (!ask("Do you want to replace the destination file ?")) {
+            result.clear();
+        }
+    }
+    return result;
 }
 
 } // namespace dexpert

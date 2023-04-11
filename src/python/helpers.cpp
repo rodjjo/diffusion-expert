@@ -95,7 +95,7 @@ callback_t open_image(const char* path, image_callback_t status_cb) {
     };
 }
 
-callback_t save_image(const char* path, std::shared_ptr<RawImage> image, status_callback_t status_cb) {
+callback_t save_image(const char* path, RawImage *image, status_callback_t status_cb) {
     return [status_cb, path, image] () {
         bool errors = false;
         const char* msg = NULL;

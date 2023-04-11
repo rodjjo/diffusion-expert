@@ -13,6 +13,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
     steps_ = new Fl_Int_Input(0, 0, 1, 1, "Steps");
     guidance_ = new Fl_Float_Input(0, 0, 1, 1, "CFG");
+    var_strength_ = new Fl_Float_Input(0, 0, 1, 1, "Var Strength");
     width_ = new Fl_Int_Input(0, 0, 1, 1, "Width");
     height_ = new Fl_Int_Input(0, 0, 1, 1, "Height");
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
@@ -26,6 +27,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     width_->align(FL_ALIGN_TOP_LEFT);
     height_->align(FL_ALIGN_TOP_LEFT);
     models_->align(FL_ALIGN_TOP_LEFT);
+    var_strength_->align(FL_ALIGN_TOP_LEFT);
 
     positivePrompt_->value("An astronaut riding a horse at the moon");
     negativePrompt_->value("drawing,cartoon,3d,render,rendering");
@@ -33,6 +35,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     seed_->value("-1");
     steps_->value("50");
     guidance_->value("7.5");
+    var_strength_->value("0.1");
     width_->value("512");
     height_->value("512");
 
@@ -114,6 +117,20 @@ float PromptPanel::getCFG() {
     return result;
 }
 
+float PromptPanel::getVariationStrength() {
+    float result = 0.1;
+    sscanf(var_strength_->value(), "%f", &result);
+    if (result < 0) {
+        var_strength_->value("0");
+        return 0;
+    }
+    if (result > 1) {
+        var_strength_->value("1");
+        return 1;
+    }
+    return result;
+}
+
 void PromptPanel::alignComponents() {
     positivePrompt_->resize(x() + 5, y() + 25, w() - 10, 50);
     negativePrompt_->resize(
@@ -125,31 +142,37 @@ void PromptPanel::alignComponents() {
     seed_->resize(
         x() + 5, 
         negativePrompt_->y() + negativePrompt_->h() + 25, 
-        80, 
+        75, 
         25
     );
     steps_->resize(
         seed_->x() + seed_->w() + 5, 
         seed_->y(),
-        80,
+        75,
         25
     );
     guidance_->resize(
-        steps_->x() + seed_->w() + 5, 
+        steps_->x() + steps_->w() + 5, 
         steps_->y(),
-        80,
+        75,
         25
     );
     width_->resize(
-        guidance_->x() + seed_->w() + 5, 
+        guidance_->x() + guidance_->w() + 5, 
         guidance_->y(),
-        80,
+        75,
         25
     );
     height_->resize(
-        width_->x() + seed_->w() + 5, 
+        width_->x() + width_->w() + 5, 
         width_->y(),
-        80,
+        75,
+        25
+    );
+    var_strength_->resize(
+        height_->x() + height_->w() + 5, 
+        height_->y(),
+        75,
         25
     );
     models_->resize(

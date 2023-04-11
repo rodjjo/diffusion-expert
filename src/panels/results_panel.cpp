@@ -1,6 +1,7 @@
 #include "src/panels/results_panel.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/stable_diffusion/state.h"
+#include "src/windows/image_viewer.h"
 
 #define BUTTON_ID_PREVIEW 1
 #define BUTTON_ID_NEXT_ROW 2
@@ -15,8 +16,8 @@ namespace dexpert
     {
         this->begin();
         
-        auto btn_callback = [this] (FramePanel *w, int id) {
-            this->take_action(w, id);
+        auto btn_callback = [this] (FramePanel *p, int id) {
+            this->take_action(p, id);
         };
 
         for (int i = 0; i < get_sd_state()->getMaxResultImages(); i++)
@@ -33,10 +34,10 @@ namespace dexpert
                 fp->setImageSource(image_src_results);
                 fp->addButton(BUTTON_ID_PREVIEW, 0, 0, dexpert::xpm::lupe_16x16, btn_callback);
             }
-            row[0]->addButton(BUTTON_ID_PREV_ROW, 0, 1, dexpert::xpm::move_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_NEXT_ROW, 0, -1.0, dexpert::xpm::boss_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::eject_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::eye_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_PREV_ROW, 0, 1, dexpert::xpm::arrow_up_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_NEXT_ROW, 0, -1.0, dexpert::xpm::arrow_down_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::arrow_left_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::arrow_right_16x16, btn_callback);
             miniatures_.push_back(row);
         }
 
@@ -106,7 +107,7 @@ namespace dexpert
             auto &v = miniatures_[r];
             for (int c = 0; c < v.size(); ++c)
             {
-                if (v[c]->visible_r())
+                if (v[c]->visible())
                 {
                     max_row = r;
                     max_col = c;
@@ -130,8 +131,6 @@ namespace dexpert
             for (int c = 0; c < max_col; ++c)
             {
                 v[c]->resize(xx, yy, minature_w, minature_h);
-                if (v[c]->visible_r()) 
-                    v[c]->redraw();
                 xx += minature_w + 5;
             }
             xx = sx;
@@ -155,6 +154,12 @@ namespace dexpert
     void ResultsPanel::take_action(FramePanel *w, int id) {
         switch (id) {
             case BUTTON_ID_PREVIEW:
+                {
+                    auto img = get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation());
+                    if (img) {
+                        view_image(img->duplicate());
+                    }
+                }
                 break;
             case BUTTON_ID_NEXT_ROW:
                 get_sd_state()->generateNextImage(w->gridIndex());

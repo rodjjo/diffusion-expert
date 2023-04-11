@@ -225,8 +225,7 @@ bool StableDiffusionState::generateNextVariation(int index) {
 }
 
 
-/*
-bool StableDiffusionState::openInputImage(const char *path) {
+image_ptr_t StableDiffusionState::openImage(const char *path) {
     bool success = false;
     last_error_ = std::string();
 
@@ -242,16 +241,13 @@ bool StableDiffusionState::openInputImage(const char *path) {
 
     if (!success) {
         last_error_ = message ? message : kNO_ERROR_MESSAGE;
-    } else if (image) {
-        input_image_ = image;
-    }
+    } 
 
-    return success;
-} */
+    return image;
+} 
 
-/*
-bool StableDiffusionState::saveInputImage(const char *path) {
-    if (!input_image_) {
+bool StableDiffusionState::saveImage(const char *path, RawImage *image) {
+    if (!image) {
         last_error_ = "no image to save";
         return false;
     }
@@ -260,7 +256,7 @@ bool StableDiffusionState::saveInputImage(const char *path) {
     bool success = false;
     const char *message = kNO_ERROR_MESSAGE;
 
-    auto cb = dexpert::py::save_image(path, input_image_, [&success, &message] (bool status, const char* msg) {
+    auto cb = dexpert::py::save_image(path, image, [&success, &message] (bool status, const char* msg) {
         success = status;
         message = msg;
     });
@@ -274,7 +270,7 @@ bool StableDiffusionState::saveInputImage(const char *path) {
 
     return success;
 }
-*/
+
 
 RawImage *StableDiffusionState::getResultsImage(int index, int variation) {
     if (index >= generators_.size() || index < 0)

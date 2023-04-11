@@ -32,7 +32,10 @@ def download_python():
 def main():
     prefix = []
     if '--build' in sys.argv:
-         build.main([])
+         args = []
+         if '--debug' in sys.argv:
+             args = ['--debug']
+         build.main(args)
     if '--copy-stuff' in sys.argv:
         copy_stuff.copy_files()
     if '--debug' in sys.argv:

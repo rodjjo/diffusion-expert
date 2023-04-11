@@ -65,6 +65,10 @@
 #include "src/data/xpm/menu/move_16x16.xpm"
 #include "src/data/xpm/menu/rotate_16x16.xpm"
 #include "src/data/xpm/menu/up_down_16x16.xpm"
+#include "src/data/xpm/menu/arrow_down_16x16.xpm"
+#include "src/data/xpm/menu/arrow_up_16x16.xpm"
+#include "src/data/xpm/menu/arrow_left_16x16.xpm"
+#include "src/data/xpm/menu/arrow_right_16x16.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -128,7 +132,11 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { left_right_16x16, left_right_16x16_xpm },
     { move_16x16, move_16x16_xpm },
     { rotate_16x16, rotate_16x16_xpm },
-    { up_down_16x16, up_down_16x16_xpm }
+    { up_down_16x16, up_down_16x16_xpm },
+    { arrow_down_16x16, arrow_down_16x16_xpm},
+    { arrow_up_16x16, arrow_up_16x16_xpm},
+    { arrow_left_16x16, arrow_left_16x16_xpm},
+    { arrow_right_16x16, arrow_right_16x16_xpm}
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

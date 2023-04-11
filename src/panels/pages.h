@@ -8,7 +8,7 @@
 
 #include <FL/Fl_Group.H>
 
-#include "src/panels/frame_panel.h"
+#include "src/panels/panting_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/panels/results_panel.h"
 
@@ -36,8 +36,6 @@ class Pages: public Fl_Group {
     bool goPage(page_t page);
     page_t activePage();
     const char *pageTitle(page_t page);
-    void openInputImage();
-    void saveInputImage();
     void textToImage();
 
  protected:
@@ -52,7 +50,7 @@ class Pages: public Fl_Group {
     bool visible_pages_[page_max] = {0,};
 
     PromptPanel *promptPanel_ = NULL;
-    FramePanel *inputImage_ = NULL;
+    PantingPanel *inputImage_ = NULL;
     ResultsPanel *resultsPanel_ = NULL;
     std::string current_open_input_dir_;
 };
