@@ -1,15 +1,20 @@
 # from safetensors import safe_open
 import os
 import sys
+import gc
 
 import torch
 from torchvision import transforms
 from PIL import Image
 from models.models import create_pipeline, create_var_pipeline
+from dexpert import progress, progress_canceled, progress_title
+
 
 def report(message):
-    print(f"Text2image - {message}")
-
+    progress_title(f'[Text To Image] - {message}')
+    
+class CancelException(Exception):
+    pass
 
 def pil_to_latents(image, vae):
     '''     
@@ -19,6 +24,28 @@ def pil_to_latents(image, vae):
     init_image = init_image.to(device="cuda") # , dtype=torch.float16)
     init_latent_dist = vae.encode(init_image).latent_dist.sample() * 0.18215     
     return init_latent_dist
+
+def latents_to_pil(step, vae, latents):
+    if step % 5 != 0:
+        return None
+    '''
+    Function to convert latents to images
+    '''
+    latents = (1 / 0.18215) * latents
+    with torch.no_grad():
+        image = vae.decode(latents).sample
+    image = (image / 2 + 0.5).clamp(0, 1)
+    image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
+    images = (image * 255).round().astype("uint8")
+    if (len(images)):
+        image = images[-1]
+    image = Image.fromarray(image) 
+    return {
+        'data': image.tobytes(),
+        'width': image.width,
+        'height': image.height,
+        'mode': image.mode,
+    }
 
 
 def randn(seed, shape):
@@ -64,11 +91,6 @@ def create_random_tensors(shape, seed, subseed=None, subseed_strength=0.0):
     return x
 
 
-def next():
-    # samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
-    pass
-
-
 def txt2img(params: dict):
     device = "cuda"
     def do_it():
@@ -92,6 +114,12 @@ def txt2img(params: dict):
         pipeline.to(device)
         generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
         report("generating the variation" if variation_enabled else "generating the image")
+
+        def progress_preview(step, timestep, latents):
+            progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
+            if progress_canceled():
+                raise CancelException()
+
         result = pipeline(
             prompt, 
             guidance_scale=cfg, 
@@ -100,8 +128,10 @@ def txt2img(params: dict):
             negative_prompt=negative, 
             num_inference_steps=steps,
             generator=generator,
-            latents=x
+            latents=x,
+            callback=lambda step, timest, latents: progress_preview(step, steps, latents)
         ).images[0]
+        
         report("image generated")
         return {
                 'data': result.tobytes(),
@@ -109,7 +139,13 @@ def txt2img(params: dict):
                 'height': result.height,
                 'mode': result.mode,
             }
-    data = do_it()        
-    return data
-
     
+    progress(0, 100, None)
+    try:
+        data = do_it()   
+    except CancelException:
+        print("Image generation canceled")
+        data = None
+        gc.collect()
+    progress(100, 100, None)     
+    return data

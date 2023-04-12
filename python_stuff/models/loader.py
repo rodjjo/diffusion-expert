@@ -11,6 +11,7 @@ from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjec
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR
 
+from dexpert import progress_title
 
 
 # this file was based on: https://github.com/ratwithacompiler/diffusers_stablediff_conversion/blob/main/convert_original_stable_diffusion_to_diffusers.py
@@ -509,7 +510,7 @@ def convert_ldm_vae_checkpoint(checkpoint, config):
     return new_checkpoint
 
 def report(message):
-    print(f'ModelLoader - {message}')
+    progress_title(f'[Model Loader] - {message}')
 
 def load_stable_diffusion_model(model_path: str):
     report(f"loading {model_path}")

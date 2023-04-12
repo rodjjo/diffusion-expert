@@ -5,6 +5,7 @@
 
 #include "src/python/helpers.h"
 #include "src/python/guard.h"
+#include "src/windows/progress_window.h"
 
 
 namespace dexpert {
@@ -127,6 +128,8 @@ callback_t save_image(const char* path, RawImage *image, status_callback_t statu
 
 
 callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
+    enable_progress_window();
+
     return [config, status_cb] {
         bool errors = false;
         const char *msg = NULL;
@@ -164,7 +167,11 @@ callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb) {
                 img = rawImageFromPyDict(result);
                 if (!img) {
                     errors = true;
-                    msg = "open_image did not return a valid dictionary with an image info.";
+                    if (should_cancel_progress()) {
+                        msg = "The operation was canceled by the user.";
+                    } else {
+                        msg = "open_image did not return a valid dictionary with an image info.";
+                    }
                 }
             }
         }

@@ -240,6 +240,10 @@ frame_button_t *FramePanel::get_button_mouse(int x, int y) {
     return NULL;
 }
 
+void FramePanel::setImage(image_ptr_t image) {
+    image_ = image;
+}
+
 void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
     frame_button_t * b = get_button_mouse(up_x, up_y);
     if (b) {
@@ -247,11 +251,9 @@ void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int d
     }
 }
 
-
 frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
     return NULL;
 }
-
 
 void FramePanel::draw_next() {
     float x;
