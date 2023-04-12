@@ -43,7 +43,6 @@ class PythonMachine {
    bool terminated_ = false;
    std::mutex callback_mutex_;
    async_callback_t callback_;
-   std::shared_ptr<std::thread> thread_;
 };
 
 }  // namespace py

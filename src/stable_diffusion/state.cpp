@@ -135,13 +135,14 @@ bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator
             break;
         }
     }
-    if (generators_[index].g) {
-        scroll_up_generators();
-    }
-    generators_[index].g = generator;
-    generators_[index].seed_increment = 0;
     generator->generate(generatorMakeCallback(), 0);
-
+    if (generator->getImage()) {
+        if (generators_[index].g) {
+            scroll_up_generators();
+        }
+        generators_[index].g = generator;
+        generators_[index].seed_increment = 0;
+    }
     return last_error_.empty();
 }
 
@@ -156,15 +157,17 @@ bool StableDiffusionState::generatePreviousImage(int index) {
     }
 
     last_error_.clear();
-
-    if (generators_[0].g) {
-        scroll_down_generators();
-    }
-
     g.g = g.g->duplicate();
     g.seed_increment -= 1;
-    generators_[0] = g;
+
     g.g->generate(generatorMakeCallback(), g.seed_increment, 0);
+    
+    if (g.g->getImage()) {
+        if (generators_[0].g) {
+            scroll_down_generators();
+        }
+        generators_[0] = g;
+    }
 
     return last_error_.empty();
 }
@@ -181,8 +184,9 @@ bool StableDiffusionState::generateNextImage(int index) {
     last_error_.clear();
     
     index = generators_.size() - 1;
+    bool scroll_up = false;
     if (generators_[index].g) {
-        scroll_up_generators();
+        scroll_up = true;
     } else {
         while (index > 0) {
             if (generators_[index - 1].g) {
@@ -194,8 +198,14 @@ bool StableDiffusionState::generateNextImage(int index) {
     
     g.g = g.g->duplicate();
     g.seed_increment += 1;
-    generators_[index] = g;
+    
     g.g->generate(generatorMakeCallback(), g.seed_increment, 0);
+
+    if (g.g->getImage()) {
+        if (scroll_up)
+            scroll_up_generators();
+        generators_[index] = g;
+    }
 
     return last_error_.empty();
 }

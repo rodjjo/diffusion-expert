@@ -11,6 +11,9 @@ It uses a interface written in C++ with a embedded Python interpreter.
 *Images x Variations*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-2.jpg)
 
+*Progress with image preview and cancel button*   
+![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-3.jpg)
+
 ## Build and run 
 
 Before start make sure you have 7zip, cmake, python 3.10 and Conan 1.59.0 installed.  

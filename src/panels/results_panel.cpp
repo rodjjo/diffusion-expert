@@ -71,7 +71,7 @@ namespace dexpert
 
         max_col += 1;
         max_row += 1;
-
+        bool should_redraw = this->visible_r();
         for (int r = 0; r < miniatures_.size(); ++r)
         {
             auto &v = miniatures_[r];
@@ -80,6 +80,9 @@ namespace dexpert
                 if (c < max_col && r < max_row)
                 {
                     v[c]->show();
+                    if (should_redraw) {
+                        v[c]->redraw();
+                    }
                 }
                 else
                 {

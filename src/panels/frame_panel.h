@@ -54,7 +54,8 @@ public:
     size_t gridIndex();
     size_t gridVariation();
     void setImageSource(image_src_t src_type);
-
+    void setImage(image_ptr_t image);
+    
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;
     void draw_next() override;

@@ -8,22 +8,80 @@
 #include "src/config/config.h"
 #include "src/python/wrapper.h"
 #include "src/python/python_stuff.h"
+#include "src/python/raw_image.h"
 #include "src/python/guard.h"
+#include "src/windows/progress_window.h"
+
 
 namespace dexpert {
 namespace py {
 
 namespace {
 std::shared_ptr<PythonMachine> machine;
+
+PyObject* report_progress(PyObject *self, PyObject *args)
+{
+    int p = 0, m = 100;
+    PyObject *image;
+    if(!PyArg_ParseTuple(args, "iiO", &p, &m, &image))
+        return NULL;
+
+    set_progress(p, m, rawImageFromPyDict(image));
+
+    Py_RETURN_NONE;
+}
+
+
+PyObject* report_task(PyObject *self, PyObject *args)
+{
+    const char *text = NULL;
+    if(!PyArg_ParseTuple(args, "s", &text))
+        return NULL;
+    if (text) {
+        printf("%s\n", text);
+        set_progress_title(text);
+    }
+    Py_RETURN_NONE;
+}
+
+
+PyObject* should_cancel(PyObject *self, PyObject *args)
+{
+    if (should_cancel_progress())
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+
+
+PyMethodDef dexpertMethods[] = {
+    {"progress", report_progress, METH_VARARGS, "Report the image generation progress and preview"},
+    {"progress_title", report_task, METH_VARARGS, "Set the current task title"},
+    {"progress_canceled", should_cancel, METH_NOARGS, "Check if the user wants to cancel"},
+    {NULL, NULL, 0, NULL}
+};
+
+
+struct PyModuleDef cModDexpertProgress =
+{
+    PyModuleDef_HEAD_INIT,
+    "dexpert", 
+    "The diffusion expert module",          
+    -1,          
+    dexpertMethods
+};
+
+
+PyMODINIT_FUNC PyInit_dexpertModule(void)
+{
+    PyObject *mod = PyModule_Create(&cModDexpertProgress);
+    return  mod;
+}
+
 }  // unnamed namespaces
 
 
 PythonMachine::PythonMachine() {
-    /*
-    thread_.reset(new std::thread([this]{
-        run_machine();
-    }));
-    */
 }
 
 void PythonMachine::stop_machine() {
@@ -32,7 +90,7 @@ void PythonMachine::stop_machine() {
 
 
 void PythonMachine::run_machine() {
-    wchar_t *program = Py_DecodeLocale("dexpert", NULL);
+    wchar_t *program = Py_DecodeLocale("diffusion_expert", NULL);
     wchar_t *argv[1] = {(wchar_t *)getConfig().pythonMainPy().c_str()};
 
     Py_SetProgramName(program);
@@ -42,12 +100,17 @@ void PythonMachine::run_machine() {
 
     Py_Initialize();
     PySys_SetArgvEx(1, argv, 1);
-
     {  // guard context
         ObjGuard guard;
     
         PyObject *msys = guard(PyImport_ImportModule("sys"));
         PyObject* main = guard(PyImport_AddModule("__main__")); // hold the main module
+        
+        guard(PyInit_dexpertModule());
+
+        PyObject* dexpert_mod = PyImport_AddModule("dexpert");
+        PyModule_AddFunctions(dexpert_mod, dexpertMethods);
+
 
         PyObject *pyString = guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
         PyObject_SetAttrString(msys, "executable", pyString);
@@ -77,9 +140,6 @@ void PythonMachine::run_machine() {
 
 PythonMachine::~PythonMachine() {
     terminated_ = true;
-    if (thread_) {
-        thread_->join();
-    } 
 }
 
 void PythonMachine::execute_callback_internal() {
@@ -100,7 +160,9 @@ void PythonMachine::execute_callback_internal() {
 
 void PythonMachine::execute_callback(async_callback_t callback) {
    replace_callback(callback);
+   show_progress_window();
    wait_callback();
+   hide_progress_window();
 }
 
 void PythonMachine::replace_callback(async_callback_t callback) {
