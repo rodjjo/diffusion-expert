@@ -13,3 +13,4 @@ GitPython
 pytorch_lightning
 torchdiffeq
 tdqm
+xformers

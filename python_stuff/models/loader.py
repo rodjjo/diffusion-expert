@@ -9,7 +9,7 @@ from diffusers import (
 )
 from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPVisionConfig
 from omegaconf import OmegaConf
-from models.paths import CONFIG_DIR
+from models.paths import CONFIG_DIR, CACHE_DIR
 
 from dexpert import progress_title
 
@@ -18,7 +18,7 @@ from dexpert import progress_title
 
 
 def convert_ldm_clip_checkpoint(checkpoint):
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
     keys = list(checkpoint.keys())
 
@@ -521,8 +521,10 @@ def load_stable_diffusion_model(model_path: str):
         checkpoint = torch.load(model_path, map_location="cpu")
     if "state_dict" in checkpoint:
         checkpoint = ["state_dict"]
-
     report("model loaded")
+
+    report("converting model to half precision")
+    checkpoint = {k: v.half() for k, v in checkpoint.items()}
 
     inference_path = os.path.join(CONFIG_DIR, 'v1-inference.yaml')
     report(f"loading {inference_path}")
@@ -571,13 +573,18 @@ def load_stable_diffusion_model(model_path: str):
         text_model = convert_ldm_clip_checkpoint(checkpoint)
         del checkpoint
         report("converting clip done")
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
         # report("safety checker")
-        safety_checker = None # StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker")
+        safety_checker = None # StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
         # report("feature extractor")
-        feature_extractor = None # AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker")
+        feature_extractor = None # AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
     else:
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
+
+    vae.to('cuda')
+    text_model.to('cuda')
+    unet.to('cuda')
+
     return {
         'vae': vae,
         'text_encoder': text_model,

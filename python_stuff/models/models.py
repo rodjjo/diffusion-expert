@@ -1,6 +1,8 @@
 import gc
 import os
 
+
+import torch
 from transformers import CLIPVisionModelWithProjection, CLIPVisionConfig
 from diffusers import (
     StableDiffusionPipeline,
@@ -20,9 +22,12 @@ CURRENT_VAR_PIPELINE = {}
 def load_model(model_path: str):
     global CURRENT_MODEL_PARAMS
     if CURRENT_MODEL_PARAMS.get('path', '') != model_path:
+        CURRENT_MODEL_PARAMS = {}
+        gc.collect()
+        params = load_stable_diffusion_model(model_path)
         CURRENT_MODEL_PARAMS = {
             'path': model_path,
-            'params': load_stable_diffusion_model(model_path)
+            'params': params
         }
     gc.collect()
 
@@ -32,37 +37,19 @@ def create_pipeline(model_path: str):
     global CURRENT_VAR_PIPELINE
     load_model(model_path)
     if CURRENT_PIPELINE.get("model_path") != model_path:
+        CURRENT_PIPELINE = {}
+        gc.collect()
+        pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
+        # pipe.enable_model_cpu_offload()
+        pipe.enable_attention_slicing(1)
+        pipe.enable_xformers_memory_efficient_attention()
         CURRENT_PIPELINE = {
             'model_path': model_path,
-            'pipeline': StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
+            'pipeline': pipe
         }
     CURRENT_VAR_PIPELINE = {}
     gc.collect()
     return CURRENT_PIPELINE['pipeline']
-
-
-def create_var_pipeline(model_path: str):
-    global CURRENT_PIPELINE
-    global CURRENT_VAR_PIPELINE
-    load_model(model_path)
-    if CURRENT_VAR_PIPELINE.get("model_path") != model_path:
-        mparams = CURRENT_MODEL_PARAMS['params']
-        image_model = CLIPVisionModelWithProjection(CLIPVisionConfig())
-        params = {
-            'vae': mparams['vae'],
-            'image_encoder': image_model,
-            'unet': mparams['unet'],
-            'scheduler':  mparams['scheduler'],
-            'safety_checker': mparams['safety_checker'],
-            'feature_extractor':  mparams['feature_extractor'],
-        }
-        CURRENT_VAR_PIPELINE = {
-            'model_path': model_path,
-            'pipeline': StableDiffusionImageVariationPipeline(**params)
-        }
-    CURRENT_PIPELINE = {}
-    gc.collect()
-    return CURRENT_VAR_PIPELINE['pipeline']
 
 
 def is_model(path: str):

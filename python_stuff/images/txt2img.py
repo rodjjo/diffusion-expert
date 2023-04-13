@@ -6,7 +6,7 @@ import gc
 import torch
 from torchvision import transforms
 from PIL import Image
-from models.models import create_pipeline, create_var_pipeline
+from models.models import create_pipeline
 from dexpert import progress, progress_canceled, progress_title
 
 
@@ -93,6 +93,8 @@ def create_random_tensors(shape, seed, subseed=None, subseed_strength=0.0):
 
 def txt2img(params: dict):
     device = "cuda"
+
+    @torch.no_grad()
     def do_it():
         prompt = params['prompt']
         negative = params['negative']
@@ -110,7 +112,7 @@ def txt2img(params: dict):
         subseed = params['variation'] if variation_enabled else None
         pipeline = create_pipeline(model) 
         shape = (4, width // 8, height // 8)
-        x = create_random_tensors(shape, seed, subseed, var_stren)
+        latents_noise = create_random_tensors(shape, seed, subseed, var_stren)
         pipeline.to(device)
         generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
         report("generating the variation" if variation_enabled else "generating the image")
@@ -119,18 +121,21 @@ def txt2img(params: dict):
             progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
             if progress_canceled():
                 raise CancelException()
+        
+        latents_noise.to(device)
 
-        result = pipeline(
-            prompt, 
-            guidance_scale=cfg, 
-            height=height, 
-            width=width, 
-            negative_prompt=negative, 
-            num_inference_steps=steps,
-            generator=generator,
-            latents=x,
-            callback=lambda step, timest, latents: progress_preview(step, steps, latents)
-        ).images[0]
+        with torch.inference_mode(), torch.autocast("cuda"):
+            result = pipeline(
+                prompt, 
+                guidance_scale=cfg, 
+                height=height, 
+                width=width, 
+                negative_prompt=negative, 
+                num_inference_steps=steps,
+                generator=generator,
+                latents=latents_noise,
+                callback=lambda step, timest, latents: progress_preview(step, steps, latents)
+            ).images[0]
         
         report("image generated")
         return {
