@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import urllib.request
 
 PRINT_PREFIX = 'dependencies.installer:'
 
@@ -25,6 +26,11 @@ def have_dependencies():
     except ImportError:
         return False
     
+def download_get_pip():
+    url = 'https://bootstrap.pypa.io/get-pip.py'
+    filepath = os.path.join(os.path.dirname(__file__), 'get-pip.py')
+    print('Downloading get-pip.py')
+    urllib.request.urlretrieve(url, filepath)
 
 def _install_dependencies():
     base_dir = os.path.dirname(sys.executable)
@@ -40,6 +46,7 @@ def _install_dependencies():
     if not have_pip():
         print(f'{PRINT_PREFIX} It does not have pip. Installing it')
         sys.stdout.flush()
+        download_get_pip()
         subprocess.check_call([
             sys.executable, get_pip
         ])
