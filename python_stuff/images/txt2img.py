@@ -1,20 +1,19 @@
-# from safetensors import safe_open
-import os
-import sys
 import gc
 
 import torch
 from torchvision import transforms
 from PIL import Image
-from models.models import create_pipeline, create_var_pipeline
+from models.models import create_pipeline
 from dexpert import progress, progress_canceled, progress_title
 
 
 def report(message):
     progress_title(f'[Text To Image] - {message}')
-    
+
+
 class CancelException(Exception):
     pass
+
 
 def pil_to_latents(image, vae):
     '''     
@@ -24,6 +23,7 @@ def pil_to_latents(image, vae):
     init_image = init_image.to(device="cuda") # , dtype=torch.float16)
     init_latent_dist = vae.encode(init_image).latent_dist.sample() * 0.18215     
     return init_latent_dist
+
 
 def latents_to_pil(step, vae, latents):
     if step % 5 != 0:
@@ -37,9 +37,9 @@ def latents_to_pil(step, vae, latents):
     image = (image / 2 + 0.5).clamp(0, 1)
     image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
     images = (image * 255).round().astype("uint8")
-    if (len(images)):
-        image = images[-1]
-    image = Image.fromarray(image) 
+    if (len(images) < 1):
+        return None
+    image = Image.fromarray(images[-1]) 
     return {
         'data': image.tobytes(),
         'width': image.width,
@@ -61,14 +61,14 @@ def randn_without_seed(shape):
 def slerp(val, low, high):
     low_norm = low/torch.norm(low, dim=1, keepdim=True)
     high_norm = high/torch.norm(high, dim=1, keepdim=True)
-    dot = (low_norm*high_norm).sum(1)
+    dot = (low_norm * high_norm).sum(1)
 
     if dot.mean() > 0.9995:
         return low * val + high * (1 - val)
 
     omega = torch.acos(dot)
     so = torch.sin(omega)
-    res = (torch.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (torch.sin(val*omega)/so).unsqueeze(1) * high
+    res = (torch.sin((1.0-val) * omega)/so).unsqueeze(1) * low + (torch.sin(val*omega)/so).unsqueeze(1) * high
     return res
 
 
@@ -93,6 +93,8 @@ def create_random_tensors(shape, seed, subseed=None, subseed_strength=0.0):
 
 def txt2img(params: dict):
     device = "cuda"
+
+    @torch.no_grad()
     def do_it():
         prompt = params['prompt']
         negative = params['negative']
@@ -106,11 +108,11 @@ def txt2img(params: dict):
         height = params["height"]
         variation_enabled = params.get('var_stren', 0) > 0
         var_stren = params.get("var_stren", 0)
-        report("creating the pipeline")
         subseed = params['variation'] if variation_enabled else None
+        report("creating the pipeline")
         pipeline = create_pipeline(model) 
         shape = (4, width // 8, height // 8)
-        x = create_random_tensors(shape, seed, subseed, var_stren)
+        latents_noise = create_random_tensors(shape, seed, subseed, var_stren)
         pipeline.to(device)
         generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
         report("generating the variation" if variation_enabled else "generating the image")
@@ -119,18 +121,21 @@ def txt2img(params: dict):
             progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
             if progress_canceled():
                 raise CancelException()
+        
+        latents_noise.to(device)
 
-        result = pipeline(
-            prompt, 
-            guidance_scale=cfg, 
-            height=height, 
-            width=width, 
-            negative_prompt=negative, 
-            num_inference_steps=steps,
-            generator=generator,
-            latents=x,
-            callback=lambda step, timest, latents: progress_preview(step, steps, latents)
-        ).images[0]
+        with torch.inference_mode(), torch.autocast("cuda"):
+            result = pipeline(
+                prompt, 
+                guidance_scale=cfg, 
+                height=height, 
+                width=width, 
+                negative_prompt=negative, 
+                num_inference_steps=steps,
+                generator=generator,
+                latents=latents_noise,
+                callback=lambda step, timest, latents: progress_preview(step, timest, latents)
+            ).images[0]
         
         report("image generated")
         return {
@@ -141,11 +146,14 @@ def txt2img(params: dict):
             }
     
     progress(0, 100, None)
+
     try:
         data = do_it()   
     except CancelException:
         print("Image generation canceled")
         data = None
         gc.collect()
+
     progress(100, 100, None)     
+
     return data

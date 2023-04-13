@@ -219,7 +219,7 @@ const char *PromptPanel::getSdModel() {
     if (models_->value() >= 0) {
         return models_->text(models_->value());
     }
-    return "";
+    return NULL;
 }
 
 } // namespace dexpert

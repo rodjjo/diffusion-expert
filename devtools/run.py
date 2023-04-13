@@ -28,7 +28,6 @@ def download_python():
         print('Extracting Python')
         subprocess.check_call(['7z.exe', 'x', filepath], cwd=python_dir())
 
-
 def main():
     prefix = []
     if '--build' in sys.argv:

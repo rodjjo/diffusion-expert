@@ -13,6 +13,7 @@ def open_image(path: str):
             'mode': im.mode,
         }
 
+
 def save_image(path: str, data: dict):
     print(f"Save image: {path}")
     with Image.frombytes(data['mode'], (data['width'], data['height']), data['data']) as im:

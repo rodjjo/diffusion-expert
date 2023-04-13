@@ -148,7 +148,7 @@ bool Config::save() {
         f << std::setw(2) << data << std::endl;
         return true;
     } catch (json::exception& e) {
-        fprintf(stderr, "Error saving dexpert configuration file: %s", e.what());
+        fprintf(stderr, "Error saving dexpert configuration file: %s\n", e.what());
     }
 
     return false;
@@ -159,7 +159,7 @@ bool Config::load() {
     std::ifstream f(path.c_str());
     try {
         if (!f.good()) {
-            fprintf(stderr, "Dexpert configuration file does not exist");
+            fprintf(stderr, "Diffusion Expert's configuration file does not exist\n");
             return true;
         }
         json data = json::parse(f);
@@ -171,7 +171,7 @@ bool Config::load() {
         }
         return true;
     } catch(json::exception& e) {
-        fprintf(stderr, "Error loading dexpert configuration file: %s", e.what());
+        fprintf(stderr, "Error loading dexpert configuration file: %s\n", e.what());
     }
 
     return false;

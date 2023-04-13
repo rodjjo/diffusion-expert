@@ -1,4 +1,7 @@
-import multiprocessing
+import os
+import sys
+import subprocess
+import urllib.request
 
 PRINT_PREFIX = 'dependencies.installer:'
 
@@ -17,25 +20,33 @@ def have_dependencies():
         import numpy
         import diffusers
         import transformers
+        import xformers
         from omegaconf import OmegaConf
         return True
     except ImportError:
         return False
     
+def download_get_pip():
+    url = 'https://bootstrap.pypa.io/get-pip.py'
+    filepath = os.path.join(os.path.dirname(__file__), 'get-pip.py')
+    print('Downloading get-pip.py')
+    urllib.request.urlretrieve(url, filepath)
 
 def _install_dependencies():
-    import sys
-    import subprocess
-    import os
-
     base_dir = os.path.dirname(sys.executable)
     requirements_path = os.path.join(base_dir, '..', 'python_stuff', 'requirements.txt')
     requirements_torch = os.path.join(base_dir, '..', 'python_stuff', 'requirements-torch.txt')
     get_pip = os.path.join(base_dir, '..', 'python_stuff', 'dependencies', 'get-pip.py')
     
+    path = os.environ['PATH']
+    path = path.split(os.pathsep)
+    path.append(os.path.join(base_dir, 'Scripts'))
+    os.environ['PATH'] = os.pathsep.join(path)
+
     if not have_pip():
         print(f'{PRINT_PREFIX} It does not have pip. Installing it')
         sys.stdout.flush()
+        download_get_pip()
         subprocess.check_call([
             sys.executable, get_pip
         ])
@@ -58,14 +69,12 @@ def _install_dependencies():
         print(f'{PRINT_PREFIX} It already has the dependencies installed.')
         sys.stdout.flush()
 
-def simulator():
-    from tqdm import tqdm
-    import time
-    import sys
-    for i in tqdm(range(3000), file=sys.stdout, colour="green"):
-        time.sleep(0.003)
 
 def install_dependencies():
-    proc = multiprocessing.Process(target=_install_dependencies)
-    proc.start()
-    proc.join()
+    subprocess.check_call([
+        sys.executable, __file__
+    ])
+
+
+if __name__ == '__main__':
+    _install_dependencies()

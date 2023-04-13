@@ -103,7 +103,8 @@ namespace dexpert
         terminated_ = true;
         if (thread_)
         {
-            fclose(STREAM(src_type));
+            fprintf(STREAM(src_type), "\n");
+            fflush(STREAM(src_type));
             thread_->join();
         }
         free(buff);

@@ -5,11 +5,12 @@ import torch
 from diffusers import (
     AutoencoderKL,
     PNDMScheduler,
-    UNet2DConditionModel,
+    UNet2DConditionModel
 )
-from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPVisionConfig
+from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
+from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
-from models.paths import CONFIG_DIR
+from models.paths import CONFIG_DIR, CACHE_DIR
 
 from dexpert import progress_title
 
@@ -18,7 +19,7 @@ from dexpert import progress_title
 
 
 def convert_ldm_clip_checkpoint(checkpoint):
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
     keys = list(checkpoint.keys())
 
@@ -521,8 +522,10 @@ def load_stable_diffusion_model(model_path: str):
         checkpoint = torch.load(model_path, map_location="cpu")
     if "state_dict" in checkpoint:
         checkpoint = ["state_dict"]
-
     report("model loaded")
+
+    report("converting model to half precision")
+    checkpoint = {k: v.half() for k, v in checkpoint.items()}
 
     inference_path = os.path.join(CONFIG_DIR, 'v1-inference.yaml')
     report(f"loading {inference_path}")
@@ -571,13 +574,24 @@ def load_stable_diffusion_model(model_path: str):
         text_model = convert_ldm_clip_checkpoint(checkpoint)
         del checkpoint
         report("converting clip done")
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-        # report("safety checker")
-        safety_checker = None # StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker")
-        # report("feature extractor")
-        feature_extractor = None # AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker")
+        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+        if os.environ.get('DEXPERT_UNSAFE_MODE', 'no').lower() in ('yes', 'on', 'true'):
+            safety_checker = None
+            feature_extractor = None
+            requires_safety_checker = False
+        else:
+            report("safety checker")
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            report("feature extractor")
+            feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            requires_safety_checker = True
     else:
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
+
+    vae.to('cuda')
+    text_model.to('cuda')
+    unet.to('cuda')
+
     return {
         'vae': vae,
         'text_encoder': text_model,
@@ -586,7 +600,7 @@ def load_stable_diffusion_model(model_path: str):
         'scheduler': scheduler,
         'safety_checker': safety_checker,
         'feature_extractor': feature_extractor,
-        'requires_safety_checker': False
+        'requires_safety_checker': requires_safety_checker
     }
 
 

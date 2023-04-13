@@ -18,7 +18,7 @@ namespace  {
 
 Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     for (int i = 0; i < page_max; ++i)  {
-        visible_pages_[i] = true;
+        visible_pages_[i] = false;
         pages_[i] =  NULL; 
     }
 
@@ -30,6 +30,10 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_prompts] = promptPanel_;
     inputImage_ = new PantingPanel(0, 0, 1, 1);
     pages_[page_input_image] = inputImage_;
+    
+    visible_pages_[page_results] = true;
+    visible_pages_[page_prompts] = true;
+    // visible_pages_[page_input_image] = true;
 
     for (int i = 0; i < page_max; ++i) {
         if (pages_[i]) {
@@ -95,8 +99,34 @@ bool Pages::goPage(page_t page) {
     return result;
 }
 
+page_t Pages::getPageIndex(int index) {
+    int page_number = 0;
+    for (int i = 0; i < page_max; ++i) {
+         if (isVisible((page_t) i)) {
+            if (index == page_number) {
+                return (page_t) i;
+            }
+            ++page_number;
+        }
+    }
+    return page_prompts;
+}
+
 page_t Pages::activePage() {
     return active_page_;
+}
+
+int Pages::visibleIndex() {
+    int page_number = 0;
+    for (int i = 0; i < page_max; ++i) {
+         if (isVisible((page_t) i)) {
+            if (active_page_ == i) {
+                return page_number;
+            }
+            ++page_number;
+        }
+    }
+    return page_prompts;
 }
 
 
@@ -104,12 +134,19 @@ void Pages::textToImage() {
     int seed = promptPanel_->getSeed();
     if (seed == -1) 
         seed = get_sd_state()->randomSeed();
-    get_sd_state()->setSdModel(promptPanel_->getSdModel());
+
+    const char* model = promptPanel_->getSdModel();
+    if (model == NULL) {
+        show_error("Add a model file (.safetensors or .ckpt) into 'models/stable diffusion' directory before you start!");
+        return;
+    }
+
+    get_sd_state()->setSdModel(model);
 
     auto g = std::make_shared<GeneratorTxt2Image>(
         promptPanel_->getPrompt(),
         promptPanel_->getNegativePrompt(),
-        get_sd_state()->getSdModelPath(promptPanel_->getSdModel()),
+        get_sd_state()->getSdModelPath(model),
         seed,
         promptPanel_->getWidth(),
         promptPanel_->getHeight(),
