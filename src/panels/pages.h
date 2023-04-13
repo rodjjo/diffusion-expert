@@ -34,6 +34,8 @@ class Pages: public Fl_Group {
     bool isVisible(page_t page);
     int pageCount();
     bool goPage(page_t page);
+    int visibleIndex();
+    page_t getPageIndex(int index);
     page_t activePage();
     const char *pageTitle(page_t page);
     void textToImage();

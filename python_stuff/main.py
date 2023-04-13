@@ -1,4 +1,3 @@
-
 import models  # no-qa
 
 if __name__ == '__main__':

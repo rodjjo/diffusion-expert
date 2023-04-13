@@ -1,13 +1,6 @@
 import gc
 import os
-
-
-import torch
-from transformers import CLIPVisionModelWithProjection, CLIPVisionConfig
-from diffusers import (
-    StableDiffusionPipeline,
-    StableDiffusionImageVariationPipeline
-)
+from diffusers import StableDiffusionPipeline
 
 from models.paths import (BASE_DIR, MODELS_DIR)
 from models.loader import load_stable_diffusion_model

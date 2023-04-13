@@ -5,9 +5,10 @@ import torch
 from diffusers import (
     AutoencoderKL,
     PNDMScheduler,
-    UNet2DConditionModel,
+    UNet2DConditionModel
 )
-from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPVisionConfig
+from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
+from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR
 
@@ -574,10 +575,16 @@ def load_stable_diffusion_model(model_path: str):
         del checkpoint
         report("converting clip done")
         tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
-        # report("safety checker")
-        safety_checker = None # StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
-        # report("feature extractor")
-        feature_extractor = None # AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+        if os.environ.get('DEXPERT_UNSAFE_MODE', 'no').lower() in ('yes', 'on', 'true'):
+            safety_checker = None
+            feature_extractor = None
+            requires_safety_checker = False
+        else:
+            report("safety checker")
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            report("feature extractor")
+            feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            requires_safety_checker = True
     else:
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
 
@@ -593,7 +600,7 @@ def load_stable_diffusion_model(model_path: str):
         'scheduler': scheduler,
         'safety_checker': safety_checker,
         'feature_extractor': feature_extractor,
-        'requires_safety_checker': False
+        'requires_safety_checker': requires_safety_checker
     }
 
 

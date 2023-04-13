@@ -27,10 +27,10 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     wnd->begin();
 
+    initPagesPanel();
     initRightPanel();
     initBottomPanel();
     initToolbar();
-    initPagesPanel();
 
     wnd->end();
 
@@ -58,7 +58,8 @@ void MainWindow::initRightPanel() {
     rightPanel_->end();
     rightPanel_->box(FL_BORDER_BOX);
     for (int i = 0; i < page_max; ++i) {
-        page_browser_->add(pages_->pageTitle((page_t) i));
+        if (pages_->isVisible((page_t) i))
+            page_browser_->add(pages_->pageTitle((page_t) i));
     }
 }
 
@@ -78,13 +79,13 @@ void MainWindow::initMenu() {
     toolsPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem(noCall, "", "File/New");
+    // menu_->addItem(noCall, "", "File/New");
     // menu_->addItem([this] {  }, "", "File/Open");
     // menu_->addItem([this] {  }, "", "File/Save");
-    menu_->addItem(noCall, "", "Edit");
+    //  menu_->addItem(noCall, "", "Edit");
     menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
-    menu_->addItem(noCall, "", "Tools");
-    menu_->addItem(noCall, "", "Help");
+    // menu_->addItem(noCall, "", "Tools");
+    //  menu_->addItem(noCall, "", "Help");
 }
 
 void MainWindow::initPagesPanel() {
@@ -161,10 +162,10 @@ void MainWindow::gotoSelectedPage() {
     int idx = page_browser_->value();
     if (idx > 0)  {
         idx -= 1;
-        pages_->goPage((page_t) idx);
+        pages_->goPage(pages_->getPageIndex(idx));
     } 
     page_browser_->deselect();
-    page_browser_->select(pages_->activePage() + 1);
+    page_browser_->select(pages_->visibleIndex() + 1);
     selecting_page_ = false;
 }
 
