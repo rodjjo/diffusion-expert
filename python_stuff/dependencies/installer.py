@@ -25,12 +25,14 @@ def have_dependencies():
         return True
     except ImportError:
         return False
-    
+
+
 def download_get_pip():
     url = 'https://bootstrap.pypa.io/get-pip.py'
     filepath = os.path.join(os.path.dirname(__file__), 'get-pip.py')
     print('Downloading get-pip.py')
     urllib.request.urlretrieve(url, filepath)
+
 
 def _install_dependencies():
     base_dir = os.path.dirname(sys.executable)

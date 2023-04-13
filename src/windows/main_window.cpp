@@ -1,5 +1,6 @@
 #include "src/windows/main_window.h"
 #include "src/windows/console_viewer.h"
+#include "src/windows/config_window.h"
 #include "src/python/helpers.h"
 #include "src/config/config.h"
 
@@ -84,6 +85,7 @@ void MainWindow::initMenu() {
     // menu_->addItem([this] {  }, "", "File/Save");
     //  menu_->addItem(noCall, "", "Edit");
     menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
+    menu_->addItem([this] { show_configuration(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
     //  menu_->addItem(noCall, "", "Help");
 }
