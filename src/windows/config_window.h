@@ -6,6 +6,8 @@
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tabs.H>
+#include <Fl/Fl_Check_Button.H>
+#include <Fl/Fl_Choice.H>
 
 #include "src/controls/button.h"
 #include "src/windows/modal_window.h"
@@ -24,8 +26,10 @@ class ConfigWindow {
     void save_configuration();
 
  private:
-    Fl_Group *page_directories_;
+    Fl_Group *page_sd_;
     Fl_Tabs *tabs_;
+    Fl_Check_Button *nsfw_check_;
+    Fl_Choice *schedulers_;
 
     ModalWindow *window_ = NULL;
     std::unique_ptr<Button> btnOk_;

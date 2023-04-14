@@ -36,3 +36,20 @@ python devtools/run.py --copy-stuff
 # build and run:
 python devtools/run.py --build --copy-stuff
 ```
+
+## Credits
+Licenses for borrowed code can be found in docs/licenses.html file.   
+  
+**Stable diffusion pipelines**  
+Hugging Face 🤗
+* [Diffusers](https://github.com/huggingface/diffusers)   
+* [Diffusers-Docs](https://huggingface.co/docs/diffusers/index)   
+
+**Model Conversion**  
+* [ratwithacompiler](https://github.com/ratwithacompiler/diffusers_stablediff_conversion)
+
+**Automatic11**  
+* [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+
+**FLTK**
+* [User-Interface](https://www.fltk.org/doc-1.3/)

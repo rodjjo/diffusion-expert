@@ -6,54 +6,62 @@
 
 #include <string>
 
-namespace dexpert {
+namespace dexpert
+{
 
-class Config {
- public:
-   Config();
-   ~Config();
+  class Config
+  {
+  public:
+    Config();
+    ~Config();
 
-   const std::wstring& executableDir();
-   const std::wstring& librariesDir();
-   const std::wstring& pyExePath();
-   const std::wstring& pythonStuffDir();
-   const std::wstring& pythonMainPy();
-   const std::wstring& modelsRootDir();
-   const std::wstring& sdModelsDir();
-   const std::wstring& getConfigDir();
+    const std::wstring &executableDir();
+    const std::wstring &librariesDir();
+    const std::wstring &pyExePath();
+    const std::wstring &pythonStuffDir();
+    const std::wstring &pythonMainPy();
+    const std::wstring &modelsRootDir();
+    const std::wstring &sdModelsDir();
+    const std::wstring &getConfigDir();
 
-   int screenWidth();
-   int screenHeight();
-   
-   int windowXPos();
-   int windowYPos();
-   int windowWidth();
-   int windowHeight();
+    int screenWidth();
+    int screenHeight();
 
-   void setLastSdModel(const std::string& model);
-   const char *getLatestSdModel();
-   
-   bool save();
-   bool load();
+    int windowXPos();
+    int windowYPos();
+    int windowWidth();
+    int windowHeight();
 
- private:
-   // string buffers
-   std::wstring configDir_;
-   std::wstring librariesDir_;
-   std::wstring executableDir_;
-   std::wstring pythonStuffDir_;
-   std::wstring pyExePath_;
-   std::wstring pythonMainPy_;
-   std::wstring modelsRootDir_;
-   std::wstring sdModelsDir_;
+    void setLastSdModel(const std::string &model);
+    const char *getLatestSdModel();
+    void setSafeFilter(bool enabled);
+    bool getSafeFilter();
+    void setScheduler(const std::string &name);
+    const char *getScheduler();
 
- private:
-  // configs
-  std::string lastSdModelName_; // the latest used sd model 
-};
+    bool save();
+    bool load();
+    
+  private:
+    // string buffers
+    std::wstring configDir_;
+    std::wstring librariesDir_;
+    std::wstring executableDir_;
+    std::wstring pythonStuffDir_;
+    std::wstring pyExePath_;
+    std::wstring pythonMainPy_;
+    std::wstring modelsRootDir_;
+    std::wstring sdModelsDir_;
 
-Config &getConfig();
+  private:
+    // configs
+    bool safeFilterEnabled_ = true;
+    std::string scheduler_ = "PNDMScheduler";
+    std::string lastSdModelName_; // the latest used sd model
+  };
 
-}  // namespace dexpert
+  Config &getConfig();
+
+} // namespace dexpert
 
 #endif

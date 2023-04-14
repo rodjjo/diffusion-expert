@@ -83,8 +83,14 @@ int PromptPanel::getWidth() {
         return 2;
     }
     if (result > 2048) {
-        steps_->value("2048");
+        width_->value("2048");
         return 2048;
+    }
+    if (result % 8) {
+        result += 8 - result % 8;
+        char buffer[30] = {0,};
+        sprintf(buffer, "%d", result);
+        width_->value(buffer);
     }
     return result;
 }
@@ -97,8 +103,14 @@ int PromptPanel::getHeight() {
         return 2;
     }
     if (result > 2048) {
-        steps_->value("2048");
+        height_->value("2048");
         return 2048;
+    }
+    if (result % 8) {
+        result += 8 - result % 8;
+        char buffer[30] = {0,};
+        sprintf(buffer, "%d", result);
+        height_->value(buffer);
     }
     return result;
 }
@@ -111,7 +123,7 @@ float PromptPanel::getCFG() {
         return 0;
     }
     if (result > 100) {
-        steps_->value("100");
+        guidance_->value("100");
         return 100;
     }
     return result;
@@ -193,6 +205,7 @@ void PromptPanel::refreshModels() {
         dexpert::show_error(get_sd_state()->lastError());
         return;
     }
+    
     const char *modelName = "";
     if (models_->value() >= 0) {
         modelName = models_->text(models_->value());
@@ -211,8 +224,11 @@ void PromptPanel::refreshModels() {
         }
         ++index;
     }
-    if (value < 0) value = 0;
-    models_->value(value); // TODO: pickup the latest model
+    
+    if (value < 0) 
+        value = 0;
+
+    models_->value(value); 
 }
 
 const char *PromptPanel::getSdModel() {

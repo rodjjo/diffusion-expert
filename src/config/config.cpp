@@ -137,12 +137,30 @@ const char *Config::getLatestSdModel() {
     return lastSdModelName_.c_str();
 }
 
+void Config::setSafeFilter(bool enabled) {
+    safeFilterEnabled_ = enabled;
+}
+
+bool Config::getSafeFilter() {
+    return safeFilterEnabled_;
+}
+
+void Config::setScheduler(const std::string &name) {
+    scheduler_ = name;
+}
+
+const char *Config::getScheduler() {
+    return scheduler_.c_str();
+}
+
 bool Config::save() {
     try {
         json data;
-        json models;
-        models["last_sd_model"] = lastSdModelName_;
-        data["models"] = models;
+        json sd;
+        sd["last_sd_model"] = lastSdModelName_;
+        sd["scheduler"] = scheduler_;
+        sd["nsfw_filter"] = safeFilterEnabled_;
+        data["stable_diffusion"] = sd;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
         f << std::setw(2) << data << std::endl;
@@ -163,10 +181,16 @@ bool Config::load() {
             return true;
         }
         json data = json::parse(f);
-        if (data.contains("models")) {
-            auto models = data["models"];
-            if (models.contains("last_sd_model")) {
-                lastSdModelName_ = models["last_sd_model"].get<std::string>();
+        if (data.contains("stable_diffusion")) {
+            auto sd = data["stable_diffusion"];
+            if (sd.contains("last_sd_model")) {
+                lastSdModelName_ = sd["last_sd_model"].get<std::string>();
+            }
+            if (sd.contains("scheduler")) {
+                scheduler_ = sd["scheduler"].get<std::string>();
+            }
+            if (sd.contains("nsfw_filter")) {
+                safeFilterEnabled_ = sd["nsfw_filter"].get<bool>();
             }
         }
         return true;

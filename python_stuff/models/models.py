@@ -3,7 +3,7 @@ import os
 from diffusers import StableDiffusionPipeline
 
 from models.paths import (BASE_DIR, MODELS_DIR)
-from models.loader import load_stable_diffusion_model
+from models.loader import load_stable_diffusion_model, set_pipeline_settings
 
 MODEL_EXTENSIONS = set(['.ckpt', '.safetensors'])
 CURRENT_MODEL_PARAMS = {}
@@ -62,3 +62,7 @@ def list_models(directory: str):
         "size": os.stat(path(n)).st_size,
         "hash": "not-computed",
     } for n in files]
+
+def set_user_settings(config: dict):
+    print("setting stable diffusion configurations")
+    set_pipeline_settings(config)
