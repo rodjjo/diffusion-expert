@@ -106,12 +106,16 @@ def txt2img(params: dict):
         steps = params["steps"]
         width = params["width"]
         height = params["height"]
+        if width % 8 != 0:
+            width += 8 - width % 8
+        if height % 8 != 0:
+            height += 8 - height % 8
         variation_enabled = params.get('var_stren', 0) > 0
         var_stren = params.get("var_stren", 0)
         subseed = params['variation'] if variation_enabled else None
         report("creating the pipeline")
         pipeline = create_pipeline(model) 
-        shape = (4, width // 8, height // 8)
+        shape = (4, height // 8, width // 8 )
         latents_noise = create_random_tensors(shape, seed, subseed, var_stren)
         pipeline.to(device)
         generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
@@ -128,8 +132,8 @@ def txt2img(params: dict):
             result = pipeline(
                 prompt, 
                 guidance_scale=cfg, 
-                height=height, 
                 width=width, 
+                height=height, 
                 negative_prompt=negative, 
                 num_inference_steps=steps,
                 generator=generator,

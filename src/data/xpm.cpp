@@ -13,6 +13,8 @@
 #include "src/data/xpm/cursor_resize.xpm"
 #include "src/data/xpm/cursor_dot.xpm"
 #include "src/data/xpm/cursor_drag.xpm"
+#include "src/data/xpm/button_ok.xpm"
+#include "src/data/xpm/button_cancel.xpm"
 #include "src/data/xpm/button_begin.xpm"
 #include "src/data/xpm/button_end.xpm"
 #include "src/data/xpm/button_next.xpm"
@@ -136,7 +138,9 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { arrow_down_16x16, arrow_down_16x16_xpm},
     { arrow_up_16x16, arrow_up_16x16_xpm},
     { arrow_left_16x16, arrow_left_16x16_xpm},
-    { arrow_right_16x16, arrow_right_16x16_xpm}
+    { arrow_right_16x16, arrow_right_16x16_xpm},
+    { button_ok_16x16, button_ok_xpm},
+    { button_cancel_16x16, button_cancel_xpm}
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

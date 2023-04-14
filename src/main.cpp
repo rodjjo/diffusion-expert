@@ -44,25 +44,39 @@ int main(int argc, char **argv)
     std::thread gui_thread([&result] {
         Fl::scheme("gtk+");
 
-        bool have_deps = false;
+        bool success = false;
         const char *msg = NULL;
         dexpert::py::get_py()->execute_callback(
-            dexpert::py::check_have_deps([&have_deps, &msg] (bool status, const char *error) {
+            dexpert::py::check_have_deps([&success, &msg] (bool status, const char *error) {
                 msg = error;
-                have_deps = status;
+                success = status;
             })
         );
 
         if (msg) {
             dexpert::py::py_end();    
             dexpert::show_error(msg);
+            dexpert::showConsoles("Unexpected Error", false);
             result = 1;
             return;
         }
 
-        if (!have_deps && !install_deps()) {
+        if (!success && !install_deps()) {
             dexpert::py::py_end();    
             result = 2;
+            return;
+        }
+        
+        dexpert::py::get_py()->execute_callback(dexpert::py::configure_stable_diffusion([&success, &msg] (bool status, const char *error) {
+            msg = error;
+            success = status;
+        }));
+
+        if (msg) {
+            dexpert::py::py_end();    
+            dexpert::show_error(msg);
+            dexpert::showConsoles("Unexpected Error", false);
+            result = 1;
             return;
         }
 

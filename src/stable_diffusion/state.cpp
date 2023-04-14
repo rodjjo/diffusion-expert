@@ -59,7 +59,10 @@ bool StableDiffusionState::reloadSdModelList() {
     if (!success) {
         last_error_ = msg;
     } else if (currentSdModel_.empty() && !sdModels_.empty()) {
-        setSdModel(sdModels_.rbegin()->name);
+        setSdModel(getConfig().getLatestSdModel());
+        if (currentSdModel_.empty()) {
+            setSdModel(sdModels_.begin()->name);
+        }
     }
 
     return success;
