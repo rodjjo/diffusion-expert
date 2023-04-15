@@ -1,6 +1,6 @@
 #include "src/windows/image_viewer.h"
 #include "src/stable_diffusion/state.h"
-#include "src/dialogs/common_dialogs.h"
+#include "src/dialogs/utils.h"
 
 namespace dexpert
 {
@@ -52,12 +52,7 @@ void ImageViewer::show() {
 }
 
 void ImageViewer::saveImage() {
-    std::string path = choose_image_to_save(&current_open_input_dir_);
-    if (!path.empty()) {
-        if (!get_sd_state()->saveImage(path.c_str(), image_.get())) {
-            show_error(get_sd_state()->lastError());
-        }
-    }
+    save_image_with_dialog(image_);
 }
 
 void view_image(image_ptr_t image) {

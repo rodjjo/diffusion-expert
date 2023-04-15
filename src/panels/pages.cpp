@@ -33,7 +33,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     
     visible_pages_[page_results] = true;
     visible_pages_[page_prompts] = true;
-    // visible_pages_[page_input_image] = true;
+    visible_pages_[page_input_image] = true;
 
     for (int i = 0; i < page_max; ++i) {
         if (pages_[i]) {

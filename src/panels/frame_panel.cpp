@@ -256,11 +256,17 @@ frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
 }
 
 void FramePanel::draw_next() {
+    draw_mask();
+    if (!buttons_.size())  {
+        return;
+    }
+
     float x;
     float y;
     int w;
     int h;
     int format;
+
     glPixelZoom(1.0, -1.0);
     
     for (size_t i = 0; i < buttons_.size(); ++i) {
@@ -285,6 +291,31 @@ void FramePanel::draw_next() {
     
     glRasterPos2f(0.0f, 0.0f);
     glPixelZoom(1.0f, 1.0f);
+
+}
+
+void FramePanel::clearImage() {
+    image_.reset();
+}
+
+image_ptr_t FramePanel::getImage() {
+    return image_;
+}
+
+void FramePanel::draw_mask() {
+
+}
+
+void FramePanel::setMask(image_ptr_t image) {
+    mask_ = image;
+}
+
+void FramePanel::clearMask() {
+    mask_.reset();
+}
+
+image_ptr_t FramePanel::getMask() {
+   return mask_; 
 }
 
 

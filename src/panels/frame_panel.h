@@ -55,11 +55,19 @@ public:
     size_t gridVariation();
     void setImageSource(image_src_t src_type);
     void setImage(image_ptr_t image);
-    
+    void clearImage();
+    void setMask(image_ptr_t image);
+    void clearMask();
+
+    image_ptr_t getImage();
+    image_ptr_t getMask();
+
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;
     void draw_next() override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
+    void draw_mask();
+
 private:
     void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
     void get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h);
@@ -82,7 +90,8 @@ private:
 private:
     std::string current_open_dir_;
     std::vector<frame_button_t> buttons_;
-    std::shared_ptr<dexpert::py::RawImage> image_;
+    image_ptr_t image_;
+    image_ptr_t mask_;
 };
     
 }  // namespace dexpert

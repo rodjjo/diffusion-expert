@@ -7,11 +7,25 @@
 #include <memory>
 
 #include <FL/Fl_Group.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Choice.H>
 
 #include "src/controls/button.h"
 #include "src/panels/frame_panel.h"
 
 namespace dexpert {
+
+typedef enum {
+   paiting_disabled,
+   panting_img2img,
+   panting_inpaint_masked,
+   panting_inpaint_not_masked,
+   panting_scribble,
+   panting_canny,
+
+   // keep panting_mode_max ath the end
+   panting_mode_max
+} panting_mode_t;
 
 class PantingPanel: public Fl_Group {
  public:
@@ -21,12 +35,21 @@ class PantingPanel: public Fl_Group {
 
  private:
     void alignComponents();
+    void saveImage();
+    void saveMask();
+    void openImage();
+    void openMask();
 
  private:
     Fl_Group *left_bar_;
+    Fl_Choice *mode_;
+    Fl_Box* label_image_;
+    Fl_Box* label_mask_;
     FramePanel *image_panel_;
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;
+    std::unique_ptr<Button> btnOpenMask_;
+    std::unique_ptr<Button> btnSaveMask_;
 };
     
 }   // namespace dexpert

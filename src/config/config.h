@@ -39,6 +39,9 @@ namespace dexpert
     void setScheduler(const std::string &name);
     const char *getScheduler();
 
+    std::string& lastImageSaveDir();
+    std::string& lastImageOpenDir();
+
     bool save();
     bool load();
     
@@ -52,6 +55,9 @@ namespace dexpert
     std::wstring pythonMainPy_;
     std::wstring modelsRootDir_;
     std::wstring sdModelsDir_;
+
+    std::string last_image_open_dir_;
+    std::string last_image_save_dir_;
 
   private:
     // configs
