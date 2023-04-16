@@ -18,15 +18,7 @@ class FramePanel;
 
 typedef enum {
     image_src_self,
-    image_src_input,
     image_src_results,
-    image_src_input_mask,
-    image_src_input_scribble,
-    image_src_input_pose,
-    image_src_controlnet1,
-    image_src_controlnet2,
-    image_src_controlnet3,
-    image_src_controlnet4,
     // keep image_src_max at the end
     image_src_max
 } image_src_t;
@@ -63,7 +55,8 @@ public:
     image_ptr_t getMask();
 
 protected:
-    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;
+    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) override;
+    RawImage *getDrawingImage(bool mask);
     void draw_next() override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
     void draw_mask();
@@ -86,7 +79,7 @@ private:
 
     size_t variation_ = 0;
     size_t index_ = 0;
-    image_src_t src_type_ = image_src_input;
+    image_src_t src_type_ = image_src_self;
 private:
     std::string current_open_dir_;
     std::vector<frame_button_t> buttons_;

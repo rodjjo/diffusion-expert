@@ -28,7 +28,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_results] = resultsPanel_;
     promptPanel_ = new PromptPanel(0, 0, 1, 1);
     pages_[page_prompts] = promptPanel_;
-    inputImage_ = new PantingPanel(0, 0, 1, 1);
+    inputImage_ = new PantingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
     
     visible_pages_[page_results] = true;
@@ -43,7 +43,9 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
         pages_[i] = new Fl_Group(0, 0, 1, 1, "");
         pages_[i]->hide();
     }
+
     this->end();
+
     alignComponents();
     goPage(page_results);
 }
@@ -128,7 +130,6 @@ int Pages::visibleIndex() {
     }
     return page_prompts;
 }
-
 
 void Pages::textToImage() {
     int seed = promptPanel_->getSeed();

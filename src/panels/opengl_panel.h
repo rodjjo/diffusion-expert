@@ -23,19 +23,20 @@ class OpenGlPanel: public Fl_Gl_Window {
     void resize(int x, int y, int w, int h) override;
 
  protected:
-    virtual void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) {};
+    virtual void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) {};
     virtual void mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y) {};
     virtual void mouse_down(bool left_button, bool right_button, int down_x, int down_y) {};
     virtual void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {};
     virtual void mouse_cancel() {};
     virtual void draw_next() {};
-
+    
  protected:
     int handle(int event) override;
     void draw() override;
     void draw_overlay() override;
+    void draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t h, int format);
 
-private:
+ private:
     bool mouse_down_left_;
     bool mouse_down_right_;
     int mouse_down_x_;

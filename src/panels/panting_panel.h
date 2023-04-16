@@ -12,6 +12,7 @@
 
 #include "src/controls/button.h"
 #include "src/panels/frame_panel.h"
+#include "src/panels/prompt_panel.h"
 
 namespace dexpert {
 
@@ -29,7 +30,7 @@ typedef enum {
 
 class PantingPanel: public Fl_Group {
  public:
-    PantingPanel(int x, int y, int w, int h);
+    PantingPanel(int x, int y, int w, int h, PromptPanel *prompt);
     virtual ~PantingPanel();
     void resize(int x, int y, int w, int h) override;
 
@@ -41,6 +42,7 @@ class PantingPanel: public Fl_Group {
     void openMask();
 
  private:
+    PromptPanel *prompt_;
     Fl_Group *left_bar_;
     Fl_Choice *mode_;
     Fl_Box* label_image_;

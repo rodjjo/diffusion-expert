@@ -16,7 +16,7 @@ namespace {
     };
 }
 
-PantingPanel::PantingPanel(int x, int y, int w, int h): Fl_Group(x, y, w, h) {
+PantingPanel::PantingPanel(int x, int y, int w, int h,  PromptPanel *prompt): Fl_Group(x, y, w, h), prompt_(prompt) {
     this->begin();
     left_bar_ = new Fl_Group(0, 0, 1, 1);
     image_panel_ = new FramePanel(0, 0, 1, 1);
