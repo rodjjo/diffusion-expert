@@ -6,6 +6,7 @@ from diffusers import (
     PNDMScheduler,
     DDIMScheduler,
     LMSDiscreteScheduler,
+    UniPCMultistepScheduler,
     UNet2DConditionModel
 )
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
@@ -408,6 +409,14 @@ def load_stable_diffusion_model(model_path: str):
             beta_schedule="scaled_linear",
             clip_sample=False,
             set_alpha_to_one=False,
+        )
+    elif  user_settings['scheduler'] == 'UniPCMultistepScheduler':
+        scheduler = UniPCMultistepScheduler(
+            beta_start=beta_start,
+            beta_end=beta_end,
+            beta_schedule="scaled_linear",
+            # clip_sample=False,
+            # set_alpha_to_one=False,
         )
     else:
          scheduler = LMSDiscreteScheduler(beta_start=beta_start, beta_end=beta_end, beta_schedule="scaled_linear")

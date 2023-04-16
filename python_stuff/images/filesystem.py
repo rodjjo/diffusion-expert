@@ -5,7 +5,6 @@ from PIL import Image
 def open_image(path: str):
     print(f"Open image: {path}")
     with Image.open(path) as im:
-        data = im.tobytes()
         return {
             'data': im.tobytes(),
             'width': im.width,

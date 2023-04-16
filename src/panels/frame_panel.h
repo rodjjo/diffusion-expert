@@ -51,6 +51,9 @@ public:
     void setMask(image_ptr_t image);
     void clearMask();
 
+    void setMaskDrawing(bool enabled);
+    bool getMaskDrawing();
+
     image_ptr_t getImage();
     image_ptr_t getMask();
 
@@ -70,6 +73,7 @@ private:
 private:
     bool grid_enabled_ = false;
     bool cache_enabled_ = false;
+    bool mask_drawing_ = false;
     size_t cache_version_ = 0;
     int cache_channels_ = 1;
     size_t cache_w_ = 0;

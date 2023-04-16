@@ -223,7 +223,9 @@ void FramePanel::setImage(image_ptr_t image) {
 void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
     frame_button_t * b = get_button_mouse(up_x, up_y);
     if (b) {
-        b->cb(this, b->id);
+        if (getDrawingImage(false)) {
+            b->cb(this, b->id);
+        }
     }
 }
 
@@ -250,7 +252,7 @@ void FramePanel::draw_next() {
         get_button_coords(&b, &x, &y, &w, &h);
         glRasterPos2f(x, y);
 
-        if (w % 4 == 0)
+        if (w % 4 == 0) 
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         else
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -279,6 +281,8 @@ image_ptr_t FramePanel::getImage() {
 }
 
 void FramePanel::draw_mask() {
+    if (!mask_drawing_)
+        return;
     const unsigned char *buffer = NULL;
     uint32_t w = 0;
     uint32_t h = 0;
@@ -297,6 +301,17 @@ void FramePanel::clearMask() {
 
 image_ptr_t FramePanel::getMask() {
    return mask_; 
+}
+
+void FramePanel::setMaskDrawing(bool enabled) {
+    mask_drawing_ = enabled;
+    if (visible_r()) {
+        redraw();
+    }
+}
+
+bool FramePanel::getMaskDrawing() {
+    return mask_drawing_;
 }
 
 

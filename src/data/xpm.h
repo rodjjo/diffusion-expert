@@ -77,6 +77,10 @@ typedef enum {
     arrow_right_16x16,
     button_ok_16x16,
     button_cancel_16x16,
+    edit_16x16,
+    mask_16x16,
+    file_new_16x16,
+    marionette_16x16,
     // keep no_image at the end
     no_image
 } xpm_t;

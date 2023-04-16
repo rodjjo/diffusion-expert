@@ -41,6 +41,8 @@ class RawImage {
 typedef std::shared_ptr<RawImage> image_ptr_t;
 
 image_ptr_t rawImageFromPyDict(PyObject * dict);
+image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha);
+
 }  // namespace py
 
 typedef dexpert::py::image_ptr_t image_ptr_t;

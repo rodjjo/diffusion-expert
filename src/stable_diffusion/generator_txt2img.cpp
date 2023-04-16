@@ -10,15 +10,16 @@ namespace dexpert
             const std::string& prompt,
             const std::string& negative,
             const std::wstring& model,
+            controlnet_list_t controlnets,
             int seed,
             size_t width,
             size_t height,
             size_t steps,
             float cfg,
             float var_stren
-        ) : prompt_(prompt), negative_(negative), model_(model), 
+        ) : prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
             seed_(seed), width_(width), height_(height), steps_(steps), 
-            cfg_(cfg), var_strenght_(var_stren)
+            cfg_(cfg), var_strength_(var_stren)
          {
 
 }
@@ -29,12 +30,13 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
             this->prompt_,
             this->negative_,
             this->model_,
+            this->controlnets_,
             this->seed_,
             this->width_,
             this->height_,
             this->steps_,
             this->cfg_,
-            this->var_strenght_
+            this->var_strength_
     ));
     return d;
 }
@@ -44,17 +46,29 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
 
     const char *message = "Unexpected error. Callback to generate image not called";
     image_ptr_t image;
+
     dexpert::py::txt2img_config_t params;
+
     params.prompt = prompt_.c_str();
     params.negative = negative_.c_str();
     params.model = model_.c_str();
     params.seed = seed_ + seed_index;
     params.variation = enable_variation == 0 ? 0 : computeVariationSeed(enable_variation < 0);
-    params.var_stren = var_strenght_;
+    params.var_stren = var_strength_;
     params.steps = steps_;
     params.cfg = cfg_;
     params.width = width_;
     params.height = height_;
+
+    for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
+        dexpert::py::control_net_t control;
+        control.strength = (*it)->getStrenght();
+        control.mode = (*it)->getMode();
+        control.image = (*it)->getImage();
+        params.controlnets.push_back(
+            control
+        );
+    } 
 
     if (enable_variation == 0) {
         params.var_stren = 0;

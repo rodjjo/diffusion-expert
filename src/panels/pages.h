@@ -8,7 +8,7 @@
 
 #include <FL/Fl_Group.H>
 
-#include "src/panels/panting_panel.h"
+#include "src/panels/painting_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/panels/results_panel.h"
 
@@ -52,7 +52,7 @@ class Pages: public Fl_Group {
     bool visible_pages_[page_max] = {0,};
 
     PromptPanel *promptPanel_ = NULL;
-    PantingPanel *inputImage_ = NULL;
+    PaintingPanel *inputImage_ = NULL;
     ResultsPanel *resultsPanel_ = NULL;
     std::string current_open_input_dir_;
 };
