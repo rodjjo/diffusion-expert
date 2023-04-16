@@ -63,6 +63,7 @@ def list_models(directory: str):
         "hash": "not-computed",
     } for n in files]
 
+
 def set_user_settings(config: dict):
     print("setting stable diffusion configurations")
     set_pipeline_settings(config)

@@ -12,8 +12,8 @@ from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR
-
-from dexpert import progress_title
+from exceptions.exceptions import CancelException
+from dexpert import progress_title, progress_canceled
 
 user_settings = {
 }
@@ -340,6 +340,8 @@ def convert_ldm_unet_checkpoint(checkpoint, config):
 
 def report(message):
     progress_title(f'[Model Loader] - {message}')
+    if progress_canceled():
+        raise CancelException()
 
 
 checkpoint_dict_replacements = {
