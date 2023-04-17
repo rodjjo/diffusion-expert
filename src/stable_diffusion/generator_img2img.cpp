@@ -1,4 +1,4 @@
-#include "src/stable_diffusion/generator_txt2img.h"
+#include "src/stable_diffusion/generator_img2img.h"
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
 
@@ -6,48 +6,67 @@
 namespace dexpert
 {
 
- GeneratorTxt2Image::GeneratorTxt2Image(
+ GeneratorImg2Image::GeneratorImg2Image(
         const std::string& prompt,
         const std::string& negative,
         const std::wstring& model,
         controlnet_list_t controlnets,
+        image_ptr_t image,
+        image_ptr_t mask,
+        bool invert_mask,
         int seed,
         size_t width,
         size_t height,
         size_t steps,
         float cfg,
-        float var_stren
-    ) : prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
-        seed_(seed), width_(width), height_(height), steps_(steps), 
-        cfg_(cfg), var_strength_(var_stren)
+        float var_stren,
+        float image_strength
+    ) : prompt_(prompt), 
+        negative_(negative), 
+        model_(model), 
+        controlnets_(controlnets),
+        image_(image),
+        mask_(mask),
+        invert_mask_(invert_mask),
+        seed_(seed), 
+        width_(width), 
+        height_(height), 
+        steps_(steps), 
+        cfg_(cfg), 
+        var_strength_(var_stren),
+        image_strength_(image_strength)
         {
 
 }
 
-std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
-    std::shared_ptr<GeneratorTxt2Image> d;
-    d.reset(new GeneratorTxt2Image(
+std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
+    std::shared_ptr<GeneratorImg2Image> d;
+    d.reset(new GeneratorImg2Image(
         this->prompt_,
         this->negative_,
         this->model_,
         this->controlnets_,
+        this->image_,
+        this->mask_,
+        this->invert_mask_,
         this->seed_,
         this->width_,
         this->height_,
         this->steps_,
         this->cfg_,
-        this->var_strength_
+        this->var_strength_,
+        this->image_strength_
     ));
     return d;
 }
 
-void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_variation) {
+void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_variation) {
     bool success = false;
 
     const char *message = "Unexpected error. Callback to generate image not called";
     image_ptr_t image;
 
-    dexpert::py::txt2img_config_t params;
+    dexpert::py::img2img_config_t params;
 
     params.prompt = prompt_.c_str();
     params.negative = negative_.c_str();
@@ -59,6 +78,11 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.cfg = cfg_;
     params.width = width_;
     params.height = height_;
+
+    params.image = image_.get();
+    params.mask = mask_.get();
+    params.invert_mask = invert_mask_;
+    params.strength = image_strength_;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
         dexpert::py::control_net_t control;
@@ -74,7 +98,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
         params.var_stren = 0;
     }
 
-    auto gen_cb = dexpert::py::txt2_image(params, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
+    auto gen_cb = dexpert::py::img2_image(params, [&image, &success, &message] (bool status, const char* msg, std::shared_ptr<dexpert::py::RawImage> img) {
         success = status;
         message = msg;
         image = img;

@@ -2,6 +2,7 @@
 #include "src/dialogs/common_dialogs.h"
 #include "src/stable_diffusion/state.h"
 #include "src/stable_diffusion/generator_txt2img.h"
+#include "src/stable_diffusion/generator_img2img.h"
 
 namespace dexpert {
 namespace  {
@@ -132,6 +133,9 @@ int Pages::visibleIndex() {
 }
 
 void Pages::textToImage() {
+    if (!promptPanel_->ready(false)) {
+        return;
+    }
     int seed = promptPanel_->getSeed();
     if (seed == -1) 
         seed = get_sd_state()->randomSeed();
@@ -139,6 +143,10 @@ void Pages::textToImage() {
     const char* model = promptPanel_->getSdModel();
     if (model == NULL) {
         show_error("Add a model file (.safetensors or .ckpt) into 'models/stable diffusion' directory before you start!");
+        return;
+    }
+
+    if (!inputImage_->ready()) {
         return;
     }
 
@@ -152,18 +160,51 @@ void Pages::textToImage() {
         controlnets.push_back(c);
     }
 
-    auto g = std::make_shared<GeneratorTxt2Image>(
-        promptPanel_->getPrompt(),
-        promptPanel_->getNegativePrompt(),
-        get_sd_state()->getSdModelPath(model),
-        controlnets,
-        seed,
-        promptPanel_->getWidth(),
-        promptPanel_->getHeight(),
-        promptPanel_->getSteps(),
-        promptPanel_->getCFG(),
-        promptPanel_->getVariationStrength()
-    );
+    std::shared_ptr<GeneratorBase> g;
+    if (inputImage_->getImg2ImgImage()) {
+        auto img = inputImage_->getImg2ImgImage();
+        auto mask = inputImage_->getImg2ImgMask();
+
+        if (!img) {
+            show_error("No input image to proceed!");
+            return;
+        }
+
+        img = img->duplicate();
+
+        if (mask) {
+            mask = mask->duplicate();
+        }
+
+        g.reset(new GeneratorImg2Image(
+            promptPanel_->getPrompt(),
+            promptPanel_->getNegativePrompt(),
+            get_sd_state()->getSdModelPath(model),
+            controlnets,
+            img,
+            mask,
+            inputImage_->should_invert_mask_colors(),
+            seed,
+            promptPanel_->getWidth(),
+            promptPanel_->getHeight(),
+            promptPanel_->getSteps(),
+            promptPanel_->getCFG(),
+            promptPanel_->getVariationStrength()
+        ));
+    } else {
+        g.reset(new GeneratorTxt2Image(
+            promptPanel_->getPrompt(),
+            promptPanel_->getNegativePrompt(),
+            get_sd_state()->getSdModelPath(model),
+            controlnets,
+            seed,
+            promptPanel_->getWidth(),
+            promptPanel_->getHeight(),
+            promptPanel_->getSteps(),
+            promptPanel_->getCFG(),
+            promptPanel_->getVariationStrength()
+        ));
+    }
 
     if (!get_sd_state()->generatorAdd(g)) {
         show_error(get_sd_state()->lastError());

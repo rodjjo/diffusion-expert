@@ -1,7 +1,12 @@
 #include <string>
 #include <exception>
+
+#include <CImg.h>
+
 #include "src/python/raw_image.h"
 #include "src/python/guard.h"
+
+using namespace cimg_library;
 
 namespace dexpert {
 namespace py {

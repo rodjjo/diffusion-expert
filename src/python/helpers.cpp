@@ -197,7 +197,7 @@ namespace dexpert
             };
         }
 
-        const void prompt_config::fill_prompt_dict(PyObject *params, ObjGuard &guard) const {
+        const void txt2img_config_t::fill_prompt_dict(PyObject *params, ObjGuard &guard) const {
             PyDict_SetItemString(params, "prompt", guard(PyUnicode_FromString(this->prompt)));
             PyDict_SetItemString(params, "negative", guard(PyUnicode_FromString(this->negative)));
             PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(this->model, -1)));
@@ -224,13 +224,22 @@ namespace dexpert
             }
         }
 
-        const void img_to_image_config::fill_prompt_dict(PyObject *params, ObjGuard &guard) const { 
-            prompt_config::fill_prompt_dict(params, guard);
-
+        const void img2img_config_t::fill_prompt_dict(PyObject *params, ObjGuard &guard) const { 
+            txt2img_config_t::fill_prompt_dict(params, guard);
+            PyObject *data = guard(PyDict_New());
+            this->image->toPyDict(data);
+            PyDict_SetItemString(params, "image", data);
+            PyDict_SetItemString(params, "strength", guard(PyFloat_FromDouble(this->strength)));
+            if (this->mask) {
+                data = guard(PyDict_New());
+                this->mask->toPyDict(data);
+                PyDict_SetItemString(params, "mask", data);
+                PyDict_SetItemString(params, "invert_mask", guard(PyBool_FromLong(this->invert_mask ? 1 : 0)));
+            }
         }
 
-        callback_t get_diffusion_callback(const char* fn_name, prompt_config config, image_callback_t status_cb) {
-            return [fn_name, config, status_cb]
+        callback_t get_diffusion_callback(const char* fn_name, const txt2img_config_t &config, image_callback_t status_cb) {
+            return [fn_name, &config, status_cb]
             {
                 bool errors = false;
                 const char *msg = NULL;
@@ -281,13 +290,13 @@ namespace dexpert
             };
         }
 
-        callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb)
+        callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb)
         {
             enable_progress_window();
             return get_diffusion_callback("txt2img", config, status_cb);
         }
 
-        callback_t img2_image(img2img_config_t config, image_callback_t status_cb) {
+        callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb) {
             enable_progress_window();
             return get_diffusion_callback("img2img", config, status_cb);
         }

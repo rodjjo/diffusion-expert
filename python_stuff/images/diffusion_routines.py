@@ -16,52 +16,72 @@ def report(message):
 
 
 def image_from_dict(data: dict):
-    return PIL.ImageOps.invert(Image.frombytes(data['mode'], (data['width'], data['height']), data['data']))
+    img = Image.frombytes(data['mode'], (data['width'], data['height']), data['data'])
+    if img.mode.lower() == 'rgba':
+        result = Image.new('RGB', (data['width'], data['height']),  (255, 255, 255))
+        result.paste(img, (0, 0), img) 
+        return result
+    return img
 
 
-def txt2img(params: dict):
+def invert_image_from_dict(data: dict):
+    return PIL.ImageOps.invert(image_from_dict(data))
+
+
+@torch.no_grad()
+def _run_pipeline(pipeline_type, params):
     device = "cuda"
+    prompt = params['prompt']
+    negative = params['negative']
 
-    @torch.no_grad()
-    def do_it():
-        prompt = params['prompt']
-        negative = params['negative']
+    if len(negative or '') < 2:
+        negative = None
 
-        if len(negative or '') < 2:
-            negative = None
+    seed = params['seed']
+    model = params["model"]
+    cfg = params["cfg"]
+    steps = params["steps"]
+    width = params["width"]
+    height = params["height"]
+    input_image = params.get("image")
+    input_mask = params.get("mask")
 
-        seed = params['seed']
-        model = params["model"]
-        cfg = params["cfg"]
-        steps = params["steps"]
-        width = params["width"]
-        height = params["height"]
-        controlnets = params.get("controlnets", [])
+    controlnets = params.get("controlnets", [])
 
-        if width % 8 != 0:
-            width += 8 - width % 8
+    if width % 8 != 0:
+        width += 8 - width % 8
 
-        if height % 8 != 0:
-            height += 8 - height % 8
-        variation_enabled = params.get('var_stren', 0) > 0
-        var_stren = params.get("var_stren", 0)
-        subseed = params['variation'] if variation_enabled else None
-        
-        shape = (4, height // 8, width // 8 )
-        latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
-        
-        generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
-        report("generating the variation" if variation_enabled else "generating the image")
+    if height % 8 != 0:
+        height += 8 - height % 8
+    variation_enabled = params.get('var_stren', 0) > 0
+    var_stren = params.get("var_stren", 0)
+    subseed = params['variation'] if variation_enabled else None
+    
+    shape = (4, height // 8, width // 8 )
+    latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
+    
+    generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
+    report("generating the variation" if variation_enabled else "generating the image")
 
-        report("creating the pipeline")
-        pipeline = create_pipeline(model, controlnets=controlnets) 
+    report("creating the pipeline")
 
-        def progress_preview(step, timestep, latents):
-            progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
-            if progress_canceled():
-                raise CancelException()
-        
-        additional_args = {}
+    if pipeline_type == 'img2img' and input_mask is not None:
+        pipeline_type = 'inpaint2img'
+
+    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets) 
+
+    def progress_preview(step, timestep, latents):
+        progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
+        if progress_canceled():
+            raise CancelException()
+    
+    additional_args = {}
+    if pipeline_type == 'txt2img':
+        additional_args = {
+            'width': width, 
+            'height': height,
+            'latents': latents_noise,
+        }
         if len(controlnets):
             images = []
             conds = []
@@ -70,7 +90,10 @@ def txt2img(params: dict):
                     c['strength'] = 0
                 if c['strength'] > 2.0:
                     c['strength'] = 2.0
-                images.append(image_from_dict(c['image']))
+                if c['mode'] == 'pose':
+                    images.append(image_from_dict(c['image']))
+                else:
+                    images.append(invert_image_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
@@ -78,35 +101,49 @@ def txt2img(params: dict):
                 conds = conds[0]
             additional_args['image'] = images
             additional_args['controlnet_conditioning_scale'] = conds
+    elif pipeline_type == 'img2img':
+        additional_args = {
+            'image': image_from_dict(input_image),
+            'strength': params['strength'],
+        }
+    elif pipeline_type == 'inpaint2img':
+        image = image_from_dict(input_image)
+        if params.get("invert_mask"):
+            mask = invert_image_from_dict(input_mask)
+        else:
+            mask = image_from_dict(input_mask)
+        additional_args = {
+            'image': image,
+            'mask_image': mask,
+        }
 
-        pipeline.to(device)
-        latents_noise.to(device)
-        with torch.inference_mode(), torch.autocast("cuda"):
-            result = pipeline(
-                prompt, 
-                negative_prompt=negative, 
-                guidance_scale=cfg, 
-                width=width, 
-                height=height, 
-                num_inference_steps=steps,
-                generator=generator,
-                latents=latents_noise,
-                callback=progress_preview,
-                **additional_args,
-            ).images[0]
-        
-        report("image generated")
-        return {
-                'data': result.tobytes(),
-                'width': result.width,
-                'height': result.height,
-                'mode': result.mode,
-            }
+    pipeline.to(device)
+    latents_noise.to(device)
+    with torch.inference_mode(), torch.autocast("cuda"):
+        result = pipeline(
+            prompt, 
+            negative_prompt=negative, 
+            guidance_scale=cfg, 
+            num_inference_steps=steps,
+            generator=generator,
+            callback=progress_preview,
+            **additional_args,
+        ).images[0]
+    
+    report("image generated")
+    return {
+            'data': result.tobytes(),
+            'width': result.width,
+            'height': result.height,
+            'mode': result.mode,
+        }
 
+
+def run_pipeline(mode: str, params: dict):
     progress(0, 100, None)
 
     try:
-        data = do_it()   
+        data = _run_pipeline(mode, params)   
     except CancelException:
         print("Image generation canceled")
         data = None
@@ -117,5 +154,9 @@ def txt2img(params: dict):
     return data
 
 
+def txt2img(params: dict):
+    return run_pipeline('txt2img', params)
+
+
 def img2img(params: dict):
-    pass
+    return run_pipeline('img2img', params)
