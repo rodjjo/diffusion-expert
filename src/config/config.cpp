@@ -152,6 +152,13 @@ void Config::setScheduler(const std::string &name) {
 const char *Config::getScheduler() {
     return scheduler_.c_str();
 }
+std::string& Config::lastImageSaveDir() {
+    return last_image_save_dir_;
+}
+
+std::string& Config::lastImageOpenDir() {
+    return last_image_open_dir_;
+}
 
 bool Config::save() {
     try {
@@ -161,6 +168,10 @@ bool Config::save() {
         sd["scheduler"] = scheduler_;
         sd["nsfw_filter"] = safeFilterEnabled_;
         data["stable_diffusion"] = sd;
+        json files;
+        files["last_image_save_dir"] = last_image_save_dir_;
+        files["last_image_open_dir"] = last_image_open_dir_;
+        data["files"] = files;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
         f << std::setw(2) << data << std::endl;
@@ -191,6 +202,15 @@ bool Config::load() {
             }
             if (sd.contains("nsfw_filter")) {
                 safeFilterEnabled_ = sd["nsfw_filter"].get<bool>();
+            }
+        }
+        if (data.contains("files")) {
+            auto files = data["files"];
+            if (files.contains("last_image_save_dir")) {
+                last_image_save_dir_ = files["last_image_save_dir"].get<std::string>();
+            }
+            if (files.contains("last_image_open_dir")) {
+                last_image_open_dir_ = files["last_image_open_dir"].get<std::string>();
             }
         }
         return true;

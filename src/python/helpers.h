@@ -12,7 +12,7 @@
 #include <Python.h>
 
 #include "src/python/raw_image.h"
-
+#include "src/python/guard.h"
 
 namespace dexpert {
 namespace py {
@@ -26,6 +26,12 @@ typedef struct  {
 
 typedef std::list<model_t> model_list_t;
 
+typedef struct {
+    const char *mode = "";
+    RawImage *image = NULL;
+    float strength = 1.0;
+} control_net_t;
+
 struct prompt_config {
     const char *prompt = "";
     const char *negative = "";
@@ -37,9 +43,21 @@ struct prompt_config {
     float cfg = 7.5;
     int variation = 0;
     float var_stren = 0.01;
+    std::list<control_net_t> controlnets;
+    virtual ~prompt_config() {};
+    virtual const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const;
 };
 
-typedef struct prompt_config txt2img_config_t;
+struct img_to_image_config : public prompt_config {
+    RawImage *image = NULL;
+    RawImage *mask = NULL;
+    float denoise_strength_ = 75;
+    const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const override;
+};
+
+typedef prompt_config txt2img_config_t;
+typedef img_to_image_config img2img_config_t;
+
 
 
 typedef std::function<void()> callback_t;
@@ -53,7 +71,10 @@ callback_t configure_stable_diffusion(status_callback_t status_cb);
 
 callback_t open_image(const char* path, image_callback_t status_cb);
 callback_t save_image(const char* path, RawImage *image, status_callback_t status_cb);
+callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb);
 callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb); 
+callback_t img2_image(img2img_config_t config, image_callback_t status_cb); 
+
 callback_t list_models(const wchar_t* path, model_callback_t status_cb);
 
 }  // namespace py

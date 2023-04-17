@@ -14,3 +14,5 @@ pytorch_lightning
 torchdiffeq
 tdqm
 xformers
+opencv-contrib-python
+controlnet_aux

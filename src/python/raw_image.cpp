@@ -20,7 +20,11 @@ RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_fo
             break;
     }
     buffer_ = (unsigned char *)malloc(buffer_len_);
-    memcpy(buffer_, buffer, buffer_len_);
+    if (buffer) {
+        memcpy(buffer_, buffer, buffer_len_);
+    } else {
+        memset(buffer_, 0, buffer_len_);
+    }
     version_ = (size_t) buffer_; // randomize the version
 }
 
@@ -74,6 +78,20 @@ void RawImage::toPyDict(PyObject *dict) {
     PyDict_SetItemString(dict, "data", po_buffer);
 }
 
+size_t RawImage::getVersion() {
+    return version_;
+}
+
+void RawImage::incVersion() {
+    ++version_;
+}
+
+std::shared_ptr<RawImage> RawImage::duplicate() {
+    return std::make_shared<RawImage>(
+        buffer_, w_, h_, format_
+    );
+}
+
 image_ptr_t rawImageFromPyDict(PyObject * dict) {
     image_ptr_t r;
 
@@ -116,19 +134,12 @@ image_ptr_t rawImageFromPyDict(PyObject * dict) {
     return r;
 }
 
-size_t RawImage::getVersion() {
-    return version_;
-}
-
-void RawImage::incVersion() {
-    ++version_;
-}
-
-std::shared_ptr<RawImage> RawImage::duplicate() {
+image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha) {
     return std::make_shared<RawImage>(
-        buffer_, w_, h_, format_
+        (const unsigned char *) NULL, w, h, enable_alpha ? img_rgba : img_rgb
     );
 }
+
 
 
 } // namespace py

@@ -55,9 +55,11 @@ void ConfigWindow::align_components() {
     btnCancel_->position(btnOk_->x() + btnOk_->w() + 2, btnOk_->y());
     btnCancel_->size(100, 30);
 
+    schedulers_->add("UniPCMultistepScheduler");
     schedulers_->add("PNDMScheduler");
     schedulers_->add("DDIMScheduler");
     schedulers_->add("LMSDiscreteScheduler");
+    
     schedulers_->value(0);
 }
 

@@ -9,13 +9,14 @@
 #include <vector>
 #include <FL/Fl_Group.H>
 #include "src/panels/frame_panel.h"
+#include "src/panels/painting_panel.h"
 
 namespace dexpert
 {
 
 class ResultsPanel: public Fl_Group {
  public:
-    ResultsPanel(int x, int y, int w, int h);
+    ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting);
     virtual ~ResultsPanel();
     void updatePanels();
     void resize(int x, int y, int w, int h) override;
@@ -25,7 +26,8 @@ class ResultsPanel: public Fl_Group {
    FramePanel *getFrame(int col, int row);
    void take_action(FramePanel *w, int id);
  private:
-    std::vector<std::vector<FramePanel *> > miniatures_;
+  PaintingPanel *painting_;
+  std::vector<std::vector<FramePanel *> > miniatures_;
 };
 
 }  // namespace dexpert

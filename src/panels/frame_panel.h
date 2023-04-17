@@ -18,15 +18,7 @@ class FramePanel;
 
 typedef enum {
     image_src_self,
-    image_src_input,
     image_src_results,
-    image_src_input_mask,
-    image_src_input_scribble,
-    image_src_input_pose,
-    image_src_controlnet1,
-    image_src_controlnet2,
-    image_src_controlnet3,
-    image_src_controlnet4,
     // keep image_src_max at the end
     image_src_max
 } image_src_t;
@@ -55,11 +47,23 @@ public:
     size_t gridVariation();
     void setImageSource(image_src_t src_type);
     void setImage(image_ptr_t image);
-    
+    void clearImage();
+    void setMask(image_ptr_t image);
+    void clearMask();
+
+    void setMaskDrawing(bool enabled);
+    bool getMaskDrawing();
+
+    image_ptr_t getImage();
+    image_ptr_t getMask();
+
 protected:
-    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) override;
+    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) override;
+    RawImage *getDrawingImage(bool mask);
     void draw_next() override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
+    void draw_mask();
+
 private:
     void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
     void get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h);
@@ -69,6 +73,7 @@ private:
 private:
     bool grid_enabled_ = false;
     bool cache_enabled_ = false;
+    bool mask_drawing_ = false;
     size_t cache_version_ = 0;
     int cache_channels_ = 1;
     size_t cache_w_ = 0;
@@ -78,11 +83,12 @@ private:
 
     size_t variation_ = 0;
     size_t index_ = 0;
-    image_src_t src_type_ = image_src_input;
+    image_src_t src_type_ = image_src_self;
 private:
     std::string current_open_dir_;
     std::vector<frame_button_t> buttons_;
-    std::shared_ptr<dexpert::py::RawImage> image_;
+    image_ptr_t image_;
+    image_ptr_t mask_;
 };
     
 }  // namespace dexpert

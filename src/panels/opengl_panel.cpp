@@ -76,27 +76,8 @@ void OpenGlPanel::resize(int x, int y, int w, int h) {
     Fl_Gl_Window::resize(x, y, w, h);
 }
 
-
-void OpenGlPanel::draw()  {
-    if (!valid()) {
-        valid(1);
-        glLoadIdentity();
-        glViewport(0, 0, this->w(), this->h());
-    }
-    
-    vp_.update(); // update the opengl view port
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    const unsigned char *buffer = NULL;
-    uint32_t w = 0;
-    uint32_t h = 0;
-    int format = GL_RGB;
-
-    get_buffer(&buffer, &w, &h, &format);
-
+void OpenGlPanel::draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t h, int format) {
     if (buffer == NULL || w == 0 || h == 0) {
-        draw_next();
         return;
     }
 
@@ -127,7 +108,29 @@ void OpenGlPanel::draw()  {
 
     glRasterPos2f(0.0f, 0.0f);
     glPixelZoom(1.0f, 1.0f);
+}
 
+void OpenGlPanel::draw()  {
+    if (!valid()) {
+        valid(1);
+        glLoadIdentity();
+        glViewport(0, 0, this->w(), this->h());
+    }
+    
+    vp_.update(); // update the opengl view port
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    const unsigned char *buffer = NULL;
+    uint32_t w = 0;
+    uint32_t h = 0;
+    int format = GL_RGB;
+
+    get_buffer(&buffer, &w, &h, &format, false);
+    draw_buffer(buffer, w, h, format);
     draw_next();
 }
 

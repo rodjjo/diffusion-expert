@@ -71,6 +71,11 @@
 #include "src/data/xpm/menu/arrow_up_16x16.xpm"
 #include "src/data/xpm/menu/arrow_left_16x16.xpm"
 #include "src/data/xpm/menu/arrow_right_16x16.xpm"
+#include "src/data/xpm/menu/edit_16x16.xpm"
+#include "src/data/xpm/menu/mask_16x16.xpm"
+#include "src/data/xpm/menu/file_new_16x16.xpm"
+#include "src/data/xpm/menu/marionette_16x16.xpm"
+
 
 #pragma GCC diagnostic pop
 
@@ -140,7 +145,11 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { arrow_left_16x16, arrow_left_16x16_xpm},
     { arrow_right_16x16, arrow_right_16x16_xpm},
     { button_ok_16x16, button_ok_xpm},
-    { button_cancel_16x16, button_cancel_xpm}
+    { button_cancel_16x16, button_cancel_xpm},
+    { edit_16x16, edit_16x16_xpm},
+    { mask_16x16, mask_16x16_xpm},
+    { file_new_16x16, file_new_16x16_xpm},
+    { marionette_16x16, marionette_16x16_xpm}
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

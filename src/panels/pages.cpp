@@ -24,16 +24,16 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
 
     this->begin();
 
-    resultsPanel_ = new ResultsPanel(0, 0, 1, 1);
-    pages_[page_results] = resultsPanel_;
     promptPanel_ = new PromptPanel(0, 0, 1, 1);
     pages_[page_prompts] = promptPanel_;
-    inputImage_ = new PantingPanel(0, 0, 1, 1);
+    inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
+    resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
+    pages_[page_results] = resultsPanel_;
     
     visible_pages_[page_results] = true;
     visible_pages_[page_prompts] = true;
-    // visible_pages_[page_input_image] = true;
+    visible_pages_[page_input_image] = true;
 
     for (int i = 0; i < page_max; ++i) {
         if (pages_[i]) {
@@ -43,7 +43,9 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
         pages_[i] = new Fl_Group(0, 0, 1, 1, "");
         pages_[i]->hide();
     }
+
     this->end();
+
     alignComponents();
     goPage(page_results);
 }
@@ -129,7 +131,6 @@ int Pages::visibleIndex() {
     return page_prompts;
 }
 
-
 void Pages::textToImage() {
     int seed = promptPanel_->getSeed();
     if (seed == -1) 
@@ -143,10 +144,19 @@ void Pages::textToImage() {
 
     get_sd_state()->setSdModel(model);
 
+    controlnet_list_t controlnets;
+
+    std::shared_ptr c = inputImage_->getControlnet();
+
+    if (c) {
+        controlnets.push_back(c);
+    }
+
     auto g = std::make_shared<GeneratorTxt2Image>(
         promptPanel_->getPrompt(),
         promptPanel_->getNegativePrompt(),
         get_sd_state()->getSdModelPath(model),
+        controlnets,
         seed,
         promptPanel_->getWidth(),
         promptPanel_->getHeight(),

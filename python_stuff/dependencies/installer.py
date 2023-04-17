@@ -21,6 +21,8 @@ def have_dependencies():
         import diffusers
         import transformers
         import xformers
+        import cv2
+        import controlnet_aux
         from omegaconf import OmegaConf
         return True
     except ImportError:

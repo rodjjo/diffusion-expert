@@ -6,14 +6,15 @@ from diffusers import (
     PNDMScheduler,
     DDIMScheduler,
     LMSDiscreteScheduler,
+    UniPCMultistepScheduler,
     UNet2DConditionModel
 )
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR
-
-from dexpert import progress_title
+from exceptions.exceptions import CancelException
+from dexpert import progress_title, progress_canceled
 
 user_settings = {
 }
@@ -340,6 +341,8 @@ def convert_ldm_unet_checkpoint(checkpoint, config):
 
 def report(message):
     progress_title(f'[Model Loader] - {message}')
+    if progress_canceled():
+        raise CancelException()
 
 
 checkpoint_dict_replacements = {
@@ -406,6 +409,14 @@ def load_stable_diffusion_model(model_path: str):
             beta_schedule="scaled_linear",
             clip_sample=False,
             set_alpha_to_one=False,
+        )
+    elif  user_settings['scheduler'] == 'UniPCMultistepScheduler':
+        scheduler = UniPCMultistepScheduler(
+            beta_start=beta_start,
+            beta_end=beta_end,
+            beta_schedule="scaled_linear",
+            # clip_sample=False,
+            # set_alpha_to_one=False,
         )
     else:
          scheduler = LMSDiscreteScheduler(beta_start=beta_start, beta_end=beta_end, beta_schedule="scaled_linear")

@@ -8,11 +8,12 @@
 #define BUTTON_ID_PREV_ROW 3
 #define BUTTON_ID_NEXT_COL 4
 #define BUTTON_ID_PREV_COL 5
+#define BUTTON_ID_AS_INPUT 6
 
 namespace dexpert
 {
 
-    ResultsPanel::ResultsPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h)
+    ResultsPanel::ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting) : Fl_Group(x, y, w, h), painting_(painting)
     {
         this->begin();
         
@@ -38,6 +39,7 @@ namespace dexpert
             row[0]->addButton(BUTTON_ID_NEXT_ROW, 0, -1.0, dexpert::xpm::arrow_down_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::arrow_left_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::arrow_right_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_AS_INPUT, 1, 1, dexpert::xpm::green_pin_16x16, btn_callback);
             miniatures_.push_back(row);
         }
 
@@ -156,6 +158,12 @@ namespace dexpert
 
     void ResultsPanel::take_action(FramePanel *w, int id) {
         switch (id) {
+            case BUTTON_ID_AS_INPUT: {
+                    if (ask("Do you want to set this as input image ?")) {
+                        painting_->setImage(get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation()));
+                    }
+                }
+                break;
             case BUTTON_ID_PREVIEW:
                 {
                     auto img = get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation());

@@ -22,7 +22,7 @@ int abs_i(int v) {
 }
 
 FramePanel::FramePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): OpenGlPanel(x, y, w, h) {
-    src_type_ = image_src_input;
+    src_type_ = image_src_self;
 }
 
 FramePanel::FramePanel(image_ptr_t image, uint32_t x, uint32_t y, uint32_t w, uint32_t h) : OpenGlPanel(x, y, w, h) {
@@ -132,44 +132,20 @@ void FramePanel::addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm
     buttons_.push_back(btn);
 }
 
-void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format) {
-    RawImage *img = NULL;
+RawImage *FramePanel::getDrawingImage(bool mask) {
     switch (src_type_) {
         case image_src_self:
-            img = image_.get();
-            break;
-        case image_src_input:
-            //img = get_sd_state()->getInputImage();
+            return mask ? mask_.get() : image_.get();
             break;
         case image_src_results:
-            img = get_sd_state()->getResultsImage(index_, variation_);
+            return get_sd_state()->getResultsImage(index_, variation_);
             break;
-        case image_src_input_mask:
-            //img = get_sd_state()->getInputMaskImage();
-            break;
-        case image_src_input_scribble:
-            // img = get_sd_state()->getInputScribbleImage();
-            break;
-        case image_src_input_pose:
-            // img = get_sd_state()->getInputPoseImage();
-            break;
-        case image_src_controlnet1:
-            // img = get_sd_state()->getControlNetImage(0);
-            break;
-        case image_src_controlnet2:
-            // img = get_sd_state()->getControlNetImage(1);
-            break;
-        case image_src_controlnet3:
-            // img = get_sd_state()->getControlNetImage(2);
-            break;
-        case image_src_controlnet4:
-            // img = get_sd_state()->getControlNetImage(3);
-            break;
-        default:
-            img = NULL; 
-        break;
     }
+    return NULL;
+}
 
+void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) {
+    RawImage *img = getDrawingImage(mask);
     if (!img) return;
 
     *buffer = img->buffer();
@@ -247,7 +223,9 @@ void FramePanel::setImage(image_ptr_t image) {
 void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
     frame_button_t * b = get_button_mouse(up_x, up_y);
     if (b) {
-        b->cb(this, b->id);
+        if (getDrawingImage(false)) {
+            b->cb(this, b->id);
+        }
     }
 }
 
@@ -256,11 +234,17 @@ frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
 }
 
 void FramePanel::draw_next() {
+    draw_mask();
+    if (!buttons_.size() || !getDrawingImage(false))  {
+        return;
+    }
+
     float x;
     float y;
     int w;
     int h;
     int format;
+
     glPixelZoom(1.0, -1.0);
     
     for (size_t i = 0; i < buttons_.size(); ++i) {
@@ -268,7 +252,7 @@ void FramePanel::draw_next() {
         get_button_coords(&b, &x, &y, &w, &h);
         glRasterPos2f(x, y);
 
-        if (w % 4 == 0)
+        if (w % 4 == 0) 
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         else
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -285,6 +269,49 @@ void FramePanel::draw_next() {
     
     glRasterPos2f(0.0f, 0.0f);
     glPixelZoom(1.0f, 1.0f);
+
+}
+
+void FramePanel::clearImage() {
+    image_.reset();
+}
+
+image_ptr_t FramePanel::getImage() {
+    return image_;
+}
+
+void FramePanel::draw_mask() {
+    if (!mask_drawing_)
+        return;
+    const unsigned char *buffer = NULL;
+    uint32_t w = 0;
+    uint32_t h = 0;
+    int format = GL_RGB;
+    get_buffer(&buffer, &w, &h, &format, true);
+    draw_buffer(buffer, w, h, format);
+}
+
+void FramePanel::setMask(image_ptr_t image) {
+    mask_ = image;
+}
+
+void FramePanel::clearMask() {
+    mask_.reset();
+}
+
+image_ptr_t FramePanel::getMask() {
+   return mask_; 
+}
+
+void FramePanel::setMaskDrawing(bool enabled) {
+    mask_drawing_ = enabled;
+    if (visible_r()) {
+        redraw();
+    }
+}
+
+bool FramePanel::getMaskDrawing() {
+    return mask_drawing_;
 }
 
 

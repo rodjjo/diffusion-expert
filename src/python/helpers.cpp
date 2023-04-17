@@ -153,43 +153,107 @@ namespace dexpert
             };
         }
 
-        callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb)
-        {
-            enable_progress_window();
 
-            return [config, status_cb]
+        callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb)
+        {
+            return [status_cb, mode, image]()
+            {
+                std::shared_ptr<RawImage> img;
+                bool errors = false;
+                const char *msg = NULL;
+
+                PyObject *result = NULL;
+                PyObject *data = NULL;
+                ObjGuard guard("images.pre_process");
+
+                errors = handle_error();
+
+                if (!guard.module())
+                {
+                    msg = "Could not load Python module images.pre_process";
+                    errors = true;
+                }
+
+                if (!errors)
+                {
+                    data = guard(PyDict_New());
+                    image->toPyDict(data);
+                    result = guard(PyObject_CallMethod(guard.module(), "pre_process_image", "sO", mode, data));
+                    errors = handle_error();
+                    if (errors)
+                    {
+                        msg = "Fail processing the image";
+                    } else {
+                        img = rawImageFromPyDict(result);
+                        if (!img)
+                        {
+                            errors = true;
+                            msg = "open_image did not return a valid dictionary with an image info.";
+                        }
+                    }
+                }
+                
+                status_cb(!errors, msg, img);
+            };
+        }
+
+        const void prompt_config::fill_prompt_dict(PyObject *params, ObjGuard &guard) const {
+            PyDict_SetItemString(params, "prompt", guard(PyUnicode_FromString(this->prompt)));
+            PyDict_SetItemString(params, "negative", guard(PyUnicode_FromString(this->negative)));
+            PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(this->model, -1)));
+            PyDict_SetItemString(params, "width", guard(PyLong_FromSize_t(this->width)));
+            PyDict_SetItemString(params, "height", guard(PyLong_FromSize_t(this->height)));
+            PyDict_SetItemString(params, "steps", guard(PyLong_FromSize_t(this->steps)));
+            PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(this->cfg)));
+            PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(this->seed)));
+            PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(this->variation)));
+            PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(this->var_stren)));
+
+            if (!this->controlnets.empty()) {
+                PyObject *arr = guard(PyList_New(0));
+                for (auto it = this->controlnets.begin(); it != this->controlnets.end(); it++) {
+                    PyObject *c = guard(PyDict_New());
+                    PyObject *data = guard(PyDict_New());
+                    it->image->toPyDict(data);
+                    PyDict_SetItemString(c, "mode", guard(PyUnicode_FromString(it->mode)));
+                    PyDict_SetItemString(c, "image", data);
+                    PyDict_SetItemString(c, "strength", guard(PyFloat_FromDouble(it->strength)));
+                    PyList_Append(arr, c);
+                }
+                PyDict_SetItemString(params, "controlnets",arr);
+            }
+        }
+
+        const void img_to_image_config::fill_prompt_dict(PyObject *params, ObjGuard &guard) const { 
+            prompt_config::fill_prompt_dict(params, guard);
+
+        }
+
+        callback_t get_diffusion_callback(const char* fn_name, prompt_config config, image_callback_t status_cb) {
+            return [fn_name, config, status_cb]
             {
                 bool errors = false;
                 const char *msg = NULL;
                 std::shared_ptr<RawImage> img;
 
                 PyObject *result = NULL;
-                ObjGuard guard("images.txt2img");
+                ObjGuard guard("images.diffusion_routines");
 
                 errors = handle_error();
 
                 if (!guard.module())
                 {
-                    msg = "Could not load Python module images.txt2img";
+                    msg = "Could not load Python module images.diffusion_routines";
                     errors = true;
                 }
 
                 PyObject *params = guard(PyDict_New());
 
-                PyDict_SetItemString(params, "prompt", guard(PyUnicode_FromString(config.prompt)));
-                PyDict_SetItemString(params, "negative", guard(PyUnicode_FromString(config.negative)));
-                PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(config.model, -1)));
-                PyDict_SetItemString(params, "width", guard(PyLong_FromSize_t(config.width)));
-                PyDict_SetItemString(params, "height", guard(PyLong_FromSize_t(config.height)));
-                PyDict_SetItemString(params, "steps", guard(PyLong_FromSize_t(config.steps)));
-                PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(config.cfg)));
-                PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(config.seed)));
-                PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(config.variation)));
-                PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(config.var_stren)));
+                config.fill_prompt_dict(params, guard);
 
                 if (!errors)
                 {
-                    result = guard(PyObject_CallMethod(guard.module(), "txt2img", "O", params));
+                    result = guard(PyObject_CallMethod(guard.module(), fn_name, "O", params));
                     errors = handle_error();
                     if (errors)
                     {
@@ -215,6 +279,17 @@ namespace dexpert
 
                 status_cb(!errors, msg, img);
             };
+        }
+
+        callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb)
+        {
+            enable_progress_window();
+            return get_diffusion_callback("txt2img", config, status_cb);
+        }
+
+        callback_t img2_image(img2img_config_t config, image_callback_t status_cb) {
+            enable_progress_window();
+            return get_diffusion_callback("img2img", config, status_cb);
         }
 
         callback_t list_models(const wchar_t *path, model_callback_t status_cb)
