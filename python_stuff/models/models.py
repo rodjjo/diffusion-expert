@@ -1,6 +1,12 @@
 import gc
 import os
-from diffusers import StableDiffusionPipeline, StableDiffusionControlNetPipeline, ControlNetModel
+from diffusers import (
+        StableDiffusionPipeline, 
+        StableDiffusionControlNetPipeline, 
+        StableDiffusionImg2ImgPipeline,
+        StableDiffusionInpaintPipeline,
+        ControlNetModel
+    )
 import torch
 from models.paths import CACHE_DIR
 from models.loader import load_stable_diffusion_model, set_pipeline_settings
@@ -25,19 +31,21 @@ def load_model(model_path: str):
     gc.collect()
 
 
-def create_pipeline(model_path: str, controlnets = None):
+def create_pipeline(mode: str, model_path: str, controlnets = None):
     global CURRENT_PIPELINE
     global CURRENT_VAR_PIPELINE
     load_model(model_path)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
-    if CURRENT_PIPELINE.get("model_path") != model_path or CURRENT_PIPELINE.get("contronet") != controlnet_modes:
+    if CURRENT_PIPELINE.get("model_path") != model_path or \
+            CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
+            mode != CURRENT_PIPELINE.get("mode"):
         CURRENT_PIPELINE = {}
         gc.collect()
-        controlnets = controlnets or []
+        controlnets = controlnets or [] if mode == 'txt2img' else []
         control_model = []
-        have_model = False
+        have_controlnet = False
         for c in controlnets:
-            have_model = True
+            have_controlnet = True
             if c['mode'] == 'canny':
                 print("Loading controlnet canny model")
                 control_model.append(ControlNetModel.from_pretrained(
@@ -57,21 +65,26 @@ def create_pipeline(model_path: str, controlnets = None):
         if len(control_model) == 1:
             control_model = control_model[0]
 
-        if have_model:
+        if have_controlnet:
             params = {
                 **CURRENT_MODEL_PARAMS['params'],
                 'controlnet': control_model,
             }
             pipe = StableDiffusionControlNetPipeline(**params)
+        elif mode == 'img2img':
+            pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
+        elif mode == 'inpaint2img':
+            pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
         else:
             pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
         # pipe.enable_model_cpu_offload()
         pipe.enable_attention_slicing(1)
         pipe.enable_xformers_memory_efficient_attention()
         CURRENT_PIPELINE = {
+            'mode': mode,
             'model_path': model_path,
             'pipeline': pipe,
-            "contronet": controlnet_modes
+            'contronet': controlnet_modes
         }
     CURRENT_VAR_PIPELINE = {}
     gc.collect()

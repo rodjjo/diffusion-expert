@@ -385,8 +385,18 @@ def load_stable_diffusion_model(model_path: str):
         checkpoint = torch.load(model_path, map_location="cpu")
     checkpoint = get_state_dict_from_checkpoint(checkpoint)
     report("model loaded")
+    
+    b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
 
-    inference_path = os.path.join(CONFIG_DIR, 'v1-inference.yaml')
+    if b is not None and b.shape[1] == 9:
+        in_painting = True
+        inference_file = 'v1-inpainting-inference.yaml'
+    else:
+        in_painting = False
+        inference_file = 'v1-inference.yaml'
+
+    inference_path = os.path.join(CONFIG_DIR, inference_file)
+
     report(f"loading {inference_path}")
     config = OmegaConf.load(inference_path)
     num_train_timesteps = config.model.params.timesteps

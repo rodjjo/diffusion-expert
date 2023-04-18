@@ -238,4 +238,15 @@ const char *PromptPanel::getSdModel() {
     return NULL;
 }
 
+bool PromptPanel::ready(bool require_prompt) {
+    if (require_prompt) {
+        std::string p = getPrompt();
+        if (p.empty()) {
+            show_error("The prompt is required for text to image");
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace dexpert

@@ -32,7 +32,8 @@ typedef struct {
     float strength = 1.0;
 } control_net_t;
 
-struct prompt_config {
+class txt2img_config_t {
+ public:
     const char *prompt = "";
     const char *negative = "";
     const wchar_t *model = L"";
@@ -44,19 +45,18 @@ struct prompt_config {
     int variation = 0;
     float var_stren = 0.01;
     std::list<control_net_t> controlnets;
-    virtual ~prompt_config() {};
+    virtual ~txt2img_config_t() {};
     virtual const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const;
 };
 
-struct img_to_image_config : public prompt_config {
+class img2img_config_t: public txt2img_config_t {
+ public:
     RawImage *image = NULL;
     RawImage *mask = NULL;
-    float denoise_strength_ = 75;
+    float strength = 0.8;
+    bool invert_mask = true;
     const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const override;
 };
-
-typedef prompt_config txt2img_config_t;
-typedef img_to_image_config img2img_config_t;
 
 
 
@@ -72,8 +72,8 @@ callback_t configure_stable_diffusion(status_callback_t status_cb);
 callback_t open_image(const char* path, image_callback_t status_cb);
 callback_t save_image(const char* path, RawImage *image, status_callback_t status_cb);
 callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb);
-callback_t txt2_image(txt2img_config_t config, image_callback_t status_cb); 
-callback_t img2_image(img2img_config_t config, image_callback_t status_cb); 
+callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb); 
+callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 
 
 callback_t list_models(const wchar_t* path, model_callback_t status_cb);
 

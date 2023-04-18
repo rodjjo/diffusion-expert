@@ -4,7 +4,7 @@ namespace dexpert
 {
 
 ControlNet::ControlNet(const char *mode, image_ptr_t image, float strength) :
-            mode_(mode), strength_(strength), image_(image) {
+        mode_(mode), strength_(strength), image_(image) {
     if (strength_ < 0) {
         strength_ = 0;
     }

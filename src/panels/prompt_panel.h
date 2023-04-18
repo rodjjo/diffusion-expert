@@ -28,7 +28,8 @@ class PromptPanel: public Fl_Group {
     int getHeight();
     float getCFG();
     float getVariationStrength();
-
+    bool ready(bool require_prompt);
+    
  private:
     void alignComponents();
     void refreshModels();

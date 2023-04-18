@@ -253,6 +253,14 @@ bool PaintingPanel::ensureImagePresent() {
     return false;
 }
 
+bool PaintingPanel::ensureMaskPresent() {
+    if (image_panel_->getMask()) {
+        return true;
+    }
+    show_error("There is no mask to proceed");
+    return false;
+}
+
 void PaintingPanel::pre_process(const char* method) {
     if (!ensureImagePresent()) {
         return;
@@ -294,6 +302,52 @@ void PaintingPanel::extractPose() {
 
 }
 
+image_ptr_t PaintingPanel::getImg2ImgImage() {
+    switch (mode_->value())
+    {
+        case painting_img2img:
+        case painting_inpaint_masked:
+        case painting_inpaint_not_masked:
+            return image_panel_->getImage();
+        break;
+        
+        default:
+            break;
+    } 
+
+    return image_ptr_t();
+}
+
+image_ptr_t PaintingPanel::getImg2ImgMask() {
+    switch (mode_->value())
+    {
+        case painting_img2img:
+        case painting_inpaint_masked:
+        case painting_inpaint_not_masked:
+            return image_panel_->getMask();
+        break;
+        
+        default:
+            break;
+    }
+    return image_ptr_t();
+}
+
+bool PaintingPanel::ready() {
+    if (mode_->value() == paiting_disabled) {
+        return prompt_->ready(true);
+    }
+    if (mode_->value() == painting_inpaint_masked ||
+        mode_->value() == painting_inpaint_not_masked) {
+        return ensureImagePresent() && ensureMaskPresent();
+    }
+    return ensureImagePresent();
+}
+
+
+bool PaintingPanel::should_invert_mask_colors() {
+    return mode_->value() == painting_inpaint_masked;
+}
 
 std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
     std::shared_ptr<ControlNet> result;

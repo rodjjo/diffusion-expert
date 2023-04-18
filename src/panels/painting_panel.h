@@ -51,8 +51,13 @@ class PaintingPanel: public Fl_Group {
     virtual ~PaintingPanel();
     void resize(int x, int y, int w, int h) override;
     void setImage(RawImage *image);
-
+    
     std::shared_ptr<ControlNet> getControlnet();
+    image_ptr_t getImg2ImgImage();
+    image_ptr_t getImg2ImgMask();
+    bool should_invert_mask_colors();
+    bool ready();
+
 
  private:
    static void modeSelected(Fl_Widget *widget, void *cbdata);
@@ -70,6 +75,7 @@ class PaintingPanel: public Fl_Group {
     void extractScribble();
     void extractPose();
     bool ensureImagePresent();
+    bool ensureMaskPresent();
     void pre_process(const char* method);
     
  private:
