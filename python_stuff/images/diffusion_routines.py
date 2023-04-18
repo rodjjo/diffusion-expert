@@ -10,10 +10,8 @@ import PIL.ImageOps
 from dexpert import progress, progress_canceled, progress_title
 
 
-
 def report(message):
     progress_title(f'[Text To Image] - {message}')
-
 
 def image_from_dict(data: dict):
     img = Image.frombytes(data['mode'], (data['width'], data['height']), data['data'])
@@ -115,6 +113,8 @@ def _run_pipeline(pipeline_type, params):
         additional_args = {
             'image': image,
             'mask_image': mask,
+            'width': width,
+            'height': height,
         }
 
     pipeline.to(device)

@@ -34,8 +34,7 @@ def load_model(model_path: str):
 def create_pipeline(mode: str, model_path: str, controlnets = None):
     global CURRENT_PIPELINE
     global CURRENT_VAR_PIPELINE
-    if mode != 'inpaint2img':
-        load_model(model_path)
+    load_model(model_path)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
@@ -75,13 +74,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
         elif mode == 'img2img':
             pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
         elif mode == 'inpaint2img':
-            # pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
-            pipe = StableDiffusionInpaintPipeline.from_pretrained(
-                "runwayml/stable-diffusion-inpainting",
-                revision="fp16",
-                torch_dtype=torch.float16,
-                cache_dir=CACHE_DIR
-            )
+            pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
         else:
             pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
         # pipe.enable_model_cpu_offload()
