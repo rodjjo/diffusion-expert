@@ -29,6 +29,8 @@ class GeneratorBase {
 
     RawImage* getImage();
     RawImage* getVariation(int index);
+    void clearImage();
+    void clearVariation(int index);
     int getVariationSeed(int index);
     int getVariationCount();
     int computeVariationSeed(bool left);

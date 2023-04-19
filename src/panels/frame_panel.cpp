@@ -132,20 +132,26 @@ void FramePanel::addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm
     buttons_.push_back(btn);
 }
 
-RawImage *FramePanel::getDrawingImage(bool mask) {
-    switch (src_type_) {
-        case image_src_self:
-            return mask ? mask_.get() : image_.get();
-            break;
-        case image_src_results:
-            return get_sd_state()->getResultsImage(index_, variation_);
-            break;
+RawImage *FramePanel::getDrawingImage(int buffer_type) {
+    if (src_type_ == image_src_self) {
+        if (buffer_type == image_edit_disabled) {
+            if (!image_drawing_) {
+                return NULL;
+            }
+            return image_.get();
+        } else if (buffer_type == image_edit_mask) { 
+            return mask_.get();
+        } else if (buffer_type == image_edit_control_img) { 
+            return control_img_.get();
+        }
+    } else if (src_type_ == image_src_results) {
+        return get_sd_state()->getResultsImage(index_, variation_);
     }
     return NULL;
 }
 
-void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) {
-    RawImage *img = getDrawingImage(mask);
+void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, int buffer_type) {
+    RawImage *img = getDrawingImage(buffer_type);
     if (!img) return;
 
     *buffer = img->buffer();
@@ -161,7 +167,9 @@ void FramePanel::get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t 
         channels = 4;
     }
 
-    update_cache(buffer, w, h, channels, img->getVersion());
+    if (buffer_type == image_edit_disabled) {
+        update_cache(buffer, w, h, channels, img->getVersion());
+    }
 }
 
 void FramePanel::get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h) {
@@ -272,12 +280,36 @@ void FramePanel::draw_next() {
 
 }
 
+void FramePanel::editMask() {
+    editor_mode_ = image_edit_mask;
+}
+
+void FramePanel::editControlImage() {
+    editor_mode_ = image_edit_control_img;
+}
+
+void FramePanel::disableEditor() {
+    editor_mode_ = image_edit_disabled;
+}
+
+void FramePanel::setControlImg(image_ptr_t image) {
+    control_img_ = image;
+}
+
+void FramePanel::clearControlImg() {
+    control_img_.reset();
+}
+
 void FramePanel::clearImage() {
     image_.reset();
 }
 
 image_ptr_t FramePanel::getImage() {
     return image_;
+}
+
+image_ptr_t FramePanel::geControlImage() {
+    return control_img_;
 }
 
 void FramePanel::draw_mask() {
@@ -287,7 +319,7 @@ void FramePanel::draw_mask() {
     uint32_t w = 0;
     uint32_t h = 0;
     int format = GL_RGB;
-    get_buffer(&buffer, &w, &h, &format, true);
+    get_buffer(&buffer, &w, &h, &format, editor_mode_);
     draw_buffer(buffer, w, h, format);
 }
 
@@ -301,6 +333,17 @@ void FramePanel::clearMask() {
 
 image_ptr_t FramePanel::getMask() {
    return mask_; 
+}
+
+void FramePanel::setImageDrawing(bool enabled) {
+    image_drawing_ = enabled;
+    if (visible_r()) {
+        redraw();
+    }
+}
+
+bool  FramePanel::getImageDrawing() {
+    return image_drawing_;
 }
 
 void FramePanel::setMaskDrawing(bool enabled) {

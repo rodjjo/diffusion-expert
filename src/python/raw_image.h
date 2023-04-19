@@ -29,6 +29,9 @@ class RawImage {
     size_t getVersion();
     void incVersion();
     std::shared_ptr<RawImage> duplicate();
+    std::shared_ptr<RawImage> removeBackground(bool white);
+    std::shared_ptr<RawImage> removeAlpha();
+
  private:
     unsigned char *buffer_;
     size_t buffer_len_;

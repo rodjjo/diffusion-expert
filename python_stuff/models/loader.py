@@ -486,7 +486,7 @@ def load_stable_diffusion_model(model_path: str):
         'safety_checker': safety_checker,
         'feature_extractor': feature_extractor,
         'requires_safety_checker': requires_safety_checker
-    }
+    }, in_painting
 
 def set_pipeline_settings(value: dict):
     global user_settings

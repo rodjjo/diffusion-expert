@@ -9,6 +9,7 @@
 #define BUTTON_ID_NEXT_COL 4
 #define BUTTON_ID_PREV_COL 5
 #define BUTTON_ID_AS_INPUT 6
+#define BUTTON_ID_REMOVE 7
 
 namespace dexpert
 {
@@ -40,6 +41,8 @@ namespace dexpert
             row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::arrow_left_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::arrow_right_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_AS_INPUT, 1, 1, dexpert::xpm::green_pin_16x16, btn_callback);
+            row[0]->addButton(BUTTON_ID_REMOVE, 1, -1, dexpert::xpm::erase_all_16x16, btn_callback);
+            
             miniatures_.push_back(row);
         }
 
@@ -161,6 +164,13 @@ namespace dexpert
             case BUTTON_ID_AS_INPUT: {
                     if (ask("Do you want to set this as input image ?")) {
                         painting_->setImage(get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation()));
+                    }
+                }
+                break;
+            case BUTTON_ID_REMOVE:
+                {
+                    if (ask("Do you want remove this image ?")) {
+                        get_sd_state()->clearImage(w->gridIndex(), w->gridVariation());
                     }
                 }
                 break;

@@ -173,7 +173,7 @@ void Pages::textToImage() {
         img = img->duplicate();
 
         if (mask) {
-            mask = mask->duplicate();
+            mask = mask->removeAlpha();
         }
 
         g.reset(new GeneratorImg2Image(

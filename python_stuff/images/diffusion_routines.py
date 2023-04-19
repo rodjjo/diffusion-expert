@@ -1,7 +1,7 @@
 import gc
 
 import torch
-from models.models import create_pipeline
+from models.models import create_pipeline, current_model_is_in_painting
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from PIL import Image
@@ -12,6 +12,7 @@ from dexpert import progress, progress_canceled, progress_title
 
 def report(message):
     progress_title(f'[Text To Image] - {message}')
+
 
 def image_from_dict(data: dict):
     img = Image.frombytes(data['mode'], (data['width'], data['height']), data['data'])
@@ -68,6 +69,16 @@ def _run_pipeline(pipeline_type, params):
 
     pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets) 
 
+    if pipeline_type == 'inpaint2img':
+        if not current_model_is_in_painting():
+            return {
+                "error": "The current model is not for inpainting"
+            }
+    elif current_model_is_in_painting():
+        return {
+            "error": "The current model is a inpainting model"
+        }
+
     def progress_preview(step, timestep, latents):
         progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
         if progress_canceled():
@@ -91,7 +102,7 @@ def _run_pipeline(pipeline_type, params):
                 if c['mode'] == 'pose':
                     images.append(image_from_dict(c['image']))
                 else:
-                    images.append(invert_image_from_dict(c['image']))
+                    images.append(image_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
@@ -105,9 +116,13 @@ def _run_pipeline(pipeline_type, params):
             'strength': params['strength'],
         }
     elif pipeline_type == 'inpaint2img':
+        if not current_model_is_in_painting():
+            return {
+                "error": "The current model is not for in painting"
+            }
         image = image_from_dict(input_image)
         if params.get("invert_mask"):
-            mask = invert_image_from_dict(input_mask)
+            mask = image_from_dict(input_mask)
         else:
             mask = image_from_dict(input_mask)
         additional_args = {
@@ -115,6 +130,7 @@ def _run_pipeline(pipeline_type, params):
             'mask_image': mask,
             'width': width,
             'height': height,
+            'latents': latents_noise,
         }
 
     pipeline.to(device)

@@ -23,6 +23,12 @@ typedef enum {
     image_src_max
 } image_src_t;
 
+typedef enum {
+    image_edit_disabled,
+    image_edit_mask,
+    image_edit_control_img
+} image_edit_t;
+
 typedef std::function<void(FramePanel *frame, int id)> frame_btn_cb_t;
 
 typedef struct {
@@ -41,6 +47,9 @@ public:
     void setGridLocation(int index, int variation);
     void enableGrid();
     void enableCache();
+    void editMask();
+    void editControlImage();
+    void disableEditor();
     void addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm_t image, frame_btn_cb_t cb);
 
     size_t gridIndex();
@@ -50,16 +59,20 @@ public:
     void clearImage();
     void setMask(image_ptr_t image);
     void clearMask();
+    void setControlImg(image_ptr_t image);
+    void clearControlImg();
 
     void setMaskDrawing(bool enabled);
+    void setImageDrawing(bool enabled);
     bool getMaskDrawing();
+    bool getImageDrawing();
 
     image_ptr_t getImage();
     image_ptr_t getMask();
-
+    image_ptr_t geControlImage();
 protected:
-    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, bool mask) override;
-    RawImage *getDrawingImage(bool mask);
+    void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, int buffer_type) override;
+    RawImage *getDrawingImage(int buffer_type);
     void draw_next() override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
     void draw_mask();
@@ -74,6 +87,7 @@ private:
     bool grid_enabled_ = false;
     bool cache_enabled_ = false;
     bool mask_drawing_ = false;
+    bool image_drawing_ = true;
     size_t cache_version_ = 0;
     int cache_channels_ = 1;
     size_t cache_w_ = 0;
@@ -84,11 +98,13 @@ private:
     size_t variation_ = 0;
     size_t index_ = 0;
     image_src_t src_type_ = image_src_self;
+    image_edit_t editor_mode_ = image_edit_disabled;
 private:
     std::string current_open_dir_;
     std::vector<frame_button_t> buttons_;
     image_ptr_t image_;
     image_ptr_t mask_;
+    image_ptr_t control_img_;
 };
     
 }  // namespace dexpert

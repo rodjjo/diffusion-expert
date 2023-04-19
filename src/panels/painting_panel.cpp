@@ -80,6 +80,8 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
         extractPose();
     }));
 
+    draw_image_check_ = new Fl_Check_Button(0, 0, 1, 1, "Show reference img");
+
     left_bar_->end();
 
     this->end();
@@ -127,15 +129,19 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
     for (int i = 0; i < brush_size_count; ++i) {
         brushes_->add(brush_sizes[i]);
     }
+    
+    draw_image_check_->value(1);
 
     mode_->value(paiting_disabled);
     mode_->align(FL_ALIGN_TOP);
     mode_->callback(modeSelected, this);
+    draw_image_check_->callback(modeSelected, this);
 
     brushes_->align(FL_ALIGN_TOP);
     brushes_->value(brush_size_disabled);
     
     alignComponents();
+    enableControls();
 }
 
 void PaintingPanel::resize(int x, int y, int w, int h) {
@@ -147,7 +153,9 @@ void PaintingPanel::alignComponents() {
     left_bar_->resize(x(), y(), 150, h());
     image_panel_->resize(x() + left_bar_->w() + 1, y(), w() - left_bar_->w() - 2, h());
 
-    label_image_->resize(left_bar_->x() + 1, left_bar_->y() + 1, left_bar_->w() - 2, 20);
+    mode_->resize(left_bar_->x() + 1, left_bar_->y() + 24, left_bar_->w() - 2, 30);
+
+    label_image_->resize(left_bar_->x() + 1, mode_->y() + 1 + mode_->h(), left_bar_->w() - 2, 20);
     btnNew_->position(left_bar_->x() + 1, label_image_->y() + label_image_->h() + 1);
     btnOpen_->position(btnNew_->x() + 2 + btnNew_->w(), btnNew_->y());
     btnSave_->position(btnOpen_->x() + 2 + btnOpen_->w(), btnOpen_->y());
@@ -157,18 +165,65 @@ void PaintingPanel::alignComponents() {
     btnOpenMask_->position(btnNewMask_->x() + 1 + btnNewMask_->w(), btnNewMask_->y());
     btnSaveMask_->position(btnOpenMask_->x() + 1 + btnOpenMask_->w(), btnOpenMask_->y());
 
-    mode_->resize(left_bar_->x() + 1, btnOpenMask_->y() + btnOpenMask_->h() + 23, left_bar_->w() - 2, 30);
-    brushes_->resize(left_bar_->x() + 1, mode_->y() + mode_->h() + 23, left_bar_->w() - 2, 30);
+    brushes_->resize(left_bar_->x() + 1, btnSaveMask_->y() + btnSaveMask_->h() + 23, left_bar_->w() - 2, 30);
     
     label_control_->resize(left_bar_->x(), brushes_->y() + brushes_->h() + 3, left_bar_->w() - 2, 30);
     btnScribble_->position(left_bar_->x(), brushes_->y() + brushes_->h() + 26);
     btnCanny_->position(btnScribble_->x() + btnScribble_->w() + 2, btnScribble_->y());
     btnPose_->position(btnCanny_->x() + btnCanny_->w() + 2, btnCanny_->y());
-    
+
+    draw_image_check_->resize(left_bar_->x(), btnPose_->y() + btnPose_->h() + 3, left_bar_->w() - 2, 20);
 }
 
 PaintingPanel::~PaintingPanel() {
 
+}
+
+void PaintingPanel::enableControls() {
+    bool inpanting = false;
+    bool image2image = false;
+    bool controlnet = false;
+
+    if (mode_->value() == painting_img2img) {
+        image2image = true;
+    }
+
+    if (mode_->value() == painting_inpaint_masked ||
+        mode_->value() == painting_inpaint_not_masked) {
+        inpanting = true;
+    }
+
+    if (mode_->value() == painting_canny ||
+        mode_->value() == painting_scribble ||
+        mode_->value() == painting_pose) {
+        controlnet = true;     
+    }
+    
+    btnNew_->enabled(inpanting || image2image || controlnet);
+    btnOpen_->enabled(btnNew_->enabled());
+    btnSave_->enabled(btnNew_->enabled());
+
+    btnNewMask_->enabled(inpanting || controlnet);
+    btnOpenMask_->enabled(btnNewMask_->enabled());
+    btnSaveMask_->enabled(btnNewMask_->enabled());
+
+    btnScribble_->enabled(controlnet);
+    btnCanny_->enabled(controlnet);
+    btnPose_->enabled(controlnet);
+    
+    if (inpanting || controlnet) {
+        brushes_->activate();
+        draw_image_check_->activate();
+    } else {
+        brushes_->deactivate();
+        draw_image_check_->deactivate();
+    }
+
+    if (inpanting || image2image || controlnet) {
+        image_panel_->show();
+    } else {
+        image_panel_->hide();
+    }
 }
 
 void PaintingPanel::saveImage() {
@@ -194,13 +249,28 @@ void PaintingPanel::openImage() {
 }
 
 void PaintingPanel::openMask() {
+    if (mode_->value() != painting_inpaint_masked &&
+        mode_->value() != painting_inpaint_not_masked &&
+        mode_->value() != painting_pose &&
+        mode_->value() != painting_canny &&
+        mode_->value() != painting_scribble
+    ) {
+        show_error("This mode does not allow masks!");
+        return;
+    }
     auto img = open_image_from_dialog();
     if (img) {
         if (img->format() != dexpert::py::img_rgba) {
             show_error("THe image does not have alpha channel.");
             return;
         }
-        image_panel_->setMask(img);
+        if (mode_->value() == painting_inpaint_masked ||
+            mode_->value() == painting_inpaint_not_masked
+        ) {
+            image_panel_->setMask(img);
+        } else {
+            image_panel_->setControlImg(img);
+        }
     }
     image_panel_->redraw();
 }
@@ -214,19 +284,47 @@ void PaintingPanel::modeSelected() {
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
             image_panel_->setMaskDrawing(true);
+            image_panel_->setImageDrawing(draw_image_check_->value() == 1);
+            image_panel_->editMask();
+        break;
+        case painting_pose:
+        case painting_canny:
+        case painting_scribble:
+            image_panel_->setMaskDrawing(true);
+            image_panel_->setImageDrawing(draw_image_check_->value() == 1);
+            image_panel_->editControlImage();
         break;
         default:
             image_panel_->setMaskDrawing(false);
+            image_panel_->setImageDrawing(true);
+            image_panel_->disableEditor();
         break;
     }
+    enableControls();
 }
 
 void PaintingPanel::newMask() {
-    bool should_continue = image_panel_->getMask() ? false : true;
-    should_continue = (should_continue || ask("Do you want to create a new mask ?"));
-    if (should_continue) {
-        image_panel_->setMask(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
-        image_panel_->redraw();
+    if (mode_->value() == painting_inpaint_masked ||
+        mode_->value() == painting_inpaint_not_masked
+    ) {
+        bool should_continue = image_panel_->getMask() ? false : true;
+        should_continue = (should_continue || ask("Do you want to create a new mask ?"));
+        if (should_continue) {
+            image_panel_->setMask(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->redraw();
+        }
+    } else if (mode_->value() == painting_pose ||
+        mode_->value() == painting_canny ||
+        mode_->value() == painting_scribble
+    ) {
+        bool should_continue = image_panel_->geControlImage() ? false : true;
+        should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
+        if (should_continue) {
+            image_panel_->setControlImg(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->redraw();
+        }
+    } else {
+        show_error("This mode does not allow mask");
     }
 }
 
@@ -243,6 +341,14 @@ void PaintingPanel::setImage(RawImage *image) {
     if (image) {
         image_panel_->setImage(image->duplicate());
     }
+}
+
+bool PaintingPanel::ensureControlPresent() {
+     if (image_panel_->geControlImage()) {
+        return true;
+    }
+    show_error("There is no image to proceed");
+    return false;
 }
 
 bool PaintingPanel::ensureImagePresent() {
@@ -284,7 +390,17 @@ void PaintingPanel::pre_process(const char* method) {
     if (msg) {
         show_error(msg);
     } else {
-        image_panel_->setImage(img);
+        if (method == std::string("canny")) {
+            mode_->value(painting_canny);
+        } else if (method == std::string("pose")) {
+            mode_->value(painting_pose);
+        } else if (method == std::string("scriblle")) {
+            mode_->value(painting_scribble);
+        }
+        image_panel_->setControlImg(img->removeBackground(mode_->value() != painting_pose));
+        image_panel_->editControlImage();
+        image_panel_->setMaskDrawing(true);
+        image_panel_->setImageDrawing(draw_image_check_->value() == 1);
         image_panel_->redraw();
     }
 }
@@ -341,6 +457,12 @@ bool PaintingPanel::ready() {
         mode_->value() == painting_inpaint_not_masked) {
         return ensureImagePresent() && ensureMaskPresent();
     }
+    if (mode_->value() == painting_scribble ||
+        mode_->value() == painting_canny || 
+        mode_->value() == painting_pose
+    ) {
+        return ensureControlPresent();
+    }
     return ensureImagePresent();
 }
 
@@ -366,8 +488,8 @@ std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
     }
 
     if (mode != NULL) {
-        if (ensureImagePresent()) {
-            result.reset(new ControlNet(mode, image_panel_->getImage()->duplicate()));
+        if (ensureControlPresent()) {
+            result.reset(new ControlNet(mode, image_panel_->geControlImage()->removeAlpha()));
         }
     }
      

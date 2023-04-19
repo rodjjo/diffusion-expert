@@ -28,7 +28,7 @@ RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_fo
     if (buffer) {
         memcpy(buffer_, buffer, buffer_len_);
     } else {
-        memset(buffer_, 0, buffer_len_);
+        memset(buffer_, 255, buffer_len_);
     }
     version_ = (size_t) buffer_; // randomize the version
 }
@@ -95,6 +95,62 @@ std::shared_ptr<RawImage> RawImage::duplicate() {
     return std::make_shared<RawImage>(
         buffer_, w_, h_, format_
     );
+}
+
+std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
+    std::shared_ptr<RawImage> r;
+    r.reset(new RawImage(NULL, w_, h_, img_rgba));
+    int src_channels = 1;
+    if (format_ == img_rgb) {
+        src_channels = 3;
+    } else if (format_ == img_rgba) {
+        src_channels = 4;
+    }
+   
+    CImg<unsigned char> src(buffer_, src_channels, w_, h_, 1, true);
+    CImg<unsigned char> img(r->buffer_, 4, w_, h_, 1, true);
+    
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    img.draw_image(0, 0, src);
+    
+    if (white) {
+        img.fill("if(i0==255&&i1==255&&i2==255,0,i)", true);
+    } else {
+        img.fill("if(i0!=0||i1!=0||i2!=0,i,0)", true);
+    }
+   
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+
+    return r;
+}
+
+std::shared_ptr<RawImage> RawImage::removeAlpha() {
+    std::shared_ptr<RawImage> r;
+
+    r.reset(new RawImage(NULL, w_, h_, img_rgb));
+
+    int src_channels = 1;
+    if (format_ == img_rgb) {
+        src_channels = 3;
+    } else if (format_ == img_rgba) {
+        src_channels = 4;
+    }
+   
+    CImg<unsigned char> src(buffer_, src_channels, w_, h_, 1, true);
+    CImg<unsigned char> img(r->buffer_, 3, w_, h_, 1, true);
+    CImg<unsigned char> tmp(src, false);
+
+    tmp.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    tmp.fill("if(i3==0,255,i)", true); // remove the transparency
+    img.draw_image(0, 0, tmp); 
+    // replace white per black and black per white
+    img.fill("if((i0==i1&&i0==i2)&&(i0==255||i0==0),if(i0==0,255,0),i)", true);
+    img.permute_axes("cxyz");
+
+    return r;
 }
 
 image_ptr_t rawImageFromPyDict(PyObject * dict) {

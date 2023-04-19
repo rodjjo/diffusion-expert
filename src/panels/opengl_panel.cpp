@@ -22,6 +22,12 @@ OpenGlPanel::OpenGlPanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_
 OpenGlPanel::~OpenGlPanel() {
 }
 
+void OpenGlPanel::redraw() {
+    if (!visible_r())
+        return;
+    Fl_Gl_Window::redraw();
+}
+
 int OpenGlPanel::handle(int event) {
     switch (event) {
         case FL_KEYUP:
@@ -129,7 +135,7 @@ void OpenGlPanel::draw()  {
     uint32_t h = 0;
     int format = GL_RGB;
 
-    get_buffer(&buffer, &w, &h, &format, false);
+    get_buffer(&buffer, &w, &h, &format, 0);
     draw_buffer(buffer, w, h, format);
     draw_next();
 }
