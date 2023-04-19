@@ -56,6 +56,8 @@ class StableDiffusionState {
     bool generateNextImage(int index);
     bool generateNextVariation(int index);
     bool generatePreviousVariation(int index);
+    void clearGenerators();
+    void clearImage(int index, int variation);
 
     generator_cb_t generatorMakeCallback();
     
@@ -73,8 +75,6 @@ class StableDiffusionState {
 
     int getMaxResultImages();
     int getMaxResultVariations();
-    void clearAllResultImages();
-    void clearResult(int index, int variation);
 
 private:
     void scroll_down_generators();

@@ -9,6 +9,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Choice.H>
+#include <FL/Fl_Check_Button.H>
 
 #include "src/controls/button.h"
 #include "src/panels/frame_panel.h"
@@ -55,6 +56,7 @@ class PaintingPanel: public Fl_Group {
     std::shared_ptr<ControlNet> getControlnet();
     image_ptr_t getImg2ImgImage();
     image_ptr_t getImg2ImgMask();
+    image_ptr_t getImg2ImgControl();
     bool should_invert_mask_colors();
     bool ready();
 
@@ -74,10 +76,12 @@ class PaintingPanel: public Fl_Group {
     void extractCanny();
     void extractScribble();
     void extractPose();
+    bool ensureControlPresent();
     bool ensureImagePresent();
     bool ensureMaskPresent();
     void pre_process(const char* method);
-    
+    void enableControls();
+
  private:
     PromptPanel *prompt_;
     Fl_Group *left_bar_;
@@ -86,6 +90,7 @@ class PaintingPanel: public Fl_Group {
     Fl_Box* label_image_;
     Fl_Box* label_mask_;
     Fl_Box* label_control_;
+    Fl_Check_Button *draw_image_check_;
     FramePanel *image_panel_;
     std::unique_ptr<Button> btnNew_;
     std::unique_ptr<Button> btnOpen_;

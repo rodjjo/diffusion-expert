@@ -23,10 +23,11 @@ def load_model(model_path: str):
     if CURRENT_MODEL_PARAMS.get('path', '') != model_path:
         CURRENT_MODEL_PARAMS = {}
         gc.collect()
-        params = load_stable_diffusion_model(model_path)
+        params, in_painting = load_stable_diffusion_model(model_path)
         CURRENT_MODEL_PARAMS = {
             'path': model_path,
-            'params': params
+            'params': params,
+            'in_painting': in_painting
         }
     gc.collect()
 
@@ -98,6 +99,8 @@ def is_model(path: str):
             return True
     return False
 
+def current_model_is_in_painting():
+    return CURRENT_MODEL_PARAMS.get('in_painting', False) is True
 
 def list_models(directory: str):
     files = [n for n in os.listdir(directory) if is_model(n)]

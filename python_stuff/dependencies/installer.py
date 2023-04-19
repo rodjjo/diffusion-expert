@@ -15,18 +15,22 @@ def have_pip():
 
 
 def have_dependencies():
-    try:
-        import torch
-        import numpy
-        import diffusers
-        import transformers
-        import xformers
-        import cv2
-        import controlnet_aux
-        from omegaconf import OmegaConf
-        return True
-    except ImportError:
-        return False
+    exe_dir = os.path.dirname(sys.executable)
+    lib_dir = os.path.join(exe_dir, 'Lib', 'site-packages')
+    lib_names = [
+        'torch',
+        'numpy',
+        'diffusers',
+        'transformers',
+        'xformers',
+        'cv2',
+        'controlnet_aux',
+        'omegaconf',
+    ]
+    for l in lib_names:
+        if not os.path.exists(os.path.join(lib_dir, l)):
+            return False
+    return True
 
 
 def download_get_pip():

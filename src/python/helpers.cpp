@@ -13,6 +13,19 @@ namespace dexpert
     namespace py
     {
 
+        const char *errorFromPyDict(PyObject *result, const char *def) {
+            static char buffer[1024] = {};
+            if (PyDict_Check(result)) {
+                PyObject *error = PyDict_GetItemString(result, "error");
+                if (PyUnicode_Check(error)) {
+                    strncpy(buffer, PyUnicode_AsUTF8(error), sizeof(buffer) - 1);
+                    buffer[sizeof(buffer) - 1] = 0; // ensure null terminated
+                    return buffer;
+                }
+            }
+            return def;
+        }
+
         callback_t install_deps(status_callback_t status_cb)
         {
             return [status_cb]
@@ -109,7 +122,7 @@ namespace dexpert
                         if (!img)
                         {
                             errors = true;
-                            msg = "open_image did not return a valid dictionary with an image info.";
+                            msg = errorFromPyDict(result, "open_image did not return a valid dictionary with an image info.");
                         }
                     }
                 }
@@ -188,7 +201,7 @@ namespace dexpert
                         if (!img)
                         {
                             errors = true;
-                            msg = "open_image did not return a valid dictionary with an image info.";
+                            msg = errorFromPyDict(result, "pre_process_image did not return a valid dictionary with an image info.");
                         }
                     }
                 }
@@ -280,7 +293,7 @@ namespace dexpert
                             }
                             else
                             {
-                                msg = "open_image did not return a valid dictionary with an image info.";
+                                msg = errorFromPyDict(result, "It did not return image.");
                             }
                         }
                     }

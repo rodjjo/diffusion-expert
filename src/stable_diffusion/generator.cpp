@@ -84,6 +84,16 @@ namespace dexpert
         return image_.get();
     }
 
+    void GeneratorBase::clearImage() {
+        image_.reset();
+    }
+
+    void GeneratorBase::clearVariation(int index) {
+        if (index < 0 || index >= variations_.size())
+            return;
+        return variations_[index].first.reset();
+    }
+
     int GeneratorBase::getVariationCount()
     {
         return variations_.size();

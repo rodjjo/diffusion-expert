@@ -128,24 +128,38 @@ generator_cb_t StableDiffusionState::generatorMakeCallback() {
     };
 }
 
+void StableDiffusionState::clearGenerators() {
+    for (size_t i = 0; i < generators_.size(); ++i) {
+        generators_[i].g.reset();
+        generators_[i].seed_increment = 0;
+    }
+}
+
+void StableDiffusionState::clearImage(int index, int variation) {
+    if (index >= generators_.size() || index < 0)
+        return;
+    if (!generators_[index].g) 
+        return;
+    if (variation == 0) {
+        return generators_[index].g->clearImage();
+    }
+
+    return generators_[index].g->clearVariation(variation - 1);
+}
+
 bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator) {
     last_error_.clear();
 
+    clearGenerators();
+
     size_t index = 0;
-    for (size_t i = 0; i < generators_.size(); ++i) {
-        index = i;
-        if (!generators_[i].g) {
-            break;
-        }
-    }
     generator->generate(generatorMakeCallback(), 0);
+
     if (generator->getImage()) {
-        if (generators_[index].g) {
-            scroll_up_generators();
-        }
         generators_[index].g = generator;
         generators_[index].seed_increment = 0;
     }
+
     return last_error_.empty();
 }
 
@@ -306,14 +320,6 @@ int StableDiffusionState::getMaxResultImages() {
 
 int StableDiffusionState::getMaxResultVariations() {
     return  GeneratorBase::maxVariations() + 1; // +1 of original image
-}
-
-void StableDiffusionState::clearAllResultImages() {
-    
-}
-
-void StableDiffusionState::clearResult(int index, int variation) {
-   
 }
 
 const char* StableDiffusionState::lastError() {
