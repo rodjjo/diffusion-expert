@@ -24,6 +24,7 @@ float ControlNet::getStrenght() {
 const char *ControlNet::getMode() {
     return mode_.c_str();
 }
+
 RawImage *ControlNet::getImage() {
     return image_.get();
 }

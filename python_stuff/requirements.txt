@@ -3,7 +3,7 @@ OmegaConf
 accelerate
 pytorch_lightning
 numpy
-diffusers
+diffusers==0.15.1
 transformers
 safetensors
 invisible-watermark

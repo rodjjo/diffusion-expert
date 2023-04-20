@@ -45,23 +45,21 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
         controlnets = controlnets or [] if mode == 'txt2img' else []
         control_model = []
         have_controlnet = False
+        model_repos = {
+                'canny': 'lllyasviel/sd-controlnet-canny',
+                'pose': 'lllyasviel/sd-controlnet-openpose',
+                'scribble': 'lllyasviel/sd-controlnet-scribble',
+                'deepth': 'lllyasviel/sd-controlnet-depth',
+        }
         for c in controlnets:
             have_controlnet = True
-            if c['mode'] == 'canny':
-                print("Loading controlnet canny model")
-                control_model.append(ControlNetModel.from_pretrained(
-                    "lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, cache_dir=CACHE_DIR
-                ))
-            elif c['mode'] == 'pose':
-                print("Loading controlnet pose model")
-                control_model.append(ControlNetModel.from_pretrained(
-                    "lllyasviel/sd-controlnet-openpose", torch_dtype=torch.float16, cache_dir=CACHE_DIR
-                ))
-            elif c['mode'] == 'scribble':
-                print("Loading controlnet scribble model")
-                control_model.append(ControlNetModel.from_pretrained(
-                    "lllyasviel/sd-controlnet-scribble", torch_dtype=torch.float16, cache_dir=CACHE_DIR
-                ))
+            if not model_repos.get(c['mode']):
+                print("No controlnet for ", c['mode'])
+                continue
+            print("Controlnet: ", c['mode'])
+            control_model.append(ControlNetModel.from_pretrained(
+                model_repos[c['mode']], torch_dtype=torch.float16, cache_dir=CACHE_DIR
+            ))
 
         if len(control_model) == 1:
             control_model = control_model[0]

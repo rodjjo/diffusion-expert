@@ -69,7 +69,7 @@ public:
 
     image_ptr_t getImage();
     image_ptr_t getMask();
-    image_ptr_t geControlImage();
+    image_ptr_t getControlImage();
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, int buffer_type) override;
     RawImage *getDrawingImage(int buffer_type);

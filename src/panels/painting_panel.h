@@ -27,6 +27,7 @@ typedef enum {
    painting_scribble,
    painting_canny,
    painting_pose,
+   painting_deepth,
 
    // keep painting_mode_max ath the end
    painting_mode_max
@@ -76,6 +77,7 @@ class PaintingPanel: public Fl_Group {
     void extractCanny();
     void extractScribble();
     void extractPose();
+    void extractDeepth();
     bool ensureControlPresent();
     bool ensureImagePresent();
     bool ensureMaskPresent();
@@ -101,6 +103,7 @@ class PaintingPanel: public Fl_Group {
     std::unique_ptr<Button> btnScribble_;
     std::unique_ptr<Button> btnCanny_;
     std::unique_ptr<Button> btnPose_;
+    std::unique_ptr<Button> btnDeepth_;
 };
     
 }   // namespace dexpert

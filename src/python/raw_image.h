@@ -19,7 +19,7 @@ typedef enum {
 
 class RawImage {
  public:
-    RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format);
+    RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent=true);
     virtual ~RawImage();
     void toPyDict(PyObject *dict);
     const unsigned char *buffer();

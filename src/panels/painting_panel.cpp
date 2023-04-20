@@ -17,7 +17,19 @@ namespace {
         "Inpaint not masked",
         "Scribble",
         "Canny",
-        "Pose"
+        "Pose",
+        "Deepth"
+    };
+
+    const char *controlnet_modes[painting_mode_max] = {
+        NULL, // disabled
+        NULL, // img2img
+        NULL, // inpaint
+        NULL, // inpaint
+        "scribble",
+        "canny",
+        "pose",
+        "deepth"
     };
 
     const char *brush_sizes[brush_size_count] = {
@@ -79,6 +91,10 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
         extractPose();
     }));
 
+    btnDeepth_.reset(new Button(xpm::image(xpm::eye_16x16), [this] {
+        extractDeepth();
+    }));
+
     draw_image_check_ = new Fl_Check_Button(0, 0, 1, 1, "Show reference img");
 
     left_bar_->end();
@@ -107,15 +123,19 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
 
     btnScribble_->tooltip("Convert the image to a scribble");
     btnScribble_->position(1, 1);
-    btnScribble_->size(48, 30);
+    btnScribble_->size(35, 30);
 
     btnCanny_->tooltip("Convert the image to canny edges");
     btnCanny_->position(1, 1);
-    btnCanny_->size(48, 30);
+    btnCanny_->size(35, 30);
 
     btnPose_->tooltip("Convert the image to pose");
     btnPose_->position(1, 1);
-    btnPose_->size(48, 30);
+    btnPose_->size(35, 30);
+    
+    btnDeepth_->tooltip("Convert the image to deepth");
+    btnDeepth_->position(1, 1);
+    btnDeepth_->size(35, 30);
 
     for (int i = 0; i < painting_mode_max; ++i) {
         if (!only_control_net || i == 0 || i >= painting_scribble) {
@@ -176,8 +196,9 @@ void PaintingPanel::alignComponents() {
     btnScribble_->position(left_bar_->x(), brushes_->y() + brushes_->h() + 26);
     btnCanny_->position(btnScribble_->x() + btnScribble_->w() + 2, btnScribble_->y());
     btnPose_->position(btnCanny_->x() + btnCanny_->w() + 2, btnCanny_->y());
+    btnDeepth_->position(btnPose_->x() + btnPose_->w() + 2, btnPose_->y());
 
-    draw_image_check_->resize(left_bar_->x(), btnPose_->y() + btnPose_->h() + 3, left_bar_->w() - 2, 20);
+    draw_image_check_->resize(left_bar_->x(), btnDeepth_->y() + btnDeepth_->h() + 3, left_bar_->w() - 2, 20);
 }
 
 PaintingPanel::~PaintingPanel() {
@@ -200,7 +221,8 @@ void PaintingPanel::enableControls() {
 
     if (getSelectedMode() == painting_canny ||
         getSelectedMode() == painting_scribble ||
-        getSelectedMode() == painting_pose) {
+        getSelectedMode() == painting_pose ||
+        getSelectedMode() == painting_deepth) {
         controlnet = true;     
     }
     
@@ -214,6 +236,7 @@ void PaintingPanel::enableControls() {
     btnScribble_->enabled(controlnet);
     btnCanny_->enabled(controlnet);
     btnPose_->enabled(controlnet);
+    btnDeepth_->enabled(controlnet);
     
     if (inpanting || controlnet) {
         brushes_->activate();
@@ -321,7 +344,7 @@ void PaintingPanel::newMask() {
         getSelectedMode() == painting_canny ||
         getSelectedMode() == painting_scribble
     ) {
-        bool should_continue = image_panel_->geControlImage() ? false : true;
+        bool should_continue = image_panel_->getControlImage() ? false : true;
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
         if (should_continue) {
             image_panel_->setControlImg(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
@@ -339,7 +362,7 @@ void PaintingPanel::setImage(RawImage *image) {
 }
 
 bool PaintingPanel::ensureControlPresent() {
-     if (image_panel_->geControlImage()) {
+     if (image_panel_->getControlImage()) {
         return true;
     }
     show_error("There is no image to proceed");
@@ -391,8 +414,15 @@ void PaintingPanel::pre_process(const char* method) {
             mode_->value(painting_pose);
         } else if (method == std::string("scriblle")) {
             mode_->value(painting_scribble);
+        } else if (method == std::string("deepth")) {
+            mode_->value(painting_deepth);
         }
-        image_panel_->setControlImg(img->removeBackground(getSelectedMode() != painting_pose));
+
+        if (method != std::string("deepth")) {
+            img = img->removeBackground(getSelectedMode() != painting_pose);
+        }
+
+        image_panel_->setControlImg(img);
         image_panel_->editControlImage();
         image_panel_->setMaskDrawing(true);
         image_panel_->setImageDrawing(draw_image_check_->value() == 1);
@@ -410,7 +440,10 @@ void PaintingPanel::extractScribble() {
 
 void PaintingPanel::extractPose() {
     pre_process("pose");
+}
 
+void PaintingPanel::extractDeepth() {
+    pre_process("deepth");
 }
 
 image_ptr_t PaintingPanel::getImg2ImgImage() {
@@ -468,23 +501,16 @@ bool PaintingPanel::should_invert_mask_colors() {
 
 std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
     std::shared_ptr<ControlNet> result;
-    const char *mode = NULL;
-
-    switch (getSelectedMode()) {
-        case painting_canny:
-            mode = "canny";
-        break;
-        case painting_pose:
-            mode = "pose";
-        break;
-        case painting_scribble:
-            mode = "scribble";
-        break;
-    }
+    const char *mode = controlnet_modes[getSelectedMode()];
 
     if (mode != NULL) {
         if (ensureControlPresent()) {
-            result.reset(new ControlNet(mode, image_panel_->geControlImage()->removeAlpha()));
+            auto img = image_panel_->getControlImage();
+            if (getSelectedMode() == painting_deepth)
+                img = img->duplicate();
+            else
+                img = img->removeAlpha();
+            result.reset(new ControlNet(mode, img));
         }
     }
      

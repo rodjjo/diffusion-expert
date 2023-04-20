@@ -6,6 +6,8 @@
 
 #include "src/panels/pages.h"
 
+#define COUNTOF(X) (sizeof((X))/(sizeof((X)[0])))
+
 namespace dexpert {
 namespace  {
     const char *kPAGE_TITLES[page_max] = {
@@ -172,6 +174,13 @@ void Pages::textToImage() {
 
     if (c) {
         controlnets.push_back(c);
+    }
+
+    for (int i = 0; i < COUNTOF(controlNets_); ++i) {
+        c = controlNets_[i]->getControlnet();
+        if (c) {
+            controlnets.push_back(c);
+        }
     }
 
     std::shared_ptr<GeneratorBase> g;

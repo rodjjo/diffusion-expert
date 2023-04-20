@@ -99,10 +99,7 @@ def _run_pipeline(pipeline_type, params):
                     c['strength'] = 0
                 if c['strength'] > 2.0:
                     c['strength'] = 2.0
-                if c['mode'] == 'pose':
-                    images.append(image_from_dict(c['image']))
-                else:
-                    images.append(image_from_dict(c['image']))
+                images.append(image_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
