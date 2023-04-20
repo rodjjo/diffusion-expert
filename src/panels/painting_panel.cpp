@@ -317,6 +317,7 @@ void PaintingPanel::modeSelected() {
         case painting_pose:
         case painting_canny:
         case painting_scribble:
+        case painting_deepth:
             image_panel_->setMaskDrawing(true);
             image_panel_->setImageDrawing(draw_image_check_->value() == 1);
             image_panel_->editControlImage();

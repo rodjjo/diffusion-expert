@@ -212,7 +212,10 @@ void Pages::textToImage() {
             promptPanel_->getHeight(),
             promptPanel_->getSteps(),
             promptPanel_->getCFG(),
-            promptPanel_->getVariationStrength()
+            promptPanel_->getVariationStrength(),
+            0.8,
+            promptPanel_->shouldRestoreFaces(),
+            promptPanel_->shouldUseCodeformer()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -225,7 +228,9 @@ void Pages::textToImage() {
             promptPanel_->getHeight(),
             promptPanel_->getSteps(),
             promptPanel_->getCFG(),
-            promptPanel_->getVariationStrength()
+            promptPanel_->getVariationStrength(),
+            promptPanel_->shouldRestoreFaces(),
+            promptPanel_->shouldUseCodeformer()
         ));
     }
 

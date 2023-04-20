@@ -20,7 +20,7 @@ namespace dexpert
 
 class ProgressWindow {
  public: 
-    ProgressWindow();
+    ProgressWindow(bool preview_images);
     virtual ~ProgressWindow();
     void show();
     void hide();
@@ -30,6 +30,7 @@ class ProgressWindow {
     static void update(void *cbdata);
 
  private:
+   bool preview_images_ = true;
     ModalWindow *window_ = NULL;
     FramePanel *preview_;
     Fl_Progress *progress_;
@@ -41,7 +42,7 @@ class ProgressWindow {
 void set_progress_title(const char *title);
 void set_progress(int progress, int max, image_ptr_t preview);
 bool should_cancel_progress();
-void enable_progress_window();
+void enable_progress_window(bool preview_images=true);
 void show_progress_window();
 void hide_progress_window();
 

@@ -20,7 +20,9 @@ namespace dexpert
         size_t steps,
         float cfg,
         float var_stren,
-        float image_strength
+        float image_strength,
+        bool restore_faces,
+        bool enable_codeformer
     ) : prompt_(prompt), 
         negative_(negative), 
         model_(model), 
@@ -34,7 +36,9 @@ namespace dexpert
         steps_(steps), 
         cfg_(cfg), 
         var_strength_(var_stren),
-        image_strength_(image_strength)
+        image_strength_(image_strength),
+        restore_faces_(restore_faces), 
+        enable_codeformer_(enable_codeformer)
         {
 
 }
@@ -55,7 +59,9 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
         this->steps_,
         this->cfg_,
         this->var_strength_,
-        this->image_strength_
+        this->image_strength_,
+        this->restore_faces_,
+        this->enable_codeformer_
     ));
     return d;
 }
@@ -83,6 +89,8 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.mask = mask_.get();
     params.invert_mask = invert_mask_;
     params.strength = image_strength_;
+    params.restore_faces = restore_faces_;
+    params.enable_codeformer = enable_codeformer_;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
         dexpert::py::control_net_t control;

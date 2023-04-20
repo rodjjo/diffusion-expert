@@ -19,7 +19,7 @@ def python_binary():
 
 
 def download_python():
-    url = 'https://www.python.org/ftp/python/3.10.0/python-3.10.0-embed-amd64.zip'
+    url = 'https://www.python.org/ftp/python/3.10.9/python-3.10.9-embed-amd64.zip'
     filepath = os.path.join(build.temp_dir(), "python3.10.zip")
     if not os.path.exists(filepath):
         print('Downloading embedded Python')

@@ -26,6 +26,7 @@ def have_dependencies():
         'cv2',
         'controlnet_aux',
         'omegaconf',
+        'gfpgan',
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):

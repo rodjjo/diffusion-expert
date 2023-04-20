@@ -17,6 +17,11 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     width_ = new Fl_Int_Input(0, 0, 1, 1, "Width");
     height_ = new Fl_Int_Input(0, 0, 1, 1, "Height");
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
+    restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
+    codeformer_ = new Fl_Check_Button(0, 0, 1, 1, "Codeformer");
+
+    codeformer_->hide(); // TODO: add codeformer
+
     this->end();
 
     positivePrompt_->align(FL_ALIGN_TOP_LEFT);
@@ -193,6 +198,19 @@ void PromptPanel::alignComponents() {
         420,
         25
     );
+    restore_face_->resize(
+        x() + 5,
+        models_->y() + models_->h() + 5,
+        120,
+        25
+    );
+    codeformer_->resize(
+        x() + 5 + restore_face_->w(),
+        restore_face_->y(),
+        120,
+        25
+    ); 
+
 }
 
 void PromptPanel::resize(int x, int y, int w, int h) {
@@ -247,6 +265,14 @@ bool PromptPanel::ready(bool require_prompt) {
         }
     }
     return true;
+}
+
+bool PromptPanel::shouldRestoreFaces() {
+    return restore_face_->value() != 0;
+}
+
+bool PromptPanel::shouldUseCodeformer() {
+    return codeformer_->value() != 0;
 }
 
 } // namespace dexpert

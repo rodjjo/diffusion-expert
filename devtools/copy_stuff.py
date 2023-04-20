@@ -12,6 +12,7 @@ def copy_files():
     if os.path.exists(target_dir):
         shutil.rmtree(target_dir)
     shutil.copytree(source_dir, target_dir)
+    os.makedirs(os.path.join(target_root, 'bin'), exist_ok=True)
     shutil.copyfile(os.path.join(config_dir, 'python310._pth'), os.path.join(target_root, 'bin', 'python310._pth'))
     
     os.makedirs(os.path.join(target_dir, '..', 'bin', 'Lib', 'site-packages'), exist_ok=True)
