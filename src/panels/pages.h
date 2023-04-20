@@ -52,6 +52,7 @@ class Pages: public Fl_Group {
     Fl_Group *pages_[page_max] = {0,};
     bool visible_pages_[page_max] = {0,};
 
+    PaintingPanel *controlNets_[4] = {};
     PromptPanel *promptPanel_ = NULL;
     PaintingPanel *inputImage_ = NULL;
     ResultsPanel *resultsPanel_ = NULL;

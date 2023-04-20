@@ -32,7 +32,10 @@ namespace {
     };
 }
 
-PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): Fl_Group(x, y, w, h), prompt_(prompt) {
+PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, bool only_control_net): 
+        Fl_Group(x, y, w, h), 
+        prompt_(prompt), 
+        only_control_net_(only_control_net) {
     this->begin();
     left_bar_ = new Fl_Group(0, 0, 1, 1);
     image_panel_ = new FramePanel(0, 0, 1, 1);
@@ -43,9 +46,6 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
     label_control_ = new Fl_Box(0, 0, 1, 1, "Transformations");
     mode_ = new Fl_Choice(0, 0, 1, 1, "Mode");
     brushes_ = new Fl_Choice(0, 0, 1, 1, "Brush size");
-    btnNew_.reset(new Button(xpm::image(xpm::file_new_16x16), [this] {
-        newImage();
-    }));
 
     btnOpen_.reset(new Button(xpm::image(xpm::directory_16x16), [this] {
        openImage(); 
@@ -67,7 +67,6 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
         saveMask();
     }));
 
-
     btnScribble_.reset(new Button(xpm::image(xpm::edit_16x16), [this] {
         extractScribble();
     }));
@@ -86,10 +85,6 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
 
     this->end();
     
-    btnNew_->tooltip("New image");
-    btnNew_->position(1, 1);
-    btnNew_->size(48, 30);
-
     btnOpen_->tooltip("Open a image");
     btnOpen_->position(1, 1);
     btnOpen_->size(48, 30);
@@ -123,7 +118,9 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt): 
     btnPose_->size(48, 30);
 
     for (int i = 0; i < painting_mode_max; ++i) {
-        mode_->add(modes_text[i]);    
+        if (!only_control_net || i == 0 || i >= painting_scribble) {
+            mode_->add(modes_text[i]);    
+        }
     }
 
     for (int i = 0; i < brush_size_count; ++i) {
@@ -149,6 +146,15 @@ void PaintingPanel::resize(int x, int y, int w, int h) {
     alignComponents();
 }
 
+painting_mode_t PaintingPanel::getSelectedMode() {
+    if (only_control_net_) {
+        if (mode_->value() == 0) 
+            return paiting_disabled;
+        return (painting_mode_t) (mode_->value() - 1 + painting_scribble);
+    }
+    return (painting_mode_t) mode_->value();
+}
+
 void PaintingPanel::alignComponents() {
     left_bar_->resize(x(), y(), 150, h());
     image_panel_->resize(x() + left_bar_->w() + 1, y(), w() - left_bar_->w() - 2, h());
@@ -156,8 +162,7 @@ void PaintingPanel::alignComponents() {
     mode_->resize(left_bar_->x() + 1, left_bar_->y() + 24, left_bar_->w() - 2, 30);
 
     label_image_->resize(left_bar_->x() + 1, mode_->y() + 1 + mode_->h(), left_bar_->w() - 2, 20);
-    btnNew_->position(left_bar_->x() + 1, label_image_->y() + label_image_->h() + 1);
-    btnOpen_->position(btnNew_->x() + 2 + btnNew_->w(), btnNew_->y());
+    btnOpen_->position(left_bar_->x() + 1, label_image_->y() + label_image_->h() + 1);
     btnSave_->position(btnOpen_->x() + 2 + btnOpen_->w(), btnOpen_->y());
 
     label_mask_->resize(left_bar_->x() + 1, btnOpen_->y() + btnOpen_->h() + 3, left_bar_->w() - 2, 20);
@@ -184,24 +189,23 @@ void PaintingPanel::enableControls() {
     bool image2image = false;
     bool controlnet = false;
 
-    if (mode_->value() == painting_img2img) {
+    if (getSelectedMode() == painting_img2img) {
         image2image = true;
     }
 
-    if (mode_->value() == painting_inpaint_masked ||
-        mode_->value() == painting_inpaint_not_masked) {
+    if (getSelectedMode() == painting_inpaint_masked ||
+        getSelectedMode() == painting_inpaint_not_masked) {
         inpanting = true;
     }
 
-    if (mode_->value() == painting_canny ||
-        mode_->value() == painting_scribble ||
-        mode_->value() == painting_pose) {
+    if (getSelectedMode() == painting_canny ||
+        getSelectedMode() == painting_scribble ||
+        getSelectedMode() == painting_pose) {
         controlnet = true;     
     }
     
-    btnNew_->enabled(inpanting || image2image || controlnet);
-    btnOpen_->enabled(btnNew_->enabled());
-    btnSave_->enabled(btnNew_->enabled());
+    btnOpen_->enabled(inpanting | image2image | controlnet);
+    btnSave_->enabled(btnOpen_->enabled());
 
     btnNewMask_->enabled(inpanting || controlnet);
     btnOpenMask_->enabled(btnNewMask_->enabled());
@@ -249,11 +253,11 @@ void PaintingPanel::openImage() {
 }
 
 void PaintingPanel::openMask() {
-    if (mode_->value() != painting_inpaint_masked &&
-        mode_->value() != painting_inpaint_not_masked &&
-        mode_->value() != painting_pose &&
-        mode_->value() != painting_canny &&
-        mode_->value() != painting_scribble
+    if (getSelectedMode() != painting_inpaint_masked &&
+        getSelectedMode() != painting_inpaint_not_masked &&
+        getSelectedMode() != painting_pose &&
+        getSelectedMode() != painting_canny &&
+        getSelectedMode() != painting_scribble
     ) {
         show_error("This mode does not allow masks!");
         return;
@@ -264,8 +268,8 @@ void PaintingPanel::openMask() {
             show_error("THe image does not have alpha channel.");
             return;
         }
-        if (mode_->value() == painting_inpaint_masked ||
-            mode_->value() == painting_inpaint_not_masked
+        if (getSelectedMode() == painting_inpaint_masked ||
+            getSelectedMode() == painting_inpaint_not_masked
         ) {
             image_panel_->setMask(img);
         } else {
@@ -280,7 +284,7 @@ void PaintingPanel::modeSelected(Fl_Widget *widget, void *cbdata) {
 }
 
 void PaintingPanel::modeSelected() {
-    switch (mode_->value()) {
+    switch (getSelectedMode()) {
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
             image_panel_->setMaskDrawing(true);
@@ -304,8 +308,8 @@ void PaintingPanel::modeSelected() {
 }
 
 void PaintingPanel::newMask() {
-    if (mode_->value() == painting_inpaint_masked ||
-        mode_->value() == painting_inpaint_not_masked
+    if (getSelectedMode() == painting_inpaint_masked ||
+        getSelectedMode() == painting_inpaint_not_masked
     ) {
         bool should_continue = image_panel_->getMask() ? false : true;
         should_continue = (should_continue || ask("Do you want to create a new mask ?"));
@@ -313,9 +317,9 @@ void PaintingPanel::newMask() {
             image_panel_->setMask(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
             image_panel_->redraw();
         }
-    } else if (mode_->value() == painting_pose ||
-        mode_->value() == painting_canny ||
-        mode_->value() == painting_scribble
+    } else if (getSelectedMode() == painting_pose ||
+        getSelectedMode() == painting_canny ||
+        getSelectedMode() == painting_scribble
     ) {
         bool should_continue = image_panel_->geControlImage() ? false : true;
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
@@ -325,15 +329,6 @@ void PaintingPanel::newMask() {
         }
     } else {
         show_error("This mode does not allow mask");
-    }
-}
-
-void PaintingPanel::newImage() {
-    bool should_continue = image_panel_->getImage() ? false : true;
-    should_continue = (should_continue || ask("Do you want to create a new image ?"));
-    if (should_continue) {
-        image_panel_->setImage(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), false));
-        image_panel_->redraw();
     }
 }
 
@@ -397,7 +392,7 @@ void PaintingPanel::pre_process(const char* method) {
         } else if (method == std::string("scriblle")) {
             mode_->value(painting_scribble);
         }
-        image_panel_->setControlImg(img->removeBackground(mode_->value() != painting_pose));
+        image_panel_->setControlImg(img->removeBackground(getSelectedMode() != painting_pose));
         image_panel_->editControlImage();
         image_panel_->setMaskDrawing(true);
         image_panel_->setImageDrawing(draw_image_check_->value() == 1);
@@ -419,7 +414,7 @@ void PaintingPanel::extractPose() {
 }
 
 image_ptr_t PaintingPanel::getImg2ImgImage() {
-    switch (mode_->value())
+    switch (getSelectedMode())
     {
         case painting_img2img:
         case painting_inpaint_masked:
@@ -435,7 +430,7 @@ image_ptr_t PaintingPanel::getImg2ImgImage() {
 }
 
 image_ptr_t PaintingPanel::getImg2ImgMask() {
-    switch (mode_->value())
+    switch (getSelectedMode())
     {
         case painting_img2img:
         case painting_inpaint_masked:
@@ -450,16 +445,16 @@ image_ptr_t PaintingPanel::getImg2ImgMask() {
 }
 
 bool PaintingPanel::ready() {
-    if (mode_->value() == paiting_disabled) {
+    if (getSelectedMode() == paiting_disabled) {
         return prompt_->ready(true);
     }
-    if (mode_->value() == painting_inpaint_masked ||
-        mode_->value() == painting_inpaint_not_masked) {
+    if (getSelectedMode() == painting_inpaint_masked ||
+        getSelectedMode() == painting_inpaint_not_masked) {
         return ensureImagePresent() && ensureMaskPresent();
     }
-    if (mode_->value() == painting_scribble ||
-        mode_->value() == painting_canny || 
-        mode_->value() == painting_pose
+    if (getSelectedMode() == painting_scribble ||
+        getSelectedMode() == painting_canny || 
+        getSelectedMode() == painting_pose
     ) {
         return ensureControlPresent();
     }
@@ -468,14 +463,14 @@ bool PaintingPanel::ready() {
 
 
 bool PaintingPanel::should_invert_mask_colors() {
-    return mode_->value() == painting_inpaint_masked;
+    return getSelectedMode() == painting_inpaint_masked;
 }
 
 std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
     std::shared_ptr<ControlNet> result;
     const char *mode = NULL;
 
-    switch (mode_->value()) {
+    switch (getSelectedMode()) {
         case painting_canny:
             mode = "canny";
         break;

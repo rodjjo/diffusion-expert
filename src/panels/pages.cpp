@@ -33,6 +33,11 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_input_image] = inputImage_;
     resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
     pages_[page_results] = resultsPanel_;
+
+    for (int i = 0; i < 4; i++) {
+        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, true);
+        pages_[page_controlnet1 + i] = controlNets_[i];
+    }
     
     visible_pages_[page_results] = true;
     visible_pages_[page_prompts] = true;
