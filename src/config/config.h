@@ -38,6 +38,8 @@ namespace dexpert
     bool getSafeFilter();
     void setScheduler(const std::string &name);
     const char *getScheduler();
+    int getControlnetCount();
+    void setControlnetCount(int value);
 
     std::string& lastImageSaveDir();
     std::string& lastImageOpenDir();
@@ -61,6 +63,7 @@ namespace dexpert
 
   private:
     // configs
+    int controlnetCount_ = 0;
     bool safeFilterEnabled_ = true;
     std::string scheduler_ = "PNDMScheduler";
     std::string lastSdModelName_; // the latest used sd model

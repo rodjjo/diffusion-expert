@@ -1,8 +1,10 @@
-#include "src/panels/pages.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/stable_diffusion/state.h"
 #include "src/stable_diffusion/generator_txt2img.h"
 #include "src/stable_diffusion/generator_img2img.h"
+#include "src/config/config.h"
+
+#include "src/panels/pages.h"
 
 namespace dexpert {
 namespace  {
@@ -47,11 +49,18 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
 
     this->end();
 
-    alignComponents();
+    loadConfig();
     goPage(page_results);
 }
 
 Pages::~Pages() {
+}
+
+void Pages::loadConfig() {
+    for (int i = page_controlnet1; i <= page_controlnet4; i++) {
+        visible_pages_[i] = getConfig().getControlnetCount() > i - page_controlnet1;
+    }
+    alignComponents();
 }
 
 const char *Pages::pageTitle(page_t page) {

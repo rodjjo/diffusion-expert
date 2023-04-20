@@ -7,15 +7,28 @@
 
 namespace dexpert {
 
+namespace {
+    const char *controlnet_choices[controlnet_max] = {
+        "Only for the input image",
+        "Controlnet +1",
+        "Controlnet +2",
+        "Controlnet +3",
+        "Controlnet +4"
+    };
+}
+
 ConfigWindow::ConfigWindow() {
     window_ = new ModalWindow(0, 0, 640, 480, "Configurations");
     window_->begin();
     tabs_ = new Fl_Tabs(0, 0, 1, 1);
+
     tabs_->begin();
     page_sd_ = new Fl_Group(0, 0, 1, 1, "Stable Diffusion");
     nsfw_check_ = new Fl_Check_Button(0, 0, 1, 1, "Filter NSFW");
     schedulers_ = new Fl_Choice(0, 0, 1, 1, "Scheduler");
+    controlnetTabs_ = new Fl_Choice(0, 0, 1, 1, "Controlnet");
     tabs_->end();
+
     btnOk_.reset(new Button(xpm::image(xpm::button_ok_16x16), [this] {
         save_configuration();
     }));
@@ -31,6 +44,19 @@ ConfigWindow::ConfigWindow() {
     window_->position(Fl::w() / 2 - window_->w() / 2, Fl::h() / 2 - window_->h() / 2);
 
     schedulers_->align(FL_ALIGN_TOP_LEFT);
+    controlnetTabs_->align(FL_ALIGN_TOP_LEFT);
+
+    schedulers_->add("UniPCMultistepScheduler");
+    schedulers_->add("PNDMScheduler");
+    schedulers_->add("DDIMScheduler");
+    schedulers_->add("LMSDiscreteScheduler");
+    schedulers_->value(0);
+    
+    for (int i = 0; i < controlnet_max; i++) {
+        controlnetTabs_->add(controlnet_choices[i]);
+    }
+    controlnetTabs_->value(0);
+    
 
     align_components();
     load_configuration();
@@ -43,24 +69,17 @@ ConfigWindow::~ConfigWindow() {
 
 void ConfigWindow::align_components() {
     tabs_->resize(0, 0, window_->w(), window_->h() - 50);
-
     page_sd_->resize(tabs_->x(), tabs_->y() + 20, tabs_->w(), tabs_->h() - 22);
     int left = tabs_->x() + 5;
     int top = tabs_->y() + 50;
     int height = 30;
     schedulers_->resize(left, top, 200, height);
     nsfw_check_->resize(left + schedulers_->w() + 5, top, 200, height);
+    controlnetTabs_->resize(nsfw_check_->x() + nsfw_check_->w() + 5, top, 200, height);
     btnOk_->position(window_->w() - 215, window_->h() - 40);
     btnOk_->size(100, 30);
     btnCancel_->position(btnOk_->x() + btnOk_->w() + 2, btnOk_->y());
     btnCancel_->size(100, 30);
-
-    schedulers_->add("UniPCMultistepScheduler");
-    schedulers_->add("PNDMScheduler");
-    schedulers_->add("DDIMScheduler");
-    schedulers_->add("LMSDiscreteScheduler");
-    
-    schedulers_->value(0);
 }
 
 void ConfigWindow::load_configuration() {
@@ -69,6 +88,7 @@ void ConfigWindow::load_configuration() {
     if (index >= 0) {
         schedulers_->value(index);
     }
+    controlnetTabs_->value(getConfig().getControlnetCount());
 }
 
 void ConfigWindow::save_configuration() {
@@ -80,6 +100,8 @@ void ConfigWindow::save_configuration() {
     } else {
         getConfig().setScheduler(schedulers_->text(0));
     }
+    getConfig().setControlnetCount(controlnetTabs_->value());
+    getConfig().save();
 
     const char *msg;
     bool success = false;

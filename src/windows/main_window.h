@@ -40,6 +40,8 @@ class MainWindow : Fl_Menu_Window {
   void initMenu();
   void alignComponents();
   void gotoSelectedPage();
+  void refreshBrowser();
+  void editConfig();
   static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
   static void gotoPromptPage(void *cbdata);
  private:

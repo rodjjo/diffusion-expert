@@ -62,7 +62,13 @@ std::string execute_file_choose(Fl_Native_File_Chooser *fc, std::string* current
         path = fc->filename();
 
         if (current_dir) {
-            std::string dir = std::string(path) + "/..";
+            std::string dir = std::string(path);
+            size_t latest = dir.find_last_of("/\\");
+            if (latest != std::wstring::npos) {
+                dir = dir.substr(0, latest);
+            } else {
+                dir = std::string();
+            }
             if (path_exists(dir.c_str())) {
                 *current_dir = dir;
             }

@@ -39,6 +39,7 @@ class Pages: public Fl_Group {
     page_t activePage();
     const char *pageTitle(page_t page);
     void textToImage();
+    void loadConfig();
 
  protected:
     void resize(int x, int y, int w, int h) override;

@@ -14,6 +14,16 @@
 
 namespace dexpert {
 
+typedef enum {
+    controlnet_0,
+    controlnet_1,
+    controlnet_2,
+    controlnet_3,
+    controlnet_4,
+    // keep controlnet_max at the end
+    controlnet_max
+} controlnet_counter_t;
+
 class ConfigWindow {
  public:
     ConfigWindow();
@@ -30,6 +40,7 @@ class ConfigWindow {
     Fl_Tabs *tabs_;
     Fl_Check_Button *nsfw_check_;
     Fl_Choice *schedulers_;
+    Fl_Choice *controlnetTabs_;
 
     ModalWindow *window_ = NULL;
     std::unique_ptr<Button> btnOk_;
