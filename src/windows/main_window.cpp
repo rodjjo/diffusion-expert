@@ -58,10 +58,18 @@ void MainWindow::initRightPanel() {
     page_browser_->callback(pageChangeCallback, this);
     rightPanel_->end();
     rightPanel_->box(FL_BORDER_BOX);
+
+    refreshBrowser();
+}
+
+void MainWindow::refreshBrowser() {
+    page_browser_->clear();
     for (int i = 0; i < page_max; ++i) {
         if (pages_->isVisible((page_t) i))
             page_browser_->add(pages_->pageTitle((page_t) i));
     }
+    page_browser_->deselect();
+    page_browser_->select(pages_->visibleIndex() + 1);
 }
 
 void MainWindow::initToolbar() {
@@ -85,7 +93,7 @@ void MainWindow::initMenu() {
     // menu_->addItem([this] {  }, "", "File/Save");
     //  menu_->addItem(noCall, "", "Edit");
     menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
-    menu_->addItem([this] { show_configuration(); }, "", "Edit/Settings");
+    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
     //  menu_->addItem(noCall, "", "Help");
 }
@@ -122,6 +130,13 @@ void MainWindow::alignComponents() {
     rightPanel_->size(rightW, centerH);
 
     page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
+}
+
+void MainWindow::editConfig() {
+    show_configuration(); 
+    pages_->loadConfig();
+    refreshBrowser();
+    gotoSelectedPage();
 }
 
 void MainWindow::resize(int x, int y, int w, int h) {

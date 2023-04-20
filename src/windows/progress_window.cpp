@@ -11,6 +11,7 @@ namespace dexpert
 namespace {
     bool progress_enabled = false;
     bool progress_canceled = false;
+    bool preview_enabled = false;
     std::unique_ptr<ProgressWindow> prog_win;
     std::string progress_label;
 
@@ -21,8 +22,9 @@ namespace {
     int max_progress = 100;
 }
 
-ProgressWindow::ProgressWindow() {
-    window_ = new ModalWindow(0, 0, 640, 480, "Please wait");
+ProgressWindow::ProgressWindow(bool preview_images) {
+    preview_images_ = preview_images;
+    window_ = new ModalWindow(0, 0, 640, preview_images_ ? 480 : 90, "Please wait");
     window_->begin();
     preview_ = new FramePanel(image_ptr_t(), 0, 0, window_->w(), window_->h() - 85);
     title_ = new Fl_Box(5, preview_->h() + 3, window_->w() - 10, 20, "Wait");
@@ -37,6 +39,10 @@ ProgressWindow::ProgressWindow() {
 
     progress_->maximum(100);
     progress_->value(0);
+
+    if (!preview_images_) {
+        preview_->hide();
+    }
 
     btnCancel_->tooltip("Cancel the operation");
     btnCancel_->position(window_->w() / 2 - 50, window_->h() - 40);
@@ -98,9 +104,10 @@ bool should_cancel_progress() {
     return progress_canceled;
 }
 
-void enable_progress_window() {
+void enable_progress_window(bool preview_images) {
     progress_enabled = true;
     progress_canceled = false;
+    preview_enabled = preview_images;
  }
 
 void show_progress_window() {
@@ -110,7 +117,7 @@ void show_progress_window() {
         return;
     current_progress = 0;
     max_progress = 100;
-    prog_win.reset(new ProgressWindow());
+    prog_win.reset(new ProgressWindow(preview_enabled));
     prog_win->show();
     progress_enabled = false;
 }

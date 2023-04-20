@@ -1,8 +1,12 @@
-#include "src/panels/pages.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/stable_diffusion/state.h"
 #include "src/stable_diffusion/generator_txt2img.h"
 #include "src/stable_diffusion/generator_img2img.h"
+#include "src/config/config.h"
+
+#include "src/panels/pages.h"
+
+#define COUNTOF(X) (sizeof((X))/(sizeof((X)[0])))
 
 namespace dexpert {
 namespace  {
@@ -31,6 +35,11 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_input_image] = inputImage_;
     resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
     pages_[page_results] = resultsPanel_;
+
+    for (int i = 0; i < 4; i++) {
+        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, true);
+        pages_[page_controlnet1 + i] = controlNets_[i];
+    }
     
     visible_pages_[page_results] = true;
     visible_pages_[page_prompts] = true;
@@ -47,11 +56,18 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
 
     this->end();
 
-    alignComponents();
+    loadConfig();
     goPage(page_results);
 }
 
 Pages::~Pages() {
+}
+
+void Pages::loadConfig() {
+    for (int i = page_controlnet1; i <= page_controlnet4; i++) {
+        visible_pages_[i] = getConfig().getControlnetCount() > i - page_controlnet1;
+    }
+    alignComponents();
 }
 
 const char *Pages::pageTitle(page_t page) {
@@ -160,6 +176,13 @@ void Pages::textToImage() {
         controlnets.push_back(c);
     }
 
+    for (int i = 0; i < COUNTOF(controlNets_); ++i) {
+        c = controlNets_[i]->getControlnet();
+        if (c) {
+            controlnets.push_back(c);
+        }
+    }
+
     std::shared_ptr<GeneratorBase> g;
     if (inputImage_->getImg2ImgImage()) {
         auto img = inputImage_->getImg2ImgImage();
@@ -189,7 +212,10 @@ void Pages::textToImage() {
             promptPanel_->getHeight(),
             promptPanel_->getSteps(),
             promptPanel_->getCFG(),
-            promptPanel_->getVariationStrength()
+            promptPanel_->getVariationStrength(),
+            0.8,
+            promptPanel_->shouldRestoreFaces(),
+            promptPanel_->shouldUseCodeformer()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -202,7 +228,9 @@ void Pages::textToImage() {
             promptPanel_->getHeight(),
             promptPanel_->getSteps(),
             promptPanel_->getCFG(),
-            promptPanel_->getVariationStrength()
+            promptPanel_->getVariationStrength(),
+            promptPanel_->shouldRestoreFaces(),
+            promptPanel_->shouldUseCodeformer()
         ));
     }
 

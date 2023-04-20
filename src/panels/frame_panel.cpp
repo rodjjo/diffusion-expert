@@ -308,7 +308,7 @@ image_ptr_t FramePanel::getImage() {
     return image_;
 }
 
-image_ptr_t FramePanel::geControlImage() {
+image_ptr_t FramePanel::getControlImage() {
     return control_img_;
 }
 

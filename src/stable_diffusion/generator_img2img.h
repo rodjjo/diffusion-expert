@@ -26,13 +26,15 @@ class GeneratorImg2Image: public GeneratorBase {
             image_ptr_t image,
             image_ptr_t mask,
             bool invert_mask,
-            int seed = -1,
-            size_t width = 512,
-            size_t height = 512,
-            size_t steps = 50,
-            float cfg = 7.5,
-            float var_stren = 0.1,
-            float image_strength = 0.8
+            int seed,
+            size_t width,
+            size_t height,
+            size_t steps,
+            float cfg,
+            float var_stren,
+            float image_strength,
+            bool restore_faces,
+            bool enable_codeformer
         );
 
         void generate(
@@ -58,6 +60,8 @@ class GeneratorImg2Image: public GeneratorBase {
         float cfg_ = 7.5;
         float var_strength_ = 0.1;
         float image_strength_ = 0.8;
+        bool restore_faces_ = false;
+        bool enable_codeformer_ = false;
 };
 
 

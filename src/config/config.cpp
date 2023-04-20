@@ -167,6 +167,7 @@ bool Config::save() {
         sd["last_sd_model"] = lastSdModelName_;
         sd["scheduler"] = scheduler_;
         sd["nsfw_filter"] = safeFilterEnabled_;
+        sd["controlnet_count"] = controlnetCount_;
         data["stable_diffusion"] = sd;
         json files;
         files["last_image_save_dir"] = last_image_save_dir_;
@@ -203,6 +204,15 @@ bool Config::load() {
             if (sd.contains("nsfw_filter")) {
                 safeFilterEnabled_ = sd["nsfw_filter"].get<bool>();
             }
+            if (sd.contains("controlnet_count")) {
+                controlnetCount_ = sd["controlnet_count"].get<int>();
+                if (controlnetCount_ < 0) {
+                    controlnetCount_ = 0;
+                }
+                if (controlnetCount_ > 4) {
+                    controlnetCount_ = 4;
+                }
+            }
         }
         if (data.contains("files")) {
             auto files = data["files"];
@@ -219,6 +229,14 @@ bool Config::load() {
     }
 
     return false;
+}
+
+int Config::getControlnetCount() {
+    return controlnetCount_;
+}
+
+void Config::setControlnetCount(int value) {
+    controlnetCount_ = value;
 }
 
 }  // namespace dexpert

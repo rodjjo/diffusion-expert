@@ -4,6 +4,7 @@ import torch
 from models.models import create_pipeline, current_model_is_in_painting
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
+from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from PIL import Image
 import PIL.ImageOps
 
@@ -30,6 +31,11 @@ def invert_image_from_dict(data: dict):
 @torch.no_grad()
 def _run_pipeline(pipeline_type, params):
     device = "cuda"
+    restore_faces = False
+    if params.get('restore_faces'):
+        gfpgan_dwonload_model()
+        restore_faces = True
+
     prompt = params['prompt']
     negative = params['negative']
 
@@ -44,7 +50,6 @@ def _run_pipeline(pipeline_type, params):
     height = params["height"]
     input_image = params.get("image")
     input_mask = params.get("mask")
-
     controlnets = params.get("controlnets", [])
 
     if width % 8 != 0:
@@ -99,10 +104,7 @@ def _run_pipeline(pipeline_type, params):
                     c['strength'] = 0
                 if c['strength'] > 2.0:
                     c['strength'] = 2.0
-                if c['mode'] == 'pose':
-                    images.append(image_from_dict(c['image']))
-                else:
-                    images.append(image_from_dict(c['image']))
+                images.append(image_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
@@ -146,6 +148,8 @@ def _run_pipeline(pipeline_type, params):
             **additional_args,
         ).images[0]
     
+    if restore_faces:
+        result = gfpgan_restore_faces(result)
     report("image generated")
     return {
             'data': result.tobytes(),

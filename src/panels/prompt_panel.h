@@ -11,6 +11,7 @@
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Choice.H>
+#include <FL/Fl_Check_Button.H>
 
 namespace dexpert
 {
@@ -28,6 +29,8 @@ class PromptPanel: public Fl_Group {
     int getHeight();
     float getCFG();
     float getVariationStrength();
+    bool shouldRestoreFaces();
+    bool shouldUseCodeformer();
     bool ready(bool require_prompt);
     
  private:
@@ -47,7 +50,8 @@ class PromptPanel: public Fl_Group {
    Fl_Int_Input *width_;
    Fl_Int_Input *height_;
    Fl_Choice *models_;
-
+   Fl_Check_Button *restore_face_;
+   Fl_Check_Button *codeformer_;
 };
 
 

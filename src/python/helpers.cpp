@@ -169,6 +169,7 @@ namespace dexpert
 
         callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb)
         {
+            enable_progress_window(false);
             return [status_cb, mode, image]()
             {
                 std::shared_ptr<RawImage> img;
@@ -221,6 +222,8 @@ namespace dexpert
             PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(this->seed)));
             PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(this->variation)));
             PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(this->var_stren)));
+            PyDict_SetItemString(params, "restore_faces", guard(PyBool_FromLong((int)restore_faces)));
+            PyDict_SetItemString(params, "enable_codeformer", guard(PyBool_FromLong((int)enable_codeformer)));
 
             if (!this->controlnets.empty()) {
                 PyObject *arr = guard(PyList_New(0));

@@ -11,7 +11,7 @@ using namespace cimg_library;
 namespace dexpert {
 namespace py {
 
-RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format) {
+RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent) {
     format_ = format;
     buffer_len_ = w * h;
     w_ = w;
@@ -28,7 +28,11 @@ RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_fo
     if (buffer) {
         memcpy(buffer_, buffer, buffer_len_);
     } else {
-        memset(buffer_, 255, buffer_len_);
+        if (format_ == img_rgba && fill_transparent) {
+            memset(buffer_, 0, buffer_len_);
+        } else {
+            memset(buffer_, 255, buffer_len_);
+        }
     }
     version_ = (size_t) buffer_; // randomize the version
 }
@@ -99,7 +103,7 @@ std::shared_ptr<RawImage> RawImage::duplicate() {
 
 std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
     std::shared_ptr<RawImage> r;
-    r.reset(new RawImage(NULL, w_, h_, img_rgba));
+    r.reset(new RawImage(NULL, w_, h_, img_rgba, false));
     int src_channels = 1;
     if (format_ == img_rgb) {
         src_channels = 3;
@@ -112,6 +116,7 @@ std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
     
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
+    
     img.draw_image(0, 0, src);
     
     if (white) {

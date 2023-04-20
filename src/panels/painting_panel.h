@@ -27,6 +27,7 @@ typedef enum {
    painting_scribble,
    painting_canny,
    painting_pose,
+   painting_deepth,
 
    // keep painting_mode_max ath the end
    painting_mode_max
@@ -48,7 +49,7 @@ typedef enum {
 
 class PaintingPanel: public Fl_Group {
  public:
-    PaintingPanel(int x, int y, int w, int h, PromptPanel *prompt);
+    PaintingPanel(int x, int y, int w, int h, PromptPanel *prompt, bool only_control_net=false);
     virtual ~PaintingPanel();
     void resize(int x, int y, int w, int h) override;
     void setImage(RawImage *image);
@@ -60,6 +61,7 @@ class PaintingPanel: public Fl_Group {
     bool should_invert_mask_colors();
     bool ready();
 
+    painting_mode_t getSelectedMode();
 
  private:
    static void modeSelected(Fl_Widget *widget, void *cbdata);
@@ -70,12 +72,12 @@ class PaintingPanel: public Fl_Group {
     void saveImage();
     void saveMask();
     void openImage();
-    void newImage();
     void newMask();
     void openMask();
     void extractCanny();
     void extractScribble();
     void extractPose();
+    void extractDeepth();
     bool ensureControlPresent();
     bool ensureImagePresent();
     bool ensureMaskPresent();
@@ -83,6 +85,7 @@ class PaintingPanel: public Fl_Group {
     void enableControls();
 
  private:
+    bool only_control_net_;
     PromptPanel *prompt_;
     Fl_Group *left_bar_;
     Fl_Choice *mode_;
@@ -92,7 +95,6 @@ class PaintingPanel: public Fl_Group {
     Fl_Box* label_control_;
     Fl_Check_Button *draw_image_check_;
     FramePanel *image_panel_;
-    std::unique_ptr<Button> btnNew_;
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;
     std::unique_ptr<Button> btnNewMask_;
@@ -101,6 +103,7 @@ class PaintingPanel: public Fl_Group {
     std::unique_ptr<Button> btnScribble_;
     std::unique_ptr<Button> btnCanny_;
     std::unique_ptr<Button> btnPose_;
+    std::unique_ptr<Button> btnDeepth_;
 };
     
 }   // namespace dexpert
