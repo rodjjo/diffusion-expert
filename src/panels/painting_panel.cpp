@@ -1,3 +1,5 @@
+#include <FL/Fl.H>
+
 #include "src/stable_diffusion/state.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/dialogs/utils.h"
@@ -32,15 +34,17 @@ namespace {
         "deepth"
     };
 
-    const char *brush_sizes[brush_size_count] = {
+    const char *brush_captions[brush_size_count] = {
         "Disabled",
         "1 Pixel",
+        "2 Pixels",
         "4 Pixels",
         "8 Pixels",
         "16 Pixels",
-        "32 Pixels",
-        "64 Pixels",
-        "128 Pixels"
+        "32 Pixels"
+    };
+    const uint8_t brushes_sizes[brush_size_count] = {
+        0, 1, 4, 8, 16, 32
     };
 }
 
@@ -49,9 +53,9 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
         prompt_(prompt), 
         only_control_net_(only_control_net) {
     this->begin();
-    left_bar_ = new Fl_Group(0, 0, 1, 1);
     image_panel_ = new FramePanel(0, 0, 1, 1);
     image_panel_->setImageSource(image_src_self);
+    left_bar_ = new Fl_Group(0, 0, 1, 1);
     left_bar_->begin();
     label_image_ = new Fl_Box(0, 0, 1, 1, "Image");
     label_mask_ = new Fl_Box(0, 0, 1, 1, "Mask");
@@ -144,7 +148,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
     }
 
     for (int i = 0; i < brush_size_count; ++i) {
-        brushes_->add(brush_sizes[i]);
+        brushes_->add(brush_captions[i]);
     }
     
     draw_image_check_->value(1);
@@ -155,10 +159,22 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
     draw_image_check_->callback(modeSelected, this);
 
     brushes_->align(FL_ALIGN_TOP);
-    brushes_->value(brush_size_disabled);
-    
+    brushes_->value(5);
+    brushes_->callback(brushSelected, this);
+
     alignComponents();
     enableControls();
+    Fl::add_timeout(0.01, PaintingPanel::imageRefresh, this);
+    brushSelected();
+}
+
+PaintingPanel::~PaintingPanel() {
+    Fl::remove_timeout(PaintingPanel::imageRefresh, this);
+}
+
+void PaintingPanel::imageRefresh(void *cbdata) {
+    ((PaintingPanel*) cbdata)->image_panel_->redrawIfModified();
+    Fl::repeat_timeout(0.10, PaintingPanel::imageRefresh, cbdata); // retrigger timeout
 }
 
 void PaintingPanel::resize(int x, int y, int w, int h) {
@@ -177,7 +193,7 @@ painting_mode_t PaintingPanel::getSelectedMode() {
 
 void PaintingPanel::alignComponents() {
     left_bar_->resize(x(), y(), 150, h());
-    image_panel_->resize(x() + left_bar_->w() + 1, y(), w() - left_bar_->w() - 2, h());
+    image_panel_->resize(x() + left_bar_->w() + 1, y(), w() - left_bar_->w() - 5, h() - 5);
 
     mode_->resize(left_bar_->x() + 1, left_bar_->y() + 24, left_bar_->w() - 2, 30);
 
@@ -199,10 +215,6 @@ void PaintingPanel::alignComponents() {
     btnDeepth_->position(btnPose_->x() + btnPose_->w() + 2, btnPose_->y());
 
     draw_image_check_->resize(left_bar_->x(), btnDeepth_->y() + btnDeepth_->h() + 3, left_bar_->w() - 2, 20);
-}
-
-PaintingPanel::~PaintingPanel() {
-
 }
 
 void PaintingPanel::enableControls() {
@@ -261,7 +273,13 @@ void PaintingPanel::saveImage() {
 }
 
 void PaintingPanel::saveMask() {
-    auto img = image_panel_->getMask();
+    image_ptr_t img;
+    if (getSelectedMode() == painting_inpaint_masked || 
+        getSelectedMode() == painting_inpaint_not_masked) {
+        img = image_panel_->getMask();
+    } else {
+        img = image_panel_->getControlImage();
+    }
     if (img) {
         save_image_with_dialog(img);
     }
@@ -272,6 +290,7 @@ void PaintingPanel::openImage() {
     if (img) {
         image_panel_->setImage(img);
     }
+    modeSelected();
     image_panel_->redraw();
 }
 
@@ -299,7 +318,16 @@ void PaintingPanel::openMask() {
             image_panel_->setControlImg(img);
         }
     }
+    modeSelected();
     image_panel_->redraw();
+}
+
+void PaintingPanel::brushSelected(Fl_Widget *widget, void *cbdata) {
+    ((PaintingPanel *) cbdata)->brushSelected();
+}
+
+void PaintingPanel::brushSelected() {
+    image_panel_->setBrushSize(brushes_sizes[brushes_->value()]);
 }
 
 void PaintingPanel::modeSelected(Fl_Widget *widget, void *cbdata) {
@@ -339,6 +367,7 @@ void PaintingPanel::newMask() {
         should_continue = (should_continue || ask("Do you want to create a new mask ?"));
         if (should_continue) {
             image_panel_->setMask(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->editMask();
             image_panel_->redraw();
         }
     } else if (getSelectedMode() == painting_pose ||
@@ -349,6 +378,7 @@ void PaintingPanel::newMask() {
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
         if (should_continue) {
             image_panel_->setControlImg(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->editControlImage();
             image_panel_->redraw();
         }
     } else {

@@ -13,7 +13,9 @@ namespace py {
 typedef enum {
     img_gray_8bit,
     img_rgb,
-    img_rgba
+    img_rgba,
+    // keep img_format_count at the end
+    img_format_count
 } image_format_t;
 
 
@@ -31,6 +33,7 @@ class RawImage {
     std::shared_ptr<RawImage> duplicate();
     std::shared_ptr<RawImage> removeBackground(bool white);
     std::shared_ptr<RawImage> removeAlpha();
+    void drawCircle(int x, int y, int radius, bool clear);
 
  private:
     unsigned char *buffer_;

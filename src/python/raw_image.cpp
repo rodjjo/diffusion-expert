@@ -11,6 +11,26 @@ using namespace cimg_library;
 namespace dexpert {
 namespace py {
 
+namespace {
+    const int format_channels[img_format_count] = {
+        1,  // img_gray_8bit
+        3,  // img_rgb
+        4  // img_rgba
+    };
+
+    uint8_t white_color_rgba[4] {
+        255, 255, 255, 255
+    };
+
+    uint8_t black_color_rgba[4] {
+        0, 0, 0, 255
+    };
+    
+    uint8_t no_color_rgba[4] {
+        0, 0, 0, 0
+    };
+}  // unnamed namespace
+
 RawImage::RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent) {
     format_ = format;
     buffer_len_ = w * h;
@@ -104,13 +124,8 @@ std::shared_ptr<RawImage> RawImage::duplicate() {
 std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
     std::shared_ptr<RawImage> r;
     r.reset(new RawImage(NULL, w_, h_, img_rgba, false));
-    int src_channels = 1;
-    if (format_ == img_rgb) {
-        src_channels = 3;
-    } else if (format_ == img_rgba) {
-        src_channels = 4;
-    }
-   
+    int src_channels = format_channels[format_];
+  
     CImg<unsigned char> src(buffer_, src_channels, w_, h_, 1, true);
     CImg<unsigned char> img(r->buffer_, 4, w_, h_, 1, true);
     
@@ -136,12 +151,7 @@ std::shared_ptr<RawImage> RawImage::removeAlpha() {
 
     r.reset(new RawImage(NULL, w_, h_, img_rgb));
 
-    int src_channels = 1;
-    if (format_ == img_rgb) {
-        src_channels = 3;
-    } else if (format_ == img_rgba) {
-        src_channels = 4;
-    }
+    int src_channels = format_channels[format_];
    
     CImg<unsigned char> src(buffer_, src_channels, w_, h_, 1, true);
     CImg<unsigned char> img(r->buffer_, 3, w_, h_, 1, true);
@@ -156,6 +166,26 @@ std::shared_ptr<RawImage> RawImage::removeAlpha() {
     img.permute_axes("cxyz");
 
     return r;
+}
+
+void RawImage::drawCircle(int x, int y, int radius, bool clear) {
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x >= w_) x = w_ - 1;
+    if (y >= h_) y = h_ - 1;
+    int src_channels = format_channels[format_];
+    CImg<unsigned char> img(buffer_, src_channels, w_, h_, 1, true);
+    img.permute_axes("yzcx");
+    if (clear) {
+        if (format_ == img_rgba)
+            img.draw_circle(x, y, radius, no_color_rgba);
+        else
+            img.draw_circle(x, y, radius, white_color_rgba);
+    } else {
+        img.draw_circle(x, y, radius, black_color_rgba);
+    }
+    img.permute_axes("cxyz");
+    incVersion();
 }
 
 image_ptr_t rawImageFromPyDict(PyObject * dict) {

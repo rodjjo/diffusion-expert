@@ -231,10 +231,33 @@ void FramePanel::setImage(image_ptr_t image) {
 void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
     frame_button_t * b = get_button_mouse(up_x, up_y);
     if (b) {
-        if (getDrawingImage(false)) {
+        if (getDrawingImage(image_edit_disabled)) {
             b->cb(this, b->id);
         }
+    } else if (left_button || right_button) {
+        drawCircle(up_x, up_y, !left_button);
     }
+}
+
+void FramePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y) {
+    if (left_button || right_button) {
+        drawCircle(move_x, move_y, !left_button);
+    }
+}
+
+void FramePanel::drawCircle(int x, int y, bool clear) {
+    if (src_type_ != image_src_self || editor_mode_ == image_edit_disabled || brush_size_ < 1) {
+        return;
+    }
+    RawImage *img =  (editor_mode_ == image_edit_mask) ?  mask_.get() : control_img_.get();
+    if (!img) {
+        return;
+    }
+    auto where = view_port().screen_to_frame_coords(
+        img->w(), img->h(), dexpert::point_t(x, y)
+    );
+    where.trunc_precision();
+    img->drawCircle(where.x, where.y, brush_size_, clear);
 }
 
 frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
@@ -243,7 +266,7 @@ frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
 
 void FramePanel::draw_next() {
     draw_mask();
-    if (!buttons_.size() || !getDrawingImage(false))  {
+    if (!buttons_.size() || !getDrawingImage(image_edit_disabled))  {
         return;
     }
 
@@ -312,6 +335,14 @@ image_ptr_t FramePanel::getControlImage() {
     return control_img_;
 }
 
+void FramePanel::setBrushSize(int value) {
+    if (value < 0) 
+        value = 0;
+    if (value > 128)
+        value = 128;
+    brush_size_ = value;
+}
+
 void FramePanel::draw_mask() {
     if (!mask_drawing_)
         return;
@@ -320,7 +351,7 @@ void FramePanel::draw_mask() {
     uint32_t h = 0;
     int format = GL_RGB;
     get_buffer(&buffer, &w, &h, &format, editor_mode_);
-    draw_buffer(buffer, w, h, format);
+    draw_buffer(buffer, w, h, format); 
 }
 
 void FramePanel::setMask(image_ptr_t image) {
@@ -355,6 +386,23 @@ void FramePanel::setMaskDrawing(bool enabled) {
 
 bool FramePanel::getMaskDrawing() {
     return mask_drawing_;
+}
+
+void FramePanel::redrawIfModified() {
+    if (src_type_ != image_src_self || editor_mode_ == image_edit_disabled) {
+        return;
+    }
+    if (!visible_r()) {
+        return;
+    }
+    RawImage *img =  (editor_mode_ == image_edit_mask) ?  mask_.get() : control_img_.get();
+    if (!img) {
+        return;
+    }
+    if (img->getVersion() != image_version_) {
+        image_version_ = img->getVersion();
+        redraw();
+    }
 }
 
 

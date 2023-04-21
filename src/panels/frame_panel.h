@@ -49,6 +49,7 @@ public:
     void enableCache();
     void editMask();
     void editControlImage();
+    void setBrushSize(int value);
     void disableEditor();
     void addButton(int id, float xcoord, float ycoord, dexpert::xpm::xpm_t image, frame_btn_cb_t cb);
 
@@ -67,6 +68,8 @@ public:
     bool getMaskDrawing();
     bool getImageDrawing();
 
+    void redrawIfModified();
+
     image_ptr_t getImage();
     image_ptr_t getMask();
     image_ptr_t getControlImage();
@@ -75,9 +78,11 @@ protected:
     RawImage *getDrawingImage(int buffer_type);
     void draw_next() override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
+    void mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y) override;
     void draw_mask();
 
 private:
+    void drawCircle(int x, int y, bool clear);
     void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
     void get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h);
     frame_button_t *get_button_mouse(int x, int y);
@@ -88,6 +93,8 @@ private:
     bool cache_enabled_ = false;
     bool mask_drawing_ = false;
     bool image_drawing_ = true;
+    uint8_t brush_size_ = 0;
+    size_t image_version_ = 0;
     size_t cache_version_ = 0;
     int cache_channels_ = 1;
     size_t cache_w_ = 0;
@@ -99,6 +106,7 @@ private:
     size_t index_ = 0;
     image_src_t src_type_ = image_src_self;
     image_edit_t editor_mode_ = image_edit_disabled;
+
 private:
     std::string current_open_dir_;
     std::vector<frame_button_t> buttons_;
