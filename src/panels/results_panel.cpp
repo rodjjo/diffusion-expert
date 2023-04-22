@@ -35,13 +35,13 @@ namespace dexpert
                 fp->enableCache();
                 fp->setImageSource(image_src_results);
                 fp->addButton(BUTTON_ID_PREVIEW, 0, 0, dexpert::xpm::lupe_16x16, btn_callback);
+                fp->addButton(BUTTON_ID_AS_INPUT, 1, 1, dexpert::xpm::green_pin_16x16, btn_callback);
+                fp->addButton(BUTTON_ID_REMOVE, 1, -1, dexpert::xpm::erase_all_16x16, btn_callback);
             }
             row[0]->addButton(BUTTON_ID_PREV_ROW, 0, 1, dexpert::xpm::arrow_up_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_NEXT_ROW, 0, -1.0, dexpert::xpm::arrow_down_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::arrow_left_16x16, btn_callback);
             row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::arrow_right_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_AS_INPUT, 1, 1, dexpert::xpm::green_pin_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_REMOVE, 1, -1, dexpert::xpm::erase_all_16x16, btn_callback);
             
             miniatures_.push_back(row);
         }
@@ -171,6 +171,7 @@ namespace dexpert
                 {
                     if (ask("Do you want remove this image ?")) {
                         get_sd_state()->clearImage(w->gridIndex(), w->gridVariation());
+                        updatePanels();
                     }
                 }
                 break;

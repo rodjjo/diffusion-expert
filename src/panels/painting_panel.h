@@ -34,16 +34,15 @@ typedef enum {
 } painting_mode_t;
 
 typedef enum {
-   brush_size_disabled = 0,
-   brush_size_1 = 1,
-   brush_size_4 = 4,
-   brush_size_8 = 8,
-   brush_size_16 = 16,
-   brush_size_32 = 32,
-   brush_size_64 = 64,
-   brush_size_128 = 128,
+   brush_size_disabled,
+   brush_size_1,
+   brush_size_2,
+   brush_size_4,
+   brush_size_8,
+   brush_size_16,
+   brush_size_32,
    // 
-   brush_size_count = 8
+   brush_size_count
 } brush_size_t;
 
 
@@ -60,12 +59,14 @@ class PaintingPanel: public Fl_Group {
     image_ptr_t getImg2ImgControl();
     bool should_invert_mask_colors();
     bool ready();
-
     painting_mode_t getSelectedMode();
 
  private:
    static void modeSelected(Fl_Widget *widget, void *cbdata);
    void modeSelected();
+   static void brushSelected(Fl_Widget *widget, void *cbdata);
+   void brushSelected();
+   static void imageRefresh(void *cbdata);
 
  private:
     void alignComponents();
