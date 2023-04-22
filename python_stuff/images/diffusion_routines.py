@@ -1,5 +1,4 @@
 import gc
-
 import torch
 from models.models import create_pipeline, current_model_is_in_painting
 from images.latents import create_latents_noise, latents_to_pil
@@ -31,8 +30,8 @@ def invert_image_from_dict(data: dict):
 @torch.no_grad()
 def _run_pipeline(pipeline_type, params):
     device = "cuda"
-    restore_faces = False
-    if params.get('restore_faces'):
+    restore_faces = params.get('restore_faces')
+    if restore_faces:
         gfpgan_dwonload_model()
         restore_faces = True
 
@@ -147,8 +146,9 @@ def _run_pipeline(pipeline_type, params):
             callback=progress_preview,
             **additional_args,
         ).images[0]
-    
+        
     if restore_faces:
+        progress(99, 100, result) 
         result = gfpgan_restore_faces(result)
     report("image generated")
     return {

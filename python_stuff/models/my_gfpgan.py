@@ -14,7 +14,8 @@ from exceptions.exceptions import CancelException
 
 from dexpert import progress, progress_canceled, progress_title
 
-BASE_DIR = os.path.join(os.path.dirname(sys.executable), '..', 'models', 'gfpgan')
+UPSCALERS_DIR =  os.path.join(os.path.dirname(sys.executable), '..', 'models', 'upscalers')
+BASE_DIR = os.path.join(UPSCALERS_DIR, 'gfpgan', 'weights')
 
 # make sure it downloads the file inside the models_Dir
 MODEL_FILE_NAME = 'GFPGANv1.3.pth'
@@ -29,25 +30,29 @@ def show_progress(block_num, block_size, total_size):
         raise CancelException()
 
 def gfpgan_dwonload_model():
-    
-    if os.path.exists(MODEL_PATH):
-        report("skipping gfpgan model download. File exists")
-        return
     os.makedirs(BASE_DIR, exist_ok=True)
-    report("downloading the model GFPGANv1.3.pth. Please wait...")
-    url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth'
-    urllib.request.urlretrieve(url, f'{MODEL_PATH}.tmp', show_progress)
-    shutil.move(f'{MODEL_PATH}.tmp', MODEL_PATH)
-    progress(0, 100, None)
-
-
+    urls = [
+        'https://github.com/xinntao/facexlib/releases/download/v0.1.0/detection_Resnet50_Final.pth',
+        'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
+        'https://github.com/xinntao/facexlib/releases/download/v0.2.2/parsing_parsenet.pth'
+    ]
+    for url in urls:
+        filename = url.split('/')[-1]
+        model_path = os.path.join(BASE_DIR, filename)
+        if os.path.exists(model_path):
+            report(f'skipping {filename} model download. File exists')
+            continue
+        report(f'downloading the model {filename} Please wait...')
+        urllib.request.urlretrieve(url, f'{model_path}.tmp', show_progress)
+        shutil.move(f'{model_path}.tmp', model_path)
+        progress(0, 100, None)
 
 @contextmanager
 def enter_gfgan_model_dir():
     # gfpgan only downloads the models at the working directory
     current_dir = os.getcwd()
     try:
-        os.chdir(BASE_DIR)
+        os.chdir(UPSCALERS_DIR)
         yield
     finally:
         os.chdir(current_dir)
