@@ -19,8 +19,9 @@ It uses a interface written in C++ with a embedded Python interpreter.
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-4.jpg)
 
 
-## Installation
+## Installation video tutorial
 
+Click on the video bellow:   
 [![Installation Tutorial](http://img.youtube.com/vi/cv_RmXgOrjQ/0.jpg)](https://www.youtube.com/watch?v=cv_RmXgOrjQ)
 
 ## Build and run 
