@@ -97,7 +97,9 @@ void set_progress(int progress, int max, image_ptr_t preview) {
     std::unique_lock<std::mutex> lk(mtx_progress);
     current_progress = progress;
     max_progress = max;
-    image = preview;
+    if (preview) {
+        image = preview;
+    }
 }
 
 bool should_cancel_progress() {
@@ -108,6 +110,7 @@ void enable_progress_window(bool preview_images) {
     progress_enabled = true;
     progress_canceled = false;
     preview_enabled = preview_images;
+    image.reset();
  }
 
 void show_progress_window() {
