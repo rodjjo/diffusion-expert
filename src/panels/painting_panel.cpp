@@ -44,7 +44,7 @@ namespace {
         "32 Pixels"
     };
     const uint8_t brushes_sizes[brush_size_count] = {
-        0, 1, 4, 8, 16, 32
+        0, 1, 2, 4, 8, 16, 32
     };
 }
 
@@ -485,9 +485,6 @@ image_ptr_t PaintingPanel::getImg2ImgImage() {
         case painting_inpaint_not_masked:
             return image_panel_->getImage();
         break;
-        
-        default:
-            break;
     } 
 
     return image_ptr_t();

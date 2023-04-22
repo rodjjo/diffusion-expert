@@ -82,7 +82,7 @@ protected:
     void draw_mask();
 
 private:
-    void drawCircle(int x, int y, bool clear);
+    void drawCircle(int x, int y, bool clear, bool onscreen);
     void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
     void get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h);
     frame_button_t *get_button_mouse(int x, int y);
@@ -93,6 +93,10 @@ private:
     bool cache_enabled_ = false;
     bool mask_drawing_ = false;
     bool image_drawing_ = true;
+    bool should_draw_brush_ = false;
+    bool brush_pos_modified_ = false;
+    float brush_pos_x = 0;
+    float brush_pos_y = 0;
     uint8_t brush_size_ = 0;
     size_t image_version_ = 0;
     size_t cache_version_ = 0;

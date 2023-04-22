@@ -235,17 +235,16 @@ void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int d
             b->cb(this, b->id);
         }
     } else if (left_button || right_button) {
-        drawCircle(up_x, up_y, !left_button);
+        drawCircle(up_x, up_y, !left_button, false);
     }
 }
 
 void FramePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y) {
-    if (left_button || right_button) {
-        drawCircle(move_x, move_y, !left_button);
-    }
+    drawCircle(move_x, move_y, !left_button, !(left_button || right_button));
 }
 
-void FramePanel::drawCircle(int x, int y, bool clear) {
+void FramePanel::drawCircle(int x, int y, bool clear, bool onscreen) {
+    should_draw_brush_ = false;
     if (src_type_ != image_src_self || editor_mode_ == image_edit_disabled || brush_size_ < 1) {
         return;
     }
@@ -253,11 +252,19 @@ void FramePanel::drawCircle(int x, int y, bool clear) {
     if (!img) {
         return;
     }
-    auto where = view_port().screen_to_frame_coords(
-        img->w(), img->h(), dexpert::point_t(x, y)
-    );
-    where.trunc_precision();
-    img->drawCircle(where.x, where.y, brush_size_, clear);
+
+    if (onscreen) {
+        should_draw_brush_ = true;
+        brush_pos_modified_ = true;
+        brush_pos_x = x;
+        brush_pos_y = y;
+    } else {
+        auto where = view_port().screen_to_frame_coords(
+            img->w(), img->h(), dexpert::point_t(x, y)
+        );
+        where.trunc_precision();
+        img->drawCircle(where.x, where.y, brush_size_, clear);
+    }
 }
 
 frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
@@ -338,8 +345,8 @@ image_ptr_t FramePanel::getControlImage() {
 void FramePanel::setBrushSize(int value) {
     if (value < 0) 
         value = 0;
-    if (value > 128)
-        value = 128;
+    if (value > 32)
+        value = 32;
     brush_size_ = value;
 }
 
@@ -352,6 +359,36 @@ void FramePanel::draw_mask() {
     int format = GL_RGB;
     get_buffer(&buffer, &w, &h, &format, editor_mode_);
     draw_buffer(buffer, w, h, format); 
+    if (should_draw_brush_) {
+        glBegin(GL_LINE_LOOP);
+        float theta;
+        float x;
+        float y;
+        float cx = brush_pos_x;
+        float cy = brush_pos_y;
+        float wx;
+        float wy;
+        float sx = 2.0 / this->w();
+        float sy = 2.0 / this->h();
+        bool black = true;
+        for (int ii = 0; ii < 36; ++ii)   {
+            if (black) {
+                black = false;
+                glColor3f(0, 0, 0);
+            } else {
+                black = true;
+                glColor3f(1, 1, 1);
+            }
+            theta = (2.0f * 3.1415926f) * float(ii) / float(36);
+            x = brush_size_ * cosf(theta);
+            y = brush_size_ * sinf(theta);
+            wx = ((x + cx) * sx) - 1;
+            wy = 1 - ((y + cy) * sy);
+            glVertex2f(wx, wy);
+        }
+        glEnd();
+    }
+
 }
 
 void FramePanel::setMask(image_ptr_t image) {
@@ -399,7 +436,8 @@ void FramePanel::redrawIfModified() {
     if (!img) {
         return;
     }
-    if (img->getVersion() != image_version_) {
+    if (img->getVersion() != image_version_ || brush_pos_modified_) {
+        brush_pos_modified_ = false;
         image_version_ = img->getVersion();
         redraw();
     }
