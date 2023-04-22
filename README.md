@@ -5,10 +5,10 @@ This project is on early status of Development. Expect more updates.
 It will be a fast interface for drawing with help of the stable diffusion.  
 It uses a interface written in C++ with a embedded Python interpreter.  
 
-*Prompt*   
+*Input image*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha.jpg)
 
-*Images x Variations*   
+*Result*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-2.jpg)
 
 *Progress with image preview and cancel button*   
@@ -17,6 +17,12 @@ It uses a interface written in C++ with a embedded Python interpreter.
 
 *Input image for inpainting, image2image and controlnet*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-4.jpg)
+
+
+## Installation
+
+[![Installation Tutorial](http://img.youtube.com/vi/cv_RmXgOrjQ/0.jpg)](https://www.youtube.com/watch?v=cv_RmXgOrjQ)
+
 ## Build and run 
 
 Before start make sure you have 7zip, cmake, python 3.10 and Conan 1.59.0 installed.  
