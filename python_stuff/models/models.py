@@ -1,5 +1,6 @@
 import gc
 import os
+from contextlib import contextmanager
 from diffusers import (
         StableDiffusionPipeline, 
         StableDiffusionControlNetPipeline, 
@@ -9,7 +10,8 @@ from diffusers import (
     )
 import torch
 from models.paths import CACHE_DIR
-from models.loader import load_stable_diffusion_model, set_pipeline_settings
+from utils.settings import get_setting
+from models.loader import load_stable_diffusion_model
 
 MODEL_EXTENSIONS = set(['.ckpt', '.safetensors'])
 CURRENT_MODEL_PARAMS = {}
@@ -90,6 +92,54 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
     return CURRENT_PIPELINE['pipeline']
 
 
+@contextmanager
+def models_memory_checker():
+    global CURRENT_MODEL_PARAMS
+    global CURRENT_PIPELINE
+    device_name = get_setting('device', 'cuda')
+    params = CURRENT_MODEL_PARAMS.get('params', {})
+    vae = params.get('vae')
+    unet = params.get('unet')
+    safety_checker = params.get('safety_checker')
+    pipeline = CURRENT_PIPELINE.get('pipeline')
+
+    should_release_memory = False
+
+    if device_name != 'cpu':
+        should_release_memory = torch.cuda.memory_usage(device=device_name) > 70
+    else:
+        should_release_memory = torch.cuda.memory_usage(device='cpu') > 65
+
+    try:
+        if should_release_memory:
+            if device_name == 'cpu':
+                CURRENT_MODEL_PARAMS = {}
+                CURRENT_PIPELINE = {}
+            else:
+                if vae:
+                    vae.to('cpu')
+                if unet:
+                    unet.to('cpu')
+                if safety_checker:
+                    safety_checker.to('cpu')
+                if pipeline:
+                    pipeline.to('cpu')
+                torch.cuda.empty_cache()
+        gc.collect()
+        yield
+    finally:
+        if should_release_memory and device_name != 'cpu':
+            torch.cuda.empty_cache()
+            if vae:
+                vae.to(device_name)
+            if unet:
+                unet.to(device_name)
+            if safety_checker:
+                safety_checker.to(device_name)
+            if pipeline:
+                pipeline.to(device_name)
+            gc.collect()
+
 def is_model(path: str):
     n = path.lower()
     for e in MODEL_EXTENSIONS:
@@ -109,8 +159,3 @@ def list_models(directory: str):
         "size": os.stat(path(n)).st_size,
         "hash": "not-computed",
     } for n in files]
-
-
-def set_user_settings(config: dict):
-    print("setting stable diffusion configurations")
-    set_pipeline_settings(config)

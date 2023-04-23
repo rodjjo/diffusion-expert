@@ -20,3 +20,4 @@ opencv-contrib-python
 controlnet_aux
 gfpgan
 realesrgan
+pynvml

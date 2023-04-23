@@ -385,21 +385,31 @@ namespace dexpert
 
                 PyObject *result = NULL;
                 PyObject *data = NULL;
-                ObjGuard guard("models.models");
+                ObjGuard guard("utils.settings");
 
                 errors = handle_error();
 
                 if (!guard.module())
                 {
-                    msg = "Could not load Python module models.models";
+                    msg = "Could not load Python module utils.settings";
                     errors = true;
                 }
                 if (!errors)
                 {
+                    auto &c = getConfig();
                     PyObject *params = guard(PyDict_New());
-                    PyDict_SetItemString(params, "scheduler", guard(PyUnicode_FromString(getConfig().getScheduler())));
-                    PyDict_SetItemString(params, "nsfw_filter", guard(PyBool_FromLong(getConfig().getSafeFilter() ? 1 : 0)));
-                    result = guard(PyObject_CallMethod(guard.module(), "set_user_settings", "O", params));
+                    PyDict_SetItemString(params, "scheduler", guard(PyUnicode_FromString(c.getScheduler())));
+                    PyDict_SetItemString(params, "nsfw_filter", guard(PyBool_FromLong(c.getSafeFilter() ? 1 : 0)));
+                    PyDict_SetItemString(params, "device", guard(PyUnicode_FromString(c.getUseGPU() ? "cuda" : "cpu")));
+                    PyDict_SetItemString(params, "use_float16", guard(PyBool_FromLong(c.getUseFloat16())));
+                    PyDict_SetItemString(params, "gfpgan.arch", guard(PyUnicode_FromString(c.gfpgan_get_arch())));
+                    PyDict_SetItemString(params, "gfpgan.channel_multiplier", guard(PyLong_FromLong(c.gfpgan_get_channel_multiplier())));
+                    PyDict_SetItemString(params, "gfpgan.has_aligned", guard(PyBool_FromLong(c.gfpgan_get_has_aligned())));
+                    PyDict_SetItemString(params, "gfpgan.only_center_face", guard(PyBool_FromLong(c.gfpgan_get_only_center_face())));
+                    PyDict_SetItemString(params, "gfpgan.paste_back", guard(PyBool_FromLong(c.gfpgan_get_paste_back())));
+                    PyDict_SetItemString(params, "gfpgan.weight", guard(PyFloat_FromDouble(c.gfpgan_get_weight())));
+
+                        result = guard(PyObject_CallMethod(guard.module(), "set_user_settings", "O", params));
                     errors = handle_error();
                     if (errors)
                     {
