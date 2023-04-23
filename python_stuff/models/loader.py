@@ -14,11 +14,14 @@ from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR
 from exceptions.exceptions import CancelException
+from utils.settings import get_setting
 from dexpert import progress_title, progress_canceled
 
-user_settings = {
-}
 
+usefp16 = {
+    True: torch.float16,
+    False: torch.float32
+}
 
 # this file was based on: https://github.com/ratwithacompiler/diffusers_stablediff_conversion/blob/main/convert_original_stable_diffusion_to_diffusers.py
 
@@ -404,7 +407,8 @@ def load_stable_diffusion_model(model_path: str):
     beta_end = config.model.params.linear_end
     report(f"inference config loaded")
 
-    if user_settings.get('scheduler', 'PNDMScheduler') == 'PNDMScheduler': 
+    scheduler_name = get_setting('scheduler', 'PNDMScheduler')
+    if scheduler_name == 'PNDMScheduler': 
         scheduler = PNDMScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
@@ -412,7 +416,7 @@ def load_stable_diffusion_model(model_path: str):
             num_train_timesteps=num_train_timesteps,
             skip_prk_steps=True,
         )
-    elif user_settings['scheduler'] == 'DDIMScheduler':
+    elif scheduler_name == 'DDIMScheduler':
         scheduler = DDIMScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
@@ -420,7 +424,7 @@ def load_stable_diffusion_model(model_path: str):
             clip_sample=False,
             set_alpha_to_one=False,
         )
-    elif  user_settings['scheduler'] == 'UniPCMultistepScheduler':
+    elif  scheduler_name == 'UniPCMultistepScheduler':
         scheduler = UniPCMultistepScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
@@ -441,17 +445,24 @@ def load_stable_diffusion_model(model_path: str):
     unet = UNet2DConditionModel(**unet_config)
     unet.load_state_dict(converted_unet_checkpoint, strict=True)
 
-    report("converting model to half precision")
-    unet = unet.half()
+    if get_setting('use_float16', True):
+        report("converting model to half precision")
+        unet = unet.half()
 
     del converted_unet_checkpoint
     report("unet loaded config")
 
     report("downloading VAE. please wait")
-    vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16, cache_dir=CACHE_DIR)
+
+    vae = AutoencoderKL.from_pretrained(
+        'CompVis/stable-diffusion-v1-4', 
+        subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
+
     report("VAE loaded")
 
+    device_name = get_setting('device', 'cuda')
     text_model_type = config.model.params.cond_stage_config.target.split(".")[-1]
+
     if text_model_type == "FrozenCLIPEmbedder":
         report("converting ldm clip")
         text_model = convert_ldm_clip_checkpoint(checkpoint)
@@ -459,12 +470,13 @@ def load_stable_diffusion_model(model_path: str):
         report("converting clip done")
         tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
-        if user_settings.get("nsfw_filter", True) is True:
+        if  get_setting("nsfw_filter", True) is True:
             report("safety checker")
             safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
             report("feature extractor")
             feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
             requires_safety_checker = True
+            safety_checker.to(device_name)
         else:
             safety_checker = None
             feature_extractor = None
@@ -473,9 +485,11 @@ def load_stable_diffusion_model(model_path: str):
     else:
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
 
-    vae.to('cuda')
-    text_model.to('cuda')
-    unet.to('cuda')
+    vae.to(device_name)
+    text_model.to(device_name)
+    unet.to(device_name)
+    
+    report("model full loaded")
 
     return {
         'vae': vae,
@@ -487,9 +501,5 @@ def load_stable_diffusion_model(model_path: str):
         'feature_extractor': feature_extractor,
         'requires_safety_checker': requires_safety_checker
     }, in_painting
-
-def set_pipeline_settings(value: dict):
-    global user_settings
-    user_settings = value
 
 

@@ -8,6 +8,7 @@
 #include <FL/Fl_Tabs.H>
 #include <Fl/Fl_Check_Button.H>
 #include <Fl/Fl_Choice.H>
+#include <Fl/Fl_Float_Input.H>
 
 #include "src/controls/button.h"
 #include "src/windows/modal_window.h"
@@ -24,6 +25,15 @@ typedef enum {
     controlnet_max
 } controlnet_counter_t;
 
+typedef enum {
+   gfpgan_arch_clean,
+   gfpgan_arch_bilinear,
+   gfpgan_arch_original,
+   gfpgan_arch_restore_former,
+   // keep gfpgan_arch_count at the end
+   gfpgan_arch_count 
+} gfpgan_arch_t;
+
 class ConfigWindow {
  public:
     ConfigWindow();
@@ -37,10 +47,16 @@ class ConfigWindow {
 
  private:
     Fl_Group *page_sd_;
+    Fl_Group *page_upscalers_;
     Fl_Tabs *tabs_;
     Fl_Check_Button *nsfw_check_;
+    Fl_Check_Button *float16_check_;
+    Fl_Check_Button *gpu_check_;
     Fl_Choice *schedulers_;
-    Fl_Choice *controlnetTabs_;
+    Fl_Choice *controlnetCount_;
+    Fl_Choice *gfpgan_arch_;
+    Fl_Check_Button *gfpgan_only_center_faces_;
+    Fl_Float_Input *gfpgan_weight_;
 
     ModalWindow *window_ = NULL;
     std::unique_ptr<Button> btnOk_;

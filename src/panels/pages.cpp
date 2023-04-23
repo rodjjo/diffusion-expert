@@ -213,7 +213,7 @@ void Pages::textToImage() {
             promptPanel_->getSteps(),
             promptPanel_->getCFG(),
             promptPanel_->getVariationStrength(),
-            0.8,
+            inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
             promptPanel_->shouldUseCodeformer()
         ));

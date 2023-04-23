@@ -62,7 +62,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
     label_control_ = new Fl_Box(0, 0, 1, 1, "Transformations");
     mode_ = new Fl_Choice(0, 0, 1, 1, "Mode");
     brushes_ = new Fl_Choice(0, 0, 1, 1, "Brush size");
-
+    denoise_ = new Fl_Float_Input(0, 0, 1, 1, "Similarity");
     btnOpen_.reset(new Button(xpm::image(xpm::directory_16x16), [this] {
        openImage(); 
     }));
@@ -141,6 +141,10 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, b
     btnDeepth_->position(1, 1);
     btnDeepth_->size(35, 30);
 
+    denoise_->align(FL_ALIGN_TOP_LEFT);
+    denoise_->tooltip("Image similarity %");
+    denoise_->value("20");
+
     for (int i = 0; i < painting_mode_max; ++i) {
         if (!only_control_net || i == 0 || i >= painting_scribble) {
             mode_->add(modes_text[i]);    
@@ -196,8 +200,13 @@ void PaintingPanel::alignComponents() {
     image_panel_->resize(x() + left_bar_->w() + 1, y(), w() - left_bar_->w() - 5, h() - 5);
 
     mode_->resize(left_bar_->x() + 1, left_bar_->y() + 24, left_bar_->w() - 2, 30);
-
-    label_image_->resize(left_bar_->x() + 1, mode_->y() + 1 + mode_->h(), left_bar_->w() - 2, 20);
+    if (only_control_net_) {
+        denoise_->hide();
+        denoise_->resize(left_bar_->x() + 1, mode_->y(), mode_->w(), mode_->h());
+    } else {
+        denoise_->resize(left_bar_->x() + 1, mode_->y() + 1 + mode_->h() + 25, 100, 30);
+    }
+    label_image_->resize(left_bar_->x() + 1, denoise_->y() + 1 + denoise_->h(), left_bar_->w() - 2, 20);
     btnOpen_->position(left_bar_->x() + 1, label_image_->y() + label_image_->h() + 1);
     btnSave_->position(btnOpen_->x() + 2 + btnOpen_->w(), btnOpen_->y());
 
@@ -238,8 +247,25 @@ void PaintingPanel::enableControls() {
         controlnet = true;     
     }
     
-    btnOpen_->enabled(inpanting | image2image | controlnet);
-    btnSave_->enabled(btnOpen_->enabled());
+    if (inpanting | image2image | controlnet) {
+        btnOpen_->enabled(true);    
+        btnSave_->enabled(true);
+        denoise_->activate();
+    } else {
+        btnOpen_->enabled(false);    
+        btnSave_->enabled(false);
+        denoise_->deactivate();
+        this->top_window()->cursor(FL_CURSOR_DEFAULT);
+    }
+
+    if (!only_control_net_) {
+        if (inpanting | image2image) {
+            denoise_->activate();
+        } else {
+            denoise_->deactivate();
+            this->top_window()->cursor(FL_CURSOR_DEFAULT);
+        }
+    }
 
     btnNewMask_->enabled(inpanting || controlnet);
     btnOpenMask_->enabled(btnNewMask_->enabled());
@@ -543,6 +569,19 @@ std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
     }
      
     return result;
+}
+
+float PaintingPanel::get_denoise_strength() {
+    float value = 80.0;
+    sscanf(denoise_->value(), "%f", &value);
+    if (value < 0.0)
+        value = 0;
+    if (value > 100.0)
+        value = 100.0;
+    char buffer[100] = { 0, };
+    sprintf(buffer, "%0.1f", value);
+    denoise_->value(buffer);
+    return (100.0 - value) / 100.0; 
 }
     
 } // namespace dexpert

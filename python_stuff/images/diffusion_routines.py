@@ -1,8 +1,9 @@
 import gc
 import torch
-from models.models import create_pipeline, current_model_is_in_painting
+from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
+from utils.settings import get_setting
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from PIL import Image
 import PIL.ImageOps
@@ -29,7 +30,7 @@ def invert_image_from_dict(data: dict):
 
 @torch.no_grad()
 def _run_pipeline(pipeline_type, params):
-    device = "cuda"
+    device = get_setting('device', 'cuda')
     restore_faces = params.get('restore_faces')
     if restore_faces:
         gfpgan_dwonload_model()
@@ -63,7 +64,7 @@ def _run_pipeline(pipeline_type, params):
     shape = (4, height // 8, width // 8 )
     latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
     
-    generator = None if seed == -1  else torch.Generator(device="cuda").manual_seed(seed)
+    generator = None if seed == -1  else torch.Generator(device=device).manual_seed(seed)
     report("generating the variation" if variation_enabled else "generating the image")
 
     report("creating the pipeline")
@@ -136,7 +137,7 @@ def _run_pipeline(pipeline_type, params):
 
     pipeline.to(device)
     latents_noise.to(device)
-    with torch.inference_mode(), torch.autocast("cuda"):
+    with torch.inference_mode(), torch.autocast(device):
         result = pipeline(
             prompt, 
             negative_prompt=negative, 
@@ -146,10 +147,11 @@ def _run_pipeline(pipeline_type, params):
             callback=progress_preview,
             **additional_args,
         ).images[0]
-        
+
     if restore_faces:
         progress(99, 100, result) 
-        result = gfpgan_restore_faces(result)
+        with models_memory_checker():
+            result = gfpgan_restore_faces(result)
     report("image generated")
     return {
             'data': result.tobytes(),
@@ -167,7 +169,7 @@ def run_pipeline(mode: str, params: dict):
     except CancelException:
         print("Image generation canceled")
         data = None
-        gc.collect()
+    gc.collect()
 
     progress(100, 100, None)     
 

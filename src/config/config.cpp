@@ -152,6 +152,71 @@ void Config::setScheduler(const std::string &name) {
 const char *Config::getScheduler() {
     return scheduler_.c_str();
 }
+
+bool Config::getUseFloat16() {
+    return use_float16_;
+}
+
+bool Config::getUseGPU() {
+    return use_gpu_;
+}
+
+void Config::setUseFloat16(bool value) {
+    use_gpu_ = value;
+}
+
+void Config::setUseGPU(bool value) {
+    use_float16_ = value;
+}
+
+float Config::gfpgan_get_weight() {
+    return gfpgan_weight_;
+}
+
+void Config::gfpgan_set_weight(float value) {
+    gfpgan_weight_ = value;
+}
+
+const char* Config::gfpgan_get_arch() {
+    return gfpgan_arch_.c_str();
+}
+
+void Config::gfpgan_set_arch(const char *value) {
+    gfpgan_arch_ = value;
+}
+
+uint32_t Config::gfpgan_get_channel_multiplier() {
+    return gfpgan_channel_multiplier_;
+}
+
+void Config::gfpgan_set_channel_multiplier(uint32_t value) {
+    gfpgan_channel_multiplier_ = value;
+}
+
+bool Config::gfpgan_get_only_center_face() {
+    return gfpgan_only_center_face_;
+}
+
+void Config::gfpgan_set_only_center_face(bool value) {
+    gfpgan_only_center_face_ = value;
+}
+
+bool Config::gfpgan_get_has_aligned() {
+    return gfpgan_has_aligned_;
+}
+
+void Config::gfpgan_set_has_aligned(bool value) {
+    gfpgan_has_aligned_ = value;
+}
+
+bool Config::gfpgan_get_paste_back() {
+    return gfpgan_paste_back_;
+}
+
+void Config::gfpgan_set_paste_back(bool value) {
+    gfpgan_paste_back_ = value;
+}
+
 std::string& Config::lastImageSaveDir() {
     return last_image_save_dir_;
 }
@@ -168,11 +233,21 @@ bool Config::save() {
         sd["scheduler"] = scheduler_;
         sd["nsfw_filter"] = safeFilterEnabled_;
         sd["controlnet_count"] = controlnetCount_;
+        sd["use_float16"] = use_float16_;
+        sd["use_gpu"] = use_gpu_;
         data["stable_diffusion"] = sd;
         json files;
         files["last_image_save_dir"] = last_image_save_dir_;
         files["last_image_open_dir"] = last_image_open_dir_;
         data["files"] = files;
+        json gfpgan;
+        gfpgan["weight"] = gfpgan_weight_;
+        gfpgan["arch"] = gfpgan_arch_;
+        gfpgan["channel_multiplier"] = gfpgan_channel_multiplier_;
+        gfpgan["only_center_face"] = gfpgan_only_center_face_;
+        gfpgan["has_aligned"] = gfpgan_has_aligned_;
+        gfpgan["paste_back"] = gfpgan_paste_back_;
+        data["gfpgan"] = gfpgan;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
         f << std::setw(2) << data << std::endl;
@@ -213,6 +288,13 @@ bool Config::load() {
                     controlnetCount_ = 4;
                 }
             }
+            if (sd.contains("use_float16")) {
+                use_float16_ = sd["use_float16"].get<bool>();
+            }
+
+             if (sd.contains("use_gpu")) {
+                use_gpu_ = sd["use_gpu"].get<bool>();
+            }
         }
         if (data.contains("files")) {
             auto files = data["files"];
@@ -221,6 +303,31 @@ bool Config::load() {
             }
             if (files.contains("last_image_open_dir")) {
                 last_image_open_dir_ = files["last_image_open_dir"].get<std::string>();
+            }
+        }
+        if (data.contains("gfpgan")) {
+            auto gfpgan = data["gfpgan"];
+            if (gfpgan.contains("weight")) {
+                gfpgan_weight_ = gfpgan["weight"].get<float>();
+                if (gfpgan_weight_ > 1.0)
+                    gfpgan_weight_ = 1.0;
+                else if (gfpgan_weight_ < 0.0)
+                    gfpgan_weight_ = 0;
+            }
+            if (gfpgan.contains("arch")) {
+                gfpgan_arch_ = gfpgan["arch"].get<std::string>();
+            }
+            if (gfpgan.contains("channel_multiplier")) {
+                gfpgan_channel_multiplier_ = gfpgan["channel_multiplier"].get<uint32_t>();
+            }
+            if (gfpgan.contains("only_center_face")) {
+                gfpgan_only_center_face_ = gfpgan["only_center_face"].get<bool>();
+            }
+            if (gfpgan.contains("has_aligned")) {
+                gfpgan_has_aligned_ = gfpgan["has_aligned"].get<bool>();
+            }
+            if (gfpgan.contains("paste_back")) {
+                gfpgan_paste_back_ = gfpgan["paste_back"].get<bool>();
             }
         }
         return true;

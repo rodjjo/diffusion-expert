@@ -1,3 +1,4 @@
+import gc
 import os
 import sys
 import urllib
@@ -6,9 +7,11 @@ from contextlib import contextmanager
 
 import numpy
 import cv2
-
-from gfpgan import utils, GFPGANer  
+from gfpgan import GFPGANer  
 from PIL import Image
+
+from utils.settings import get_setting
+
 
 from exceptions.exceptions import CancelException
 
@@ -66,15 +69,24 @@ def gfpgan_restore_faces(image):
         restorer = GFPGANer(
             model_path=MODEL_PATH,
             upscale=1,
-            arch='clean',
-            channel_multiplier=2,
+            arch=get_setting('gfpgan.arch', 'clean'),
+            channel_multiplier=get_setting('gfpgan.channel_multiplier', 2),
             bg_upsampler=None
         )
         cropped_faces, restored_faces, restored_img = restorer.enhance(
                 open_cv_image,
-                has_aligned=False,
-                only_center_face=False,
-                paste_back=True,
-                weight=0.5)
+                has_aligned=get_setting('gfpgan.has_aligned', False),
+                only_center_face=get_setting('gfpgan.only_center_face', False),
+                paste_back=get_setting('gfpgan.paste_back', True),
+                weight=get_setting('gfpgan.weight', 0.5) 
+        )
         image = Image.fromarray(cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB))
+
+    del restorer
+    del cropped_faces
+    del restored_faces
+    del restored_img
+
+    gc.collect()
+
     return image

@@ -19,6 +19,8 @@ def have_dependencies():
     lib_dir = os.path.join(exe_dir, 'Lib', 'site-packages')
     lib_names = [
         'torch',
+        'torchvision',
+        'torchaudio',
         'numpy',
         'diffusers',
         'transformers',
@@ -27,9 +29,19 @@ def have_dependencies():
         'controlnet_aux',
         'omegaconf',
         'gfpgan',
+        'realesrgan',
+        'pynvml',
+        'PIL',
+        'accelerate',
+        'pytorch_lightning',
+        'safetensors',
+        'torchdiffeq',
+        'cv2'
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):
+            sys.stderr.write(f'Missing dependency: {l}\n')
+            sys.stderr.flush()
             return False
     return True
 

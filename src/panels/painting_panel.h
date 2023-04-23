@@ -10,6 +10,7 @@
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Check_Button.H>
+#include <FL/Fl_Float_Input.H>
 
 #include "src/controls/button.h"
 #include "src/panels/frame_panel.h"
@@ -57,6 +58,7 @@ class PaintingPanel: public Fl_Group {
     image_ptr_t getImg2ImgImage();
     image_ptr_t getImg2ImgMask();
     image_ptr_t getImg2ImgControl();
+    float get_denoise_strength();
     bool should_invert_mask_colors();
     bool ready();
     painting_mode_t getSelectedMode();
@@ -91,6 +93,7 @@ class PaintingPanel: public Fl_Group {
     Fl_Group *left_bar_;
     Fl_Choice *mode_;
     Fl_Choice *brushes_;
+    Fl_Float_Input *denoise_;
     Fl_Box* label_image_;
     Fl_Box* label_mask_;
     Fl_Box* label_control_;

@@ -156,7 +156,7 @@ def build(args):
         'cmake', '..', '-G', 'MinGW Makefiles'
     ], cwd=build_dir(), env=envs)
     subprocess.check_call([
-        'cmake', '--build', '.'
+        'cmake', '--build', '.',  '--', '-j', '4'
     ] + additionalArgs, cwd=build_dir(), env=envs)
     subprocess.check_call([
         'cmake', '--install', '.', '--prefix', os.path.join(build_dir(), '..', 'dexpert')
