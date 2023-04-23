@@ -5,14 +5,13 @@
 
 #include "src/config/config.h"
 #include "src/python/helpers.h"
-#include "src/python/guard.h"
+#include "src/python/python_module.h"
 #include "src/windows/progress_window.h"
 
 namespace dexpert
 {
     namespace py
     {
-
         const char *errorFromPyDict(PyObject *result, const char *def) {
             static char buffer[1024] = {};
             if (PyDict_Check(result)) {
@@ -30,12 +29,12 @@ namespace dexpert
         {
             return [status_cb]
             {
-                ObjGuard guard("dependencies.installer");
+                PythonModule module("dependencies.installer");
                 PyObject *result = NULL;
                 bool errors = handle_error();
                 const char *msg = NULL;
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module dependencies.installer";
                     errors = true;
@@ -43,7 +42,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = guard(PyObject_CallMethod(guard.module(), "install_dependencies", NULL));
+                    PyObject *result = module("install_dependencies", NULL);
                     errors = handle_error();
                     if (errors)
                     {
@@ -60,11 +59,11 @@ namespace dexpert
             return [status_cb]
             {
                 PyObject *result = NULL;
-                ObjGuard guard("dependencies.installer");
+                PythonModule module("dependencies.installer");
                 bool errors = handle_error();
                 const char *msg = NULL;
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module dependencies.installer";
                     errors = true;
@@ -72,7 +71,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = guard(PyObject_CallMethod(guard.module(), "have_dependencies", NULL));
+                    PyObject *result = module("have_dependencies", NULL);
                     errors = handle_error();
                     if (errors)
                     {
@@ -98,11 +97,11 @@ namespace dexpert
                 std::shared_ptr<RawImage> img;
 
                 PyObject *result = NULL;
-                ObjGuard guard("images.filesystem");
+                PythonModule module("images.filesystem");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module images.filesystem";
                     errors = true;
@@ -110,7 +109,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = guard(PyObject_CallMethod(guard.module(), "open_image", "s", path));
+                    result = module("open_image", "s", path);
                     errors = handle_error();
                     if (errors)
                     {
@@ -140,11 +139,11 @@ namespace dexpert
 
                 PyObject *result = NULL;
                 PyObject *data = NULL;
-                ObjGuard guard("images.filesystem");
+                PythonModule module("images.filesystem");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module images.filesystem";
                     errors = true;
@@ -152,9 +151,9 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    data = guard(PyDict_New());
+                    data = module.guard(PyDict_New());
                     image->toPyDict(data);
-                    result = guard(PyObject_CallMethod(guard.module(), "save_image", "sO", path, data));
+                    result = module("save_image", "sO", path, data);
                     errors = handle_error();
                     if (errors)
                     {
@@ -178,11 +177,11 @@ namespace dexpert
 
                 PyObject *result = NULL;
                 PyObject *data = NULL;
-                ObjGuard guard("images.pre_process");
+                PythonModule module("images.pre_process");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module images.pre_process";
                     errors = true;
@@ -190,9 +189,9 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    data = guard(PyDict_New());
+                    data = module.guard(PyDict_New());
                     image->toPyDict(data);
-                    result = guard(PyObject_CallMethod(guard.module(), "pre_process_image", "sO", mode, data));
+                    result = module("pre_process_image", "sO", mode, data);
                     errors = handle_error();
                     if (errors)
                     {
@@ -211,46 +210,46 @@ namespace dexpert
             };
         }
 
-        const void txt2img_config_t::fill_prompt_dict(PyObject *params, ObjGuard &guard) const {
-            PyDict_SetItemString(params, "prompt", guard(PyUnicode_FromString(this->prompt)));
-            PyDict_SetItemString(params, "negative", guard(PyUnicode_FromString(this->negative)));
-            PyDict_SetItemString(params, "model", guard(PyUnicode_FromWideChar(this->model, -1)));
-            PyDict_SetItemString(params, "width", guard(PyLong_FromSize_t(this->width)));
-            PyDict_SetItemString(params, "height", guard(PyLong_FromSize_t(this->height)));
-            PyDict_SetItemString(params, "steps", guard(PyLong_FromSize_t(this->steps)));
-            PyDict_SetItemString(params, "cfg", guard(PyFloat_FromDouble(this->cfg)));
-            PyDict_SetItemString(params, "seed", guard(PyLong_FromLong(this->seed)));
-            PyDict_SetItemString(params, "variation", guard(PyLong_FromLong(this->variation)));
-            PyDict_SetItemString(params, "var_stren", guard(PyFloat_FromDouble(this->var_stren)));
-            PyDict_SetItemString(params, "restore_faces", guard(PyBool_FromLong((int)restore_faces)));
-            PyDict_SetItemString(params, "enable_codeformer", guard(PyBool_FromLong((int)enable_codeformer)));
+        const void txt2img_config_t::fill_prompt_dict(PyObject *params, PythonModule &module) const {
+            PyDict_SetItemString(params, "prompt", module.guard(PyUnicode_FromString(this->prompt)));
+            PyDict_SetItemString(params, "negative", module.guard(PyUnicode_FromString(this->negative)));
+            PyDict_SetItemString(params, "model", module.guard(PyUnicode_FromWideChar(this->model, -1)));
+            PyDict_SetItemString(params, "width", module.guard(PyLong_FromSize_t(this->width)));
+            PyDict_SetItemString(params, "height", module.guard(PyLong_FromSize_t(this->height)));
+            PyDict_SetItemString(params, "steps", module.guard(PyLong_FromSize_t(this->steps)));
+            PyDict_SetItemString(params, "cfg", module.guard(PyFloat_FromDouble(this->cfg)));
+            PyDict_SetItemString(params, "seed", module.guard(PyLong_FromLong(this->seed)));
+            PyDict_SetItemString(params, "variation", module.guard(PyLong_FromLong(this->variation)));
+            PyDict_SetItemString(params, "var_stren", module.guard(PyFloat_FromDouble(this->var_stren)));
+            PyDict_SetItemString(params, "restore_faces", module.guard(PyBool_FromLong((int)restore_faces)));
+            PyDict_SetItemString(params, "enable_codeformer", module.guard(PyBool_FromLong((int)enable_codeformer)));
 
             if (!this->controlnets.empty()) {
-                PyObject *arr = guard(PyList_New(0));
+                PyObject *arr = module.guard(PyList_New(0));
                 for (auto it = this->controlnets.begin(); it != this->controlnets.end(); it++) {
-                    PyObject *c = guard(PyDict_New());
-                    PyObject *data = guard(PyDict_New());
+                    PyObject *c = module.guard(PyDict_New());
+                    PyObject *data = module.guard(PyDict_New());
                     it->image->toPyDict(data);
-                    PyDict_SetItemString(c, "mode", guard(PyUnicode_FromString(it->mode)));
+                    PyDict_SetItemString(c, "mode", module.guard(PyUnicode_FromString(it->mode)));
                     PyDict_SetItemString(c, "image", data);
-                    PyDict_SetItemString(c, "strength", guard(PyFloat_FromDouble(it->strength)));
+                    PyDict_SetItemString(c, "strength", module.guard(PyFloat_FromDouble(it->strength)));
                     PyList_Append(arr, c);
                 }
                 PyDict_SetItemString(params, "controlnets",arr);
             }
         }
 
-        const void img2img_config_t::fill_prompt_dict(PyObject *params, ObjGuard &guard) const { 
-            txt2img_config_t::fill_prompt_dict(params, guard);
-            PyObject *data = guard(PyDict_New());
+        const void img2img_config_t::fill_prompt_dict(PyObject *params, PythonModule &module) const { 
+            txt2img_config_t::fill_prompt_dict(params, module);
+            PyObject *data = module.guard(PyDict_New());
             this->image->toPyDict(data);
             PyDict_SetItemString(params, "image", data);
-            PyDict_SetItemString(params, "strength", guard(PyFloat_FromDouble(this->strength)));
+            PyDict_SetItemString(params, "strength", module.guard(PyFloat_FromDouble(this->strength)));
             if (this->mask) {
-                data = guard(PyDict_New());
+                data = module.guard(PyDict_New());
                 this->mask->toPyDict(data);
                 PyDict_SetItemString(params, "mask", data);
-                PyDict_SetItemString(params, "invert_mask", guard(PyBool_FromLong(this->invert_mask ? 1 : 0)));
+                PyDict_SetItemString(params, "invert_mask", module.guard(PyBool_FromLong(this->invert_mask ? 1 : 0)));
             }
         }
 
@@ -262,24 +261,25 @@ namespace dexpert
                 std::shared_ptr<RawImage> img;
 
                 PyObject *result = NULL;
-                ObjGuard guard("images.diffusion_routines");
+                PythonModule module("images.diffusion_routines");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module images.diffusion_routines";
                     errors = true;
                 }
 
-                PyObject *params = guard(PyDict_New());
+                PyObject *params = module.guard(PyDict_New());
 
-                config.fill_prompt_dict(params, guard);
+                config.fill_prompt_dict(params, module);
 
                 if (!errors)
                 {
-                    result = guard(PyObject_CallMethod(guard.module(), fn_name, "O", params));
+                    result = module(fn_name, "O", params);
                     errors = handle_error();
+
                     if (errors)
                     {
                         msg = "There was a failure loading the image";
@@ -327,11 +327,11 @@ namespace dexpert
 
                 PyObject *result = NULL;
                 PyObject *data = NULL;
-                ObjGuard guard("models.models");
+                PythonModule module("models.models");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module models.models";
                     errors = true;
@@ -339,7 +339,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = guard(PyObject_CallMethod(guard.module(), "list_models", "u", path));
+                    result = module("list_models", "u", path);
                     errors = handle_error();
                     if (errors || result == NULL)
                     {
@@ -351,7 +351,7 @@ namespace dexpert
                         PyObject *element = NULL;
                         for (size_t i = 0; i < size; ++i)
                         {
-                            element = guard(PySequence_Fast_GET_ITEM(result, i));
+                            element = module.guard(PySequence_Fast_GET_ITEM(result, i));
                             PyObject *name = PyDict_GetItemString(element, "name");
                             PyObject *size = PyDict_GetItemString(element, "size");
                             PyObject *hash = PyDict_GetItemString(element, "hash");
@@ -385,11 +385,11 @@ namespace dexpert
 
                 PyObject *result = NULL;
                 PyObject *data = NULL;
-                ObjGuard guard("utils.settings");
+                PythonModule module("utils.settings");
 
                 errors = handle_error();
 
-                if (!guard.module())
+                if (!module.module())
                 {
                     msg = "Could not load Python module utils.settings";
                     errors = true;
@@ -397,19 +397,19 @@ namespace dexpert
                 if (!errors)
                 {
                     auto &c = getConfig();
-                    PyObject *params = guard(PyDict_New());
-                    PyDict_SetItemString(params, "scheduler", guard(PyUnicode_FromString(c.getScheduler())));
-                    PyDict_SetItemString(params, "nsfw_filter", guard(PyBool_FromLong(c.getSafeFilter() ? 1 : 0)));
-                    PyDict_SetItemString(params, "device", guard(PyUnicode_FromString(c.getUseGPU() ? "cuda" : "cpu")));
-                    PyDict_SetItemString(params, "use_float16", guard(PyBool_FromLong(c.getUseFloat16())));
-                    PyDict_SetItemString(params, "gfpgan.arch", guard(PyUnicode_FromString(c.gfpgan_get_arch())));
-                    PyDict_SetItemString(params, "gfpgan.channel_multiplier", guard(PyLong_FromLong(c.gfpgan_get_channel_multiplier())));
-                    PyDict_SetItemString(params, "gfpgan.has_aligned", guard(PyBool_FromLong(c.gfpgan_get_has_aligned())));
-                    PyDict_SetItemString(params, "gfpgan.only_center_face", guard(PyBool_FromLong(c.gfpgan_get_only_center_face())));
-                    PyDict_SetItemString(params, "gfpgan.paste_back", guard(PyBool_FromLong(c.gfpgan_get_paste_back())));
-                    PyDict_SetItemString(params, "gfpgan.weight", guard(PyFloat_FromDouble(c.gfpgan_get_weight())));
+                    PyObject *params = module.newDict();
+                    module.dictSetString(params, "scheduler", c.getScheduler());
+                    module.dictSetBool(params, "nsfw_filter", c.getSafeFilter() ? 1 : 0);
+                    module.dictSetString(params, "device", c.getUseGPU() ? "cuda" : "cpu");
+                    module.dictSetBool(params, "use_float16", c.getUseFloat16());
+                    module.dictSetString(params, "gfpgan.arch", c.gfpgan_get_arch());
+                    module.dictSetInt(params, "gfpgan.channel_multiplier", c.gfpgan_get_channel_multiplier());
+                    module.dictSetBool(params, "gfpgan.has_aligned", c.gfpgan_get_has_aligned());
+                    module.dictSetBool(params, "gfpgan.only_center_face", c.gfpgan_get_only_center_face());
+                    module.dictSetBool(params, "gfpgan.paste_back", c.gfpgan_get_paste_back());
+                    module.dictSetFloat(params, "gfpgan.weight", c.gfpgan_get_weight());
 
-                        result = guard(PyObject_CallMethod(guard.module(), "set_user_settings", "O", params));
+                    result = module("set_user_settings", "O", params);
                     errors = handle_error();
                     if (errors)
                     {

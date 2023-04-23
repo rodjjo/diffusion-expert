@@ -9,7 +9,7 @@
 #include "src/python/wrapper.h"
 #include "src/python/python_stuff.h"
 #include "src/python/raw_image.h"
-#include "src/python/guard.h"
+#include "src/python/python_module.h"
 #include "src/windows/progress_window.h"
 
 
@@ -100,25 +100,25 @@ void PythonMachine::run_machine() {
 
     Py_Initialize();
     PySys_SetArgvEx(1, argv, 1);
-    {  // guard context
-        ObjGuard guard;
+    {  // module context
+        PythonModule module;
     
-        PyObject *msys = guard(PyImport_ImportModule("sys"));
-        PyObject* main = guard(PyImport_AddModule("__main__")); // hold the main module
+        PyObject *msys = module.guard(PyImport_ImportModule("sys"));
+        PyObject* main = module.guard(PyImport_AddModule("__main__")); // hold the main module
         
-        guard(PyInit_dexpertModule());
+        module.guard(PyInit_dexpertModule());
 
         PyObject* dexpert_mod = PyImport_AddModule("dexpert");
         PyModule_AddFunctions(dexpert_mod, dexpertMethods);
 
 
-        PyObject *pyString = guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
+        PyObject *pyString = module.guard(PyUnicode_FromWideChar(getConfig().pyExePath().c_str(), -1));
         PyObject_SetAttrString(msys, "executable", pyString);
         PyObject_SetAttrString(msys, "_base_executable", pyString);
 
-        PyObject *pyLibPath = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
-        PyObject *pyAuto111Path = guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
-        PyObject *pathList = guard(PyObject_GetAttrString(msys, "path"));
+        PyObject *pyLibPath = module.guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pyAuto111Path = module.guard(PyUnicode_FromWideChar(getConfig().librariesDir().c_str(), -1));
+        PyObject *pathList = module.guard(PyObject_GetAttrString(msys, "path"));
         
         PyList_Append(pathList, pyLibPath);
         PyList_Append(pathList, pyAuto111Path);

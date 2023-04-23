@@ -2,7 +2,7 @@
 #include <sstream>
 #include "src/python/python_stuff.h"
 #include "src/python/error_handler.h"
-#include "src/python/guard.h"
+#include "src/python/python_module.h"
 #include "src/config/config.h"
 
 
@@ -22,15 +22,15 @@ bool initialize_python_stuff(PyObject* main) {
     std::stringstream buffer;
     buffer << iofile.rdbuf();
 
-    ObjGuard guard;
+    PythonModule module;
 
-    PyObject* globalDictionary = guard(PyModule_GetDict(main));
+    PyObject* globalDictionary = module.guard(PyModule_GetDict(main));
     // PyObject* localDictionary = guard(PyDict_New());
-    PyObject* pyString = guard(PyUnicode_FromWideChar(dexpert::getConfig().pythonMainPy().c_str(), -1));
+    PyObject* pyString = module.guard(PyUnicode_FromWideChar(dexpert::getConfig().pythonMainPy().c_str(), -1));
 
     PyDict_SetItemString(globalDictionary, "__file__", pyString);
 
-    PyObject* result = guard(PyRun_String(buffer.str().c_str(), Py_file_input, globalDictionary, globalDictionary));
+    PyObject* result = module.guard(PyRun_String(buffer.str().c_str(), Py_file_input, globalDictionary, globalDictionary));
     
     handle_error();
 

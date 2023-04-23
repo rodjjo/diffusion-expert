@@ -12,7 +12,7 @@
 #include <Python.h>
 
 #include "src/python/raw_image.h"
-#include "src/python/guard.h"
+#include "src/python/python_module.h"
 
 namespace dexpert {
 namespace py {
@@ -48,7 +48,7 @@ class txt2img_config_t {
     bool enable_codeformer = false;
     std::list<control_net_t> controlnets;
     virtual ~txt2img_config_t() {};
-    virtual const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const;
+    virtual const void fill_prompt_dict(PyObject *params, PythonModule &guard) const;
 };
 
 class img2img_config_t: public txt2img_config_t {
@@ -57,7 +57,7 @@ class img2img_config_t: public txt2img_config_t {
     RawImage *mask = NULL;
     float strength = 0.8;
     bool invert_mask = true;
-    const void fill_prompt_dict(PyObject *params, ObjGuard &guard) const override;
+    const void fill_prompt_dict(PyObject *params, PythonModule &guard) const override;
 };
 
 

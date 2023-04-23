@@ -4,7 +4,7 @@
 #include <CImg.h>
 
 #include "src/python/raw_image.h"
-#include "src/python/guard.h"
+#include "src/python/python_module.h"
 
 using namespace cimg_library;
 
@@ -95,11 +95,11 @@ void RawImage::toPyDict(PyObject *dict) {
         break;
     }
 
-    ObjGuard guard;
-    PyObject *po_buffer = guard(PyBytes_FromStringAndSize((const char *)buffer_, buffer_len_));
-    PyObject *po_w = guard(PyLong_FromSize_t(w_));
-    PyObject *po_h = guard(PyLong_FromSize_t(h_));
-    PyObject* po_mode = guard(PyUnicode_FromWideChar(img_type.c_str(), -1));
+    PythonModule module;
+    PyObject *po_buffer = module.guard(PyBytes_FromStringAndSize((const char *)buffer_, buffer_len_));
+    PyObject *po_w = module.guard(PyLong_FromSize_t(w_));
+    PyObject *po_h = module.guard(PyLong_FromSize_t(h_));
+    PyObject* po_mode = module.guard(PyUnicode_FromWideChar(img_type.c_str(), -1));
 
     PyDict_SetItemString(dict, "width", po_w);
     PyDict_SetItemString(dict, "height", po_h);
@@ -191,6 +191,10 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
 image_ptr_t rawImageFromPyDict(PyObject * dict) {
     image_ptr_t r;
 
+    if (!dict) {
+        return r;
+    }
+
     // when we get item from dict whe do not inc the ref counter
     PyObject *po_buffer = PyDict_GetItemString(dict, "data");
     PyObject *po_w = PyDict_GetItemString(dict, "width");
@@ -201,22 +205,25 @@ image_ptr_t rawImageFromPyDict(PyObject * dict) {
 
     image_format_t format = img_rgba;
 
-    if (valid) {
-        valid = (PyLong_Check(po_w) != 0) && (PyLong_Check(po_h) != 0);
-        valid = valid && (PyUnicode_Check(po_mode) != 0) && (PyBytes_Check(po_buffer) != 0);
-        Py_ssize_t size;
-        wchar_t *mode = PyUnicode_AsWideCharString(po_mode, &size);
-        std::wstring img_mode(mode, size);
-        PyMem_Free(mode);
-        if (img_mode == L"L")
-            format = img_gray_8bit;
-        else if (img_mode == L"RGB")
-            format = img_rgb;
-        else if (img_mode == L"RGBA")
-            format = img_rgba;
-        else
-            valid = false;
+    if (!valid) {
+        return r;
     }
+
+    valid = (PyLong_Check(po_w) != 0) && (PyLong_Check(po_h) != 0);
+    valid = valid && (PyUnicode_Check(po_mode) != 0) && (PyBytes_Check(po_buffer) != 0);
+    Py_ssize_t size = 0;
+    wchar_t *mode = PyUnicode_AsWideCharString(po_mode, &size);
+    std::wstring img_mode(mode, size);
+    PyMem_Free(mode);
+
+    if (img_mode == L"L")
+        format = img_gray_8bit;
+    else if (img_mode == L"RGB")
+        format = img_rgb;
+    else if (img_mode == L"RGBA")
+        format = img_rgba;
+    else
+        valid = false;
 
     if (valid) {
         r.reset(new RawImage(

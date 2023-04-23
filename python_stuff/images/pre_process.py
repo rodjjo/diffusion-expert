@@ -6,6 +6,7 @@ import gc
 from controlnet_aux import HEDdetector, OpenposeDetector
 from transformers import pipeline
 
+from utils.images import pil_as_dict
 from dexpert import progress, progress_title
 
 def report(message):
@@ -14,13 +15,6 @@ def report(message):
 
 from models.paths import CACHE_DIR
 
-def image_as_dict(image) -> dict:
-    return {
-        'data': image.tobytes(),
-        'width': image.width,
-        'height': image.height,
-        'mode': image.mode,
-    }
 
 def image_to_canny(input_image) -> dict:
     def do_it():
@@ -31,7 +25,7 @@ def image_to_canny(input_image) -> dict:
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
         image = PIL.ImageOps.invert(Image.fromarray(image))
-        return image_as_dict(image)
+        return pil_as_dict(image)
 
     result = do_it()
     gc.collect()
@@ -43,7 +37,7 @@ def image_to_pose(input_image) -> dict:
         openpose = OpenposeDetector.from_pretrained('lllyasviel/ControlNet', cache_dir=CACHE_DIR)
         progress(2, 3, None)
         image = openpose(input_image)
-        return image_as_dict(image)
+        return pil_as_dict(image)
 
     result = do_it()
     gc.collect()
@@ -56,7 +50,7 @@ def image_to_scribble(input_image) -> dict:
         progress(2, 3, None)
         image = PIL.ImageOps.invert(hed(input_image, scribble=True))
         gc.collect()
-        return image_as_dict(image)
+        return pil_as_dict(image)
 
     result = do_it()
     gc.collect()
@@ -72,7 +66,7 @@ def image_to_deepth(input_image) -> dict:
         image = np.concatenate([image, image, image], axis=2)
         image = Image.fromarray(image)
         gc.collect()
-        return image_as_dict(image)
+        return pil_as_dict(image)
 
     result = do_it()
     gc.collect()

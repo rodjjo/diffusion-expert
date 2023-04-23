@@ -37,7 +37,7 @@ def main():
          build.main(args)
     if '--copy-stuff' in sys.argv:
         copy_stuff.copy_files()
-    if '--debug' in sys.argv:
+    if '--gdb' in sys.argv:
         prefix = [
             'build/mingw64/bin/gdb.exe'
         ]
