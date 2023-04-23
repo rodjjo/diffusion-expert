@@ -7,6 +7,8 @@
 #include <memory>
 #include <Python.h>
 
+#include "src/python/python_module.h"
+
 namespace dexpert {
 namespace py {
 
@@ -23,7 +25,7 @@ class RawImage {
  public:
     RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent=true);
     virtual ~RawImage();
-    void toPyDict(PyObject *dict);
+    void toPyDict(Dict *dict);
     const unsigned char *buffer();
     image_format_t format();
     uint32_t h();

@@ -25,7 +25,6 @@ class GeneratorImg2Image: public GeneratorBase {
             controlnet_list_t controlnets,
             image_ptr_t image,
             image_ptr_t mask,
-            bool invert_mask,
             int seed,
             size_t width,
             size_t height,
@@ -52,7 +51,6 @@ class GeneratorImg2Image: public GeneratorBase {
         std::string negative_;
         std::wstring model_;
         controlnet_list_t controlnets_;
-        bool invert_mask_ = false;
         int seed_ = -1;
         size_t width_ = 512;
         size_t height_ = 512;

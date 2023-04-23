@@ -42,29 +42,8 @@ PyObject *PythonModule::guard(PyObject * v) {
     return v;
 }
 
-PyObject *PythonModule::newDict() { 
-    return guard(PyDict_New());
-}
-
-
-int PythonModule::dictSetString(PyObject *d, const char *key, const char *value) {
-    return PyDict_SetItemString(d, key, guard(PyUnicode_FromString(value)));
-}
-
-int PythonModule::dictSetBool(PyObject *d, const char *key, bool value) {
-   return PyDict_SetItemString(d, key, guard(PyBool_FromLong(value)));
-}
-
-int PythonModule::dictSetInt(PyObject *d, const char *key, int64_t value) {
-    return PyDict_SetItemString(d, key, guard(PyLong_FromLong(value)));
-}
-
-int PythonModule::dictSetFloat(PyObject *d, const char *key, double value) {
-    return PyDict_SetItemString(d, key, guard(PyFloat_FromDouble(value)));
-}
-
-int PythonModule::dictSetDict(PyObject *d, const char *key, PyObject *value) {
-    return PyDict_SetItemString(d, key, value);
+Dict PythonModule::newDict() { 
+    return Dict(this);
 }
 
 PyObject *PythonModule::get_function(const char *name) {
@@ -86,6 +65,47 @@ PyObject *PythonModule::get_function(const char *name) {
 
 PyObject *PythonModule::module() {
     return module_;
+}
+
+
+Dict::Dict(PythonModule *m) : m_(m) {
+    d_ = m->guard(PyDict_New());
+}
+
+int Dict::setString(const char *key, const char *value) {
+    return PyDict_SetItemString(d_, key, m_->guard(PyUnicode_FromString(value)));
+}
+
+int Dict::setWString(const char *key, const wchar_t *value) {
+    return PyDict_SetItemString(d_, key, PyUnicode_FromWideChar(value, -1));
+}
+
+int Dict::setBool(const char *key, bool value) {
+   return PyDict_SetItemString(d_, key, m_->guard(PyBool_FromLong(value)));
+}
+
+int Dict::setInt(const char *key, int64_t value) {
+    return PyDict_SetItemString(d_, key, m_->guard(PyLong_FromLong(value)));
+}
+
+int Dict::setFloat(const char *key, double value) {
+    return PyDict_SetItemString(d_, key, m_->guard(PyFloat_FromDouble(value)));
+}
+
+int Dict::setDict(const char *key, const Dict & value) {
+    return PyDict_SetItemString(d_, key, value.d_);
+}
+
+int Dict::setBytes(const char *key, const char *data, size_t len) {
+    return PyDict_SetItemString(d_, key, PyBytes_FromStringAndSize((const char *)data, len));
+}
+
+int Dict::setAny(const char *key, PyObject *any) {
+    return PyDict_SetItemString(d_, key,  m_->guard(any));
+}
+
+PyObject *Dict::obj() {
+    return d_;
 }
 
         

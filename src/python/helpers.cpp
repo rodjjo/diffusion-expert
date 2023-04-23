@@ -42,7 +42,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = module("install_dependencies", NULL);
+                    PyObject *result = module.call("install_dependencies", NULL);
                     errors = handle_error();
                     if (errors)
                     {
@@ -71,7 +71,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = module("have_dependencies", NULL);
+                    PyObject *result = module.call("have_dependencies", NULL);
                     errors = handle_error();
                     if (errors)
                     {
@@ -109,7 +109,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = module("open_image", "s", path);
+                    result = module.call("open_image", "s", path);
                     errors = handle_error();
                     if (errors)
                     {
@@ -138,7 +138,6 @@ namespace dexpert
                 const char *msg = NULL;
 
                 PyObject *result = NULL;
-                PyObject *data = NULL;
                 PythonModule module("images.filesystem");
 
                 errors = handle_error();
@@ -151,9 +150,9 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    data = module.guard(PyDict_New());
-                    image->toPyDict(data);
-                    result = module("save_image", "sO", path, data);
+                    Dict data = module.newDict();
+                    image->toPyDict(&data);
+                    result = module.call("save_image", "sO", path, data.obj());
                     errors = handle_error();
                     if (errors)
                     {
@@ -176,7 +175,6 @@ namespace dexpert
                 const char *msg = NULL;
 
                 PyObject *result = NULL;
-                PyObject *data = NULL;
                 PythonModule module("images.pre_process");
 
                 errors = handle_error();
@@ -189,9 +187,9 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    data = module.guard(PyDict_New());
-                    image->toPyDict(data);
-                    result = module("pre_process_image", "sO", mode, data);
+                    Dict data = module.newDict();
+                    image->toPyDict(&data);
+                    result = module.call("pre_process_image", "sO", mode, data.obj());
                     errors = handle_error();
                     if (errors)
                     {
@@ -210,46 +208,49 @@ namespace dexpert
             };
         }
 
-        const void txt2img_config_t::fill_prompt_dict(PyObject *params, PythonModule &module) const {
-            PyDict_SetItemString(params, "prompt", module.guard(PyUnicode_FromString(this->prompt)));
-            PyDict_SetItemString(params, "negative", module.guard(PyUnicode_FromString(this->negative)));
-            PyDict_SetItemString(params, "model", module.guard(PyUnicode_FromWideChar(this->model, -1)));
-            PyDict_SetItemString(params, "width", module.guard(PyLong_FromSize_t(this->width)));
-            PyDict_SetItemString(params, "height", module.guard(PyLong_FromSize_t(this->height)));
-            PyDict_SetItemString(params, "steps", module.guard(PyLong_FromSize_t(this->steps)));
-            PyDict_SetItemString(params, "cfg", module.guard(PyFloat_FromDouble(this->cfg)));
-            PyDict_SetItemString(params, "seed", module.guard(PyLong_FromLong(this->seed)));
-            PyDict_SetItemString(params, "variation", module.guard(PyLong_FromLong(this->variation)));
-            PyDict_SetItemString(params, "var_stren", module.guard(PyFloat_FromDouble(this->var_stren)));
-            PyDict_SetItemString(params, "restore_faces", module.guard(PyBool_FromLong((int)restore_faces)));
-            PyDict_SetItemString(params, "enable_codeformer", module.guard(PyBool_FromLong((int)enable_codeformer)));
+        const void txt2img_config_t::fill_prompt_dict(Dict *params, PythonModule &module) const {
+            params->setString("prompt", this->prompt);
+            params->setString("negative", this->negative);
+            params->setWString("model", this->model);
+            params->setInt("width", this->width);
+            params->setInt("height", this->height);
+            params->setInt("steps", this->steps);
+            params->setFloat("cfg", this->cfg);
+            params->setInt("seed", this->seed);
+            params->setInt("variation", this->variation);
+            params->setFloat("var_stren", this->var_stren);
+            params->setBool("restore_faces", restore_faces);
+            params->setBool("enable_codeformer", enable_codeformer);
 
             if (!this->controlnets.empty()) {
-                PyObject *arr = module.guard(PyList_New(0));
+                PyObject *arr = PyList_New(0);
                 for (auto it = this->controlnets.begin(); it != this->controlnets.end(); it++) {
-                    PyObject *c = module.guard(PyDict_New());
-                    PyObject *data = module.guard(PyDict_New());
-                    it->image->toPyDict(data);
-                    PyDict_SetItemString(c, "mode", module.guard(PyUnicode_FromString(it->mode)));
-                    PyDict_SetItemString(c, "image", data);
-                    PyDict_SetItemString(c, "strength", module.guard(PyFloat_FromDouble(it->strength)));
-                    PyList_Append(arr, c);
+                    Dict c = module.newDict();
+                    Dict data = module.newDict();
+                    
+                    it->image->toPyDict(&data);
+
+                    c.setString("mode", it->mode);
+                    c.setDict("image", data);
+                    c.setFloat("strength", it->strength);
+
+                    PyList_Append(arr, c.obj());
                 }
-                PyDict_SetItemString(params, "controlnets",arr);
+                params->setAny("controlnets", arr);
             }
         }
 
-        const void img2img_config_t::fill_prompt_dict(PyObject *params, PythonModule &module) const { 
+        const void img2img_config_t::fill_prompt_dict(Dict *params, PythonModule &module) const { 
             txt2img_config_t::fill_prompt_dict(params, module);
-            PyObject *data = module.guard(PyDict_New());
-            this->image->toPyDict(data);
-            PyDict_SetItemString(params, "image", data);
-            PyDict_SetItemString(params, "strength", module.guard(PyFloat_FromDouble(this->strength)));
+            Dict data = module.newDict();
+            this->image->toPyDict(&data);
+            params->setDict("image", data);
+            params->setFloat("strength", this->strength);
+
             if (this->mask) {
-                data = module.guard(PyDict_New());
-                this->mask->toPyDict(data);
-                PyDict_SetItemString(params, "mask", data);
-                PyDict_SetItemString(params, "invert_mask", module.guard(PyBool_FromLong(this->invert_mask ? 1 : 0)));
+                data = module.newDict();
+                this->mask->toPyDict(&data);
+                params->setDict("mask", data);
             }
         }
 
@@ -271,13 +272,13 @@ namespace dexpert
                     errors = true;
                 }
 
-                PyObject *params = module.guard(PyDict_New());
+                Dict params = module.newDict();
 
-                config.fill_prompt_dict(params, module);
+                config.fill_prompt_dict(&params, module);
 
                 if (!errors)
                 {
-                    result = module(fn_name, "O", params);
+                    result = module.call(fn_name, "O", params.obj());
                     errors = handle_error();
 
                     if (errors)
@@ -339,7 +340,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = module("list_models", "u", path);
+                    result = module.call("list_models", "u", path);
                     errors = handle_error();
                     if (errors || result == NULL)
                     {
@@ -397,19 +398,20 @@ namespace dexpert
                 if (!errors)
                 {
                     auto &c = getConfig();
-                    PyObject *params = module.newDict();
-                    module.dictSetString(params, "scheduler", c.getScheduler());
-                    module.dictSetBool(params, "nsfw_filter", c.getSafeFilter() ? 1 : 0);
-                    module.dictSetString(params, "device", c.getUseGPU() ? "cuda" : "cpu");
-                    module.dictSetBool(params, "use_float16", c.getUseFloat16());
-                    module.dictSetString(params, "gfpgan.arch", c.gfpgan_get_arch());
-                    module.dictSetInt(params, "gfpgan.channel_multiplier", c.gfpgan_get_channel_multiplier());
-                    module.dictSetBool(params, "gfpgan.has_aligned", c.gfpgan_get_has_aligned());
-                    module.dictSetBool(params, "gfpgan.only_center_face", c.gfpgan_get_only_center_face());
-                    module.dictSetBool(params, "gfpgan.paste_back", c.gfpgan_get_paste_back());
-                    module.dictSetFloat(params, "gfpgan.weight", c.gfpgan_get_weight());
+                    Dict params = module.newDict();
+                    
+                    params.setString("scheduler", c.getScheduler());
+                    params.setBool("nsfw_filter", c.getSafeFilter() ? 1 : 0);
+                    params.setString("device", c.getUseGPU() ? "cuda" : "cpu");
+                    params.setBool("use_float16", c.getUseFloat16());
+                    params.setString("gfpgan.arch", c.gfpgan_get_arch());
+                    params.setInt("gfpgan.channel_multiplier", c.gfpgan_get_channel_multiplier());
+                    params.setBool("gfpgan.has_aligned", c.gfpgan_get_has_aligned());
+                    params.setBool("gfpgan.only_center_face", c.gfpgan_get_only_center_face());
+                    params.setBool("gfpgan.paste_back", c.gfpgan_get_paste_back());
+                    params.setFloat("gfpgan.weight", c.gfpgan_get_weight());
 
-                    result = module("set_user_settings", "O", params);
+                    result = module.call("set_user_settings", "O", params.obj());
                     errors = handle_error();
                     if (errors)
                     {

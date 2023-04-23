@@ -77,7 +77,7 @@ uint32_t RawImage::w() {
     return w_;
 }
 
-void RawImage::toPyDict(PyObject *dict) {
+void RawImage::toPyDict(Dict *dict) {
     std::wstring img_type;
     switch (format_)
     {
@@ -95,16 +95,10 @@ void RawImage::toPyDict(PyObject *dict) {
         break;
     }
 
-    PythonModule module;
-    PyObject *po_buffer = module.guard(PyBytes_FromStringAndSize((const char *)buffer_, buffer_len_));
-    PyObject *po_w = module.guard(PyLong_FromSize_t(w_));
-    PyObject *po_h = module.guard(PyLong_FromSize_t(h_));
-    PyObject* po_mode = module.guard(PyUnicode_FromWideChar(img_type.c_str(), -1));
-
-    PyDict_SetItemString(dict, "width", po_w);
-    PyDict_SetItemString(dict, "height", po_h);
-    PyDict_SetItemString(dict, "mode", po_mode);
-    PyDict_SetItemString(dict, "data", po_buffer);
+    dict->setInt("width", w_);
+    dict->setInt("height", h_);
+    dict->setWString("mode", img_type.c_str());
+    dict->setBytes("data", (const char *)buffer_, buffer_len_);
 }
 
 size_t RawImage::getVersion() {
