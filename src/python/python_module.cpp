@@ -63,6 +63,23 @@ PyObject *PythonModule::get_function(const char *name) {
 }
 
 
+PyObject *PythonModule::call(const char *name, int argCount, ...) {
+    va_list args;
+    PyObject *result = NULL;
+    PyObject *fun = get_function(name);
+    if (fun) {
+        PyObject* params  = guard(PyTuple_New(argCount));
+        va_start(args, name);
+        for (int i = 0; i < argCount; i++) {
+            PyTuple_SetItem(params, i, va_arg(args, PyObject*));
+        }
+        va_end(args);
+        result = guard(PyObject_CallObject(fun, params));
+    }
+    return result;
+}
+
+
 PyObject *PythonModule::module() {
     return module_;
 }

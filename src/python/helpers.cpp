@@ -42,7 +42,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = module.call("install_dependencies", NULL);
+                    PyObject *result = module.call("install_dependencies", 0);
                     errors = handle_error();
                     if (errors)
                     {
@@ -71,7 +71,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    PyObject *result = module.call("have_dependencies", NULL);
+                    PyObject *result = module.call("have_dependencies", 0);
                     errors = handle_error();
                     if (errors)
                     {
@@ -109,7 +109,8 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = module.call("open_image", "s", path);
+                    PyObject *wpath = module.guard(PyUnicode_FromString(path));
+                    result = module.call("open_image", 1, wpath);
                     errors = handle_error();
                     if (errors)
                     {
@@ -152,7 +153,8 @@ namespace dexpert
                 {
                     Dict data = module.newDict();
                     image->toPyDict(&data);
-                    result = module.call("save_image", "sO", path, data.obj());
+                    PyObject *wpath = module.guard(PyUnicode_FromString(path));
+                    result = module.call("save_image", 2, wpath, data.obj());
                     errors = handle_error();
                     if (errors)
                     {
@@ -189,7 +191,8 @@ namespace dexpert
                 {
                     Dict data = module.newDict();
                     image->toPyDict(&data);
-                    result = module.call("pre_process_image", "sO", mode, data.obj());
+                    PyObject *wmode = module.guard(PyUnicode_FromString(mode));
+                    result = module.call("pre_process_image", 2, wmode, data.obj());
                     errors = handle_error();
                     if (errors)
                     {
@@ -278,7 +281,7 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = module.call(fn_name, "O", params.obj());
+                    result = module.call(fn_name, 1, params.obj());
                     errors = handle_error();
 
                     if (errors)
@@ -340,7 +343,8 @@ namespace dexpert
 
                 if (!errors)
                 {
-                    result = module.call("list_models", "u", path);
+                    PyObject *wpath = module.guard(PyUnicode_FromWideChar(path, -1));
+                    result = module.call("list_models", 1, wpath);
                     errors = handle_error();
                     if (errors || result == NULL)
                     {
@@ -410,8 +414,8 @@ namespace dexpert
                     params.setBool("gfpgan.only_center_face", c.gfpgan_get_only_center_face());
                     params.setBool("gfpgan.paste_back", c.gfpgan_get_paste_back());
                     params.setFloat("gfpgan.weight", c.gfpgan_get_weight());
-
-                    result = module.call("set_user_settings", "O", params.obj());
+                
+                    result = module.call("set_user_settings", 1, params.obj());
                     errors = handle_error();
                     if (errors)
                     {
