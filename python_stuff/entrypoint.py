@@ -1,7 +1,7 @@
 import os
 from images.diffusion_routines import run_pipeline
 from utils.settings import set_user_settings 
-from images.pre_process import image_to_canny, image_to_scribble, image_to_pose, image_to_deepth
+from images.pre_process import pre_process_image
 from images.filesystem import save_image, open_image
 from dependencies.installer import have_dependencies, install_dependencies
 

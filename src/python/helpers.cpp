@@ -11,6 +11,12 @@ namespace dexpert
 {
     namespace py
     {
+        const char *getError(const std::runtime_error &e) {
+            static std::string error;
+            error = e.what();
+            return error.c_str();
+        }
+
         const char *errorFromPyDict(py11::dict &result, const char *def)
         {
             static std::string buffer;
@@ -27,8 +33,13 @@ namespace dexpert
         {
             return [status_cb]
             {
-                dexpert::py::getModule().attr("install_dependencies")();
-                status_cb(true, NULL); // TODO: check error!
+                try {
+                    dexpert::py::getModule().attr("install_dependencies")();
+                    status_cb(true, NULL); // TODO: check error!
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e)); // TODO: check error!
+                }
             };
         }
 
@@ -36,8 +47,13 @@ namespace dexpert
         {
             return [status_cb]
             {
-                auto r = dexpert::py::getModule().attr("have_dependencies")();
-                status_cb(r.cast<py11::bool_>(), NULL); // TODO: check error!
+                try {
+                    auto r = dexpert::py::getModule().attr("have_dependencies")();
+                    status_cb(r.cast<py11::bool_>(), NULL); // TODO: check error!
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e)); // TODO: check error!
+                }
             };
         }
 
@@ -45,10 +61,14 @@ namespace dexpert
         {
             return [status_cb, path]
             {
-                auto r = dexpert::py::getModule().attr("open_image")(path);
-                py11::dict d = r.cast<py11::dict>();
-                auto img = dexpert::py::rawImageFromPyDict(d);
-                status_cb(true, NULL, img); // TODO: check error!
+                try {
+                    auto r = dexpert::py::getModule().attr("open_image")(path);
+                    py11::dict d = r.cast<py11::dict>();
+                    auto img = dexpert::py::rawImageFromPyDict(d);
+                    status_cb(true, NULL, img); // TODO: check error!
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                }
             };
         }
 
@@ -56,10 +76,15 @@ namespace dexpert
         {
             return [status_cb, path, image]()
             {
-                py11::dict d;
-                image->toPyDict(d);
-                dexpert::py::getModule().attr("save_image")(path, d);
-                status_cb(true, NULL); // TODO: check error!
+                try {
+                    py11::dict d;
+                    image->toPyDict(d);
+                    dexpert::py::getModule().attr("save_image")(path, d);
+                    status_cb(true, NULL); // TODO: check error!
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e)); // TODO: check error!
+                }
             };
         }
 
@@ -68,12 +93,17 @@ namespace dexpert
             enable_progress_window(false);
             return [status_cb, mode, image]()
             {
-                py11::dict d;
-                image->toPyDict(d);
-                auto r = dexpert::py::getModule().attr("pre_process_image")(mode, d);
-                py11::dict asimg = r.cast<py11::dict>();
-                auto img = dexpert::py::rawImageFromPyDict(asimg);
-                status_cb(true, NULL, img); // TODO: check error!
+                try {
+                    py11::dict d;
+                    image->toPyDict(d);
+                    auto r = dexpert::py::getModule().attr("pre_process_image")(mode, d);
+                    py11::dict asimg = r.cast<py11::dict>();
+                    auto img = dexpert::py::rawImageFromPyDict(asimg);
+                    status_cb(true, NULL, img); // TODO: check error!
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                }
             };
         }
 
@@ -139,7 +169,7 @@ namespace dexpert
                     py11::dict asimg = r.cast<py11::dict>();
                     auto img = dexpert::py::rawImageFromPyDict(asimg);
                     status_cb(true, errorFromPyDict(asimg, "Error generating the image"), img); // TODO: check error!
-                } catch(std::exception e) {
+                } catch(std::runtime_error e) {
                     static std::string es;
                     es = e.what();
                     status_cb(false, es.c_str(), image_ptr_t()); // TODO: check error!
@@ -163,21 +193,26 @@ namespace dexpert
         {
             return [&path, status_cb]
             {
-                model_list_t models;
+                try {
+                    model_list_t models;
 
-                auto r = dexpert::py::getModule().attr("list_models")(path);
-                auto seq = r.cast<py11::sequence>();
-                for (size_t i = 0; i < seq.size(); ++i)
-                {
-                    auto it = seq[i].cast<py11::dict>();
-                    model_t model;
-                    model.name = it["name"].cast<std::string>();
-                    model.size = it["size"].cast<py11::int_>();
-                    model.hash = it["hash"].cast<std::string>();
-                    model.path = it["path"].cast<std::string>();
-                    models.push_back(model);
+                    auto r = dexpert::py::getModule().attr("list_models")(path);
+                    auto seq = r.cast<py11::sequence>();
+                    for (size_t i = 0; i < seq.size(); ++i)
+                    {
+                        auto it = seq[i].cast<py11::dict>();
+                        model_t model;
+                        model.name = it["name"].cast<std::string>();
+                        model.size = it["size"].cast<py11::int_>();
+                        model.hash = it["hash"].cast<std::string>();
+                        model.path = it["path"].cast<std::string>();
+                        models.push_back(model);
+                    }
+                    status_cb(true, NULL, models); // TODO: check error!
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e), model_list_t()); // TODO: check error!
                 }
-                status_cb(true, NULL, models); // TODO: check error!
+
             };
         }
 
@@ -185,20 +220,24 @@ namespace dexpert
         {
             return [status_cb]
             {
-                py11::dict settings;
-                auto &c = getConfig();
-                settings["scheduler"] = c.getScheduler();
-                settings["nsfw_filter"] = c.getSafeFilter() ? 1 : 0;
-                settings["device"] = c.getUseGPU() ? "cuda" : "cpu";
-                settings["use_float16"] = c.getUseFloat16();
-                settings["gfpgan.arch"] = c.gfpgan_get_arch();
-                settings["gfpgan.channel_multiplier"] = c.gfpgan_get_channel_multiplier();
-                settings["gfpgan.has_aligned"] = c.gfpgan_get_has_aligned();
-                settings["gfpgan.only_center_face"] = c.gfpgan_get_only_center_face();
-                settings["gfpgan.paste_back"] = c.gfpgan_get_paste_back();
-                settings["gfpgan.weight"] = c.gfpgan_get_weight();
-                auto r = dexpert::py::getModule().attr("set_user_settings")(settings);
-                status_cb(true, NULL);
+                try {
+                    py11::dict settings;
+                    auto &c = getConfig();
+                    settings["scheduler"] = c.getScheduler();
+                    settings["nsfw_filter"] = c.getSafeFilter() ? 1 : 0;
+                    settings["device"] = c.getUseGPU() ? "cuda" : "cpu";
+                    settings["use_float16"] = c.getUseFloat16();
+                    settings["gfpgan.arch"] = c.gfpgan_get_arch();
+                    settings["gfpgan.channel_multiplier"] = c.gfpgan_get_channel_multiplier();
+                    settings["gfpgan.has_aligned"] = c.gfpgan_get_has_aligned();
+                    settings["gfpgan.only_center_face"] = c.gfpgan_get_only_center_face();
+                    settings["gfpgan.paste_back"] = c.gfpgan_get_paste_back();
+                    settings["gfpgan.weight"] = c.gfpgan_get_weight();
+                    auto r = dexpert::py::getModule().attr("set_user_settings")(settings);
+                    status_cb(true, NULL);
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e)); // TODO: check error!
+                }
             };
         }
 

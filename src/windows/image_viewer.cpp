@@ -15,7 +15,7 @@ ImageViewer::ImageViewer(image_ptr_t image) {
     window_->begin();
     panel_ = new FramePanel(image_, 0, 0, 1024, 800);
     
-    btnClose_.reset(new Button(xpm::image(xpm::eject_16x16), [this] {
+    btnClose_.reset(new Button(xpm::image(xpm::button_cancel_16x16), [this] {
         window_->hide();
     }));
     

@@ -1,6 +1,7 @@
 #include "src/windows/main_window.h"
 #include "src/windows/console_viewer.h"
 #include "src/windows/config_window.h"
+#include "src/windows/diffusion_tool.h"
 #include "src/python/helpers.h"
 #include "src/config/config.h"
 
@@ -20,17 +21,12 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     getConfig().windowHeight(),
     "Stable Diffusion Expert - Py and C++"
 ) {
-    python_ = dexpert::py::get_py();
-    
     auto wnd = this;
 
     wnd->size_range(MIN_WIDTH, MIN_HEIGHT);
 
     wnd->begin();
 
-    initPagesPanel();
-    initRightPanel();
-    initBottomPanel();
     initToolbar();
 
     wnd->end();
@@ -42,35 +38,8 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     this->show();
 
     alignComponents();
-
-    Fl::add_timeout(0.01, &MainWindow::gotoPromptPage, this);
 }
 
-void MainWindow::initBottomPanel() {
-    console_ = new ConsoleTabs(0, 0, 1, 1);
-    console_->end();
-}
-
-void MainWindow::initRightPanel() {
-    rightPanel_ = new Fl_Group(this->w() - 200, 20, 200, this->h() - 120);
-    rightPanel_->begin();
-    page_browser_ = new Fl_Select_Browser(0, 0, 1, 1);
-    page_browser_->callback(pageChangeCallback, this);
-    rightPanel_->end();
-    rightPanel_->box(FL_BORDER_BOX);
-
-    refreshBrowser();
-}
-
-void MainWindow::refreshBrowser() {
-    page_browser_->clear();
-    for (int i = 0; i < page_max; ++i) {
-        if (pages_->isVisible((page_t) i))
-            page_browser_->add(pages_->pageTitle((page_t) i));
-    }
-    page_browser_->deselect();
-    page_browser_->select(pages_->visibleIndex() + 1);
-}
 
 void MainWindow::initToolbar() {
     toolsPanel_ = new Fl_Group(0, 20, this->w(), 20);
@@ -92,15 +61,10 @@ void MainWindow::initMenu() {
     // menu_->addItem([this] {  }, "", "File/Open");
     // menu_->addItem([this] {  }, "", "File/Save");
     //  menu_->addItem(noCall, "", "Edit");
-    menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
+    menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
     //  menu_->addItem(noCall, "", "Help");
-}
-
-void MainWindow::initPagesPanel() {
-    pages_ = new Pages(200, 20, this->w() - 400, this->h()-120);
-    pages_->end();
 }
 
 void MainWindow::alignComponents() {
@@ -110,33 +74,10 @@ void MainWindow::alignComponents() {
     toolsPanel_->size(w, menu_->h());
     menu_->position(0, 0);
     menu_->size(w, toolsPanel_->h());
-
-    int topH = menu_->h() + 2;
-    int bottomH = 130;
-    int leftH = h;
-    int rightH = leftH;
-    int centerH = h - topH - bottomH;
-    int leftW = 0;
-    int rightW = 100;
-    int centerW = w - leftW - rightW;
-
-    pages_->position(leftW, topH);
-    pages_->size(centerW, centerH);
-
-    console_->position(leftW, h - bottomH);
-    console_->size(w, bottomH);
-
-    rightPanel_->position(leftW + centerW, topH);
-    rightPanel_->size(rightW, centerH);
-
-    page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
 }
 
 void MainWindow::editConfig() {
     show_configuration(); 
-    pages_->loadConfig();
-    refreshBrowser();
-    gotoSelectedPage();
 }
 
 void MainWindow::resize(int x, int y, int w, int h) {
@@ -161,29 +102,6 @@ int MainWindow::handle(int event) {
     }
 
     return Fl_Menu_Window::handle(event);
-}
-
-void MainWindow::pageChangeCallback(Fl_Widget* widget, void *cbdata) {
-    ((MainWindow *) cbdata)->gotoSelectedPage();
-}
-
-void MainWindow::gotoPromptPage(void *cbdata) {
-    ((MainWindow*) cbdata)->page_browser_->select(1);
-    ((MainWindow*) cbdata)->pages_->goPage(page_prompts);
-}
-
-void MainWindow::gotoSelectedPage() {
-    if (selecting_page_)
-        return;
-    selecting_page_ = true;
-    int idx = page_browser_->value();
-    if (idx > 0)  {
-        idx -= 1;
-        pages_->goPage(pages_->getPageIndex(idx));
-    } 
-    page_browser_->deselect();
-    page_browser_->select(pages_->visibleIndex() + 1);
-    selecting_page_ = false;
 }
 
 int MainWindow::run() {

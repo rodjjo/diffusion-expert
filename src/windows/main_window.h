@@ -16,9 +16,7 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Tabs.H>
 
-#include "src/panels/pages.h"
 #include "src/windows/main_menu.h"
-#include "src/console/console_tabs.h"
 #include "src/python/wrapper.h"
 
 namespace dexpert {
@@ -33,26 +31,13 @@ class MainWindow : Fl_Menu_Window {
    int handle(int event) override;
    
  private:
-  void initBottomPanel();
-  void initRightPanel();
   void initToolbar();
-  void initPagesPanel();
   void initMenu();
   void alignComponents();
-  void gotoSelectedPage();
-  void refreshBrowser();
   void editConfig();
-  static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
-  static void gotoPromptPage(void *cbdata);
  private:
-    Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
-    ConsoleTabs *console_ = NULL;
-    Pages *pages_ = NULL;
     MainMenu *menu_ = NULL;
-    Fl_Select_Browser *page_browser_;
-    bool selecting_page_ = false;
-    std::shared_ptr<dexpert::py::PythonMachine> python_;
 };
 
 

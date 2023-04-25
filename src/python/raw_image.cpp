@@ -96,7 +96,7 @@ void RawImage::toPyDict(py11::dict &image) {
     image["width"] = w_;
     image["height"] = h_;
     image["mode"] = img_type;
-    image["data"] = py11::bytearray((const char *)buffer_, buffer_len_);
+    image["data"] = py11::bytes((const char *)buffer_, buffer_len_);
 }
 
 size_t RawImage::getVersion() {

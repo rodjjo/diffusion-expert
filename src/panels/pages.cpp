@@ -29,7 +29,9 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
 
     this->begin();
 
-    promptPanel_ = new PromptPanel(0, 0, 1, 1);
+    promptPanel_ = new PromptPanel(0, 0, 1, 1, [this] {
+        this->textToImage();
+    });
     pages_[page_prompts] = promptPanel_;
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
