@@ -28,10 +28,18 @@ endif(WIN32)
 target_link_libraries(
     diffusion-exp 
     stdc++ 
-    ${FLTK_LIBRARIES} 
-    ${PYTHON_LIBRARIES} 
-    ${nlohmann_json_LIBRARIES_RELEASE}
-    ${cimg_LIBRARIES_RELEASE}
+    fltk
+    fltk_forms 
+    fltk_images 
+    fltk_jpeg 
+    fltk_png 
+    fltk_z 
+    fltk_gl 
+#   python3.lib
+    python310.lib
+    opengl32
+    user32
+    comctl32
 )
 
 set_target_properties(diffusion-exp

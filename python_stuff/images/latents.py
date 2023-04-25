@@ -3,6 +3,7 @@ import gc
 import torch
 from torchvision import transforms
 from PIL import Image
+from utils.images import pil_as_dict
 
 
 def pil_to_latents(image, vae):
@@ -17,7 +18,7 @@ def pil_to_latents(image, vae):
 
 def latents_to_pil(step, vae, latents):
     if step % 5 != 0:
-        return None
+        return {}
     '''
     Function to convert latents to images
     '''
@@ -28,14 +29,9 @@ def latents_to_pil(step, vae, latents):
     image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
     images = (image * 255).round().astype("uint8")
     if (len(images) < 1):
-        return None
+        return {}
     image = Image.fromarray(images[-1]) 
-    return {
-        'data': image.tobytes(),
-        'width': image.width,
-        'height': image.height,
-        'mode': image.mode,
-    }
+    return pil_as_dict(image)
 
 
 def randn(seed, shape):

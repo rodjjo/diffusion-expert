@@ -206,7 +206,6 @@ void Pages::textToImage() {
             controlnets,
             img,
             mask,
-            inputImage_->should_invert_mask_colors(),
             seed,
             promptPanel_->getWidth(),
             promptPanel_->getHeight(),

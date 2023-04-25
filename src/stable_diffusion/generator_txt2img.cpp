@@ -9,7 +9,7 @@ namespace dexpert
  GeneratorTxt2Image::GeneratorTxt2Image(
         const std::string& prompt,
         const std::string& negative,
-        const std::wstring& model,
+        const std::string& model,
         controlnet_list_t controlnets,
         int seed,
         size_t width,

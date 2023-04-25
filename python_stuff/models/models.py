@@ -13,7 +13,6 @@ from models.paths import CACHE_DIR
 from utils.settings import get_setting
 from models.loader import load_stable_diffusion_model
 
-MODEL_EXTENSIONS = set(['.ckpt', '.safetensors'])
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
 CURRENT_VAR_PIPELINE = {}
@@ -140,22 +139,8 @@ def models_memory_checker():
                 pipeline.to(device_name)
             gc.collect()
 
-def is_model(path: str):
-    n = path.lower()
-    for e in MODEL_EXTENSIONS:
-        if n.endswith(e):
-            return True
-    return False
 
 def current_model_is_in_painting():
     return CURRENT_MODEL_PARAMS.get('in_painting', False) is True
 
-def list_models(directory: str):
-    files = [n for n in os.listdir(directory) if is_model(n)]
-    path = lambda n: os.path.join(directory, n)
-    return [{
-        "path": path(n),
-        "name": n,
-        "size": os.stat(path(n)).st_size,
-        "hash": "not-computed",
-    } for n in files]
+

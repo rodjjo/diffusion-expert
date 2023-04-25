@@ -9,11 +9,10 @@ namespace dexpert
  GeneratorImg2Image::GeneratorImg2Image(
         const std::string& prompt,
         const std::string& negative,
-        const std::wstring& model,
+        const std::string& model,
         controlnet_list_t controlnets,
         image_ptr_t image,
         image_ptr_t mask,
-        bool invert_mask,
         int seed,
         size_t width,
         size_t height,
@@ -29,7 +28,6 @@ namespace dexpert
         controlnets_(controlnets),
         image_(image),
         mask_(mask),
-        invert_mask_(invert_mask),
         seed_(seed), 
         width_(width), 
         height_(height), 
@@ -52,7 +50,6 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
         this->controlnets_,
         this->image_,
         this->mask_,
-        this->invert_mask_,
         this->seed_,
         this->width_,
         this->height_,
@@ -87,7 +84,6 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
 
     params.image = image_.get();
     params.mask = mask_.get();
-    params.invert_mask = invert_mask_;
     params.strength = image_strength_;
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;

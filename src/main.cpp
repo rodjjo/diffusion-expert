@@ -11,6 +11,37 @@
 #include "src/windows/console_viewer.h"
 #include "src/windows/main_window.h"
 
+#include "src/stable_diffusion/state.h"
+#include "src/stable_diffusion/generator_txt2img.h"
+#include "src/stable_diffusion/generator_img2img.h"
+
+/*
+namespace dexpert {
+    
+    void test_generators() {
+        std::shared_ptr<GeneratorBase> g;
+        g.reset(new GeneratorTxt2Image(
+            "An astronaut riding a horse at he moon",
+            "drawing",
+            get_sd_state()->getSdModelPath("model.safetensors"),
+            controlnet_list_t(),
+            100,
+            512,
+            512,
+            50,
+            7.5,
+            0.1,
+            false,
+            false
+        ));
+
+        if (!get_sd_state()->generatorAdd(g)) {
+            show_error(get_sd_state()->lastError());
+            showConsoles("Ops", true);
+        }
+    }
+}
+*/
 
 bool install_deps() {
     bool success = false;
@@ -44,12 +75,18 @@ int main(int argc, char **argv)
     std::thread gui_thread([&result] {
         Fl::scheme("gtk+");
 
-        bool success = false;
+        /*
+        for (int i = 0; i < 100; i++) {
+            dexpert::test_generators();
+        }
+        */
+
+        bool have_deeps = false;
         const char *msg = NULL;
         dexpert::py::get_py()->execute_callback(
-            dexpert::py::check_have_deps([&success, &msg] (bool status, const char *error) {
+            dexpert::py::check_have_deps([&have_deeps, &msg] (bool status, const char *error) {
                 msg = error;
-                success = status;
+                have_deeps = status;
             })
         );
 
@@ -61,24 +98,25 @@ int main(int argc, char **argv)
             return;
         }
 
-        if (!success && !install_deps()) {
+        if (!have_deeps && !install_deps()) {
             dexpert::py::py_end();    
             result = 2;
             return;
         }
-        
+
+        bool success = false;
         dexpert::py::get_py()->execute_callback(dexpert::py::configure_stable_diffusion([&success, &msg] (bool status, const char *error) {
             msg = error;
             success = status;
         }));
 
-        if (msg) {
+        if (!success) {
             dexpert::py::py_end();    
             dexpert::show_error(msg);
             dexpert::showConsoles("Unexpected Error", false);
             result = 1;
             return;
-        }
+        } 
 
         auto w = new dexpert::MainWindow(); // fltk deletes the object after we run it.
         result = w->run();

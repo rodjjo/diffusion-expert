@@ -1,7 +1,6 @@
 #include <Python.h>
 
 #include "src/python/error_handler.h"
-#include "src/python/guard.h"
 
 namespace dexpert {
 namespace py {

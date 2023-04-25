@@ -6,39 +6,6 @@ import shutil
 
 PROFILE_NAME = 'MingwDiffusionExpert'
 
-
-def get_settings():
-    mingw_dir = mingw_bin_dir()
-    mingw_dir = mingw_dir.replace('\\', '/')
-    return [
-        f'env.CC={mingw_dir}/x86_64-w64-mingw32-gcc.exe',
-        f'env.CXX={mingw_dir}/x86_64-w64-mingw32-g++.exe',
-        f'env.AR={mingw_dir}/ar.exe',
-        f'env.AS={mingw_dir}/as.exe',
-        f'env.RANLIB={mingw_dir}/ranlib.exe',
-        f'env.STRIP={mingw_dir}/strip.exe',
-        f'env.RC={mingw_dir}/windres.exe',
-        'env.CONAN_CMAKE_GENERATOR=MinGW Makefiles',
-        'env.CMAKE_GENERATOR=MinGW Makefiles',
-        'env.CMAKE_BUILD_TYPE=Debug',
-        # 'env.CMAKE_CXX_FLAGS=-Wno-error=address',
-        f'env.CONAN_CMAKE_FIND_ROOT_PATH={mingw_dir}',
-        f'env.CMAKE_MAKE_PROGRAM={mingw_dir}/mingw32-make.exe',
-        'settings.arch=x86_64',
-        'settings.build_type=Debug',
-        'settings.compiler=gcc',
-        'settings.compiler.cppstd=gnu23',
-        'settings.compiler.exception=seh',
-        'settings.compiler.libcxx=libstdc++11',
-        'settings.compiler.threads=win32',
-        'settings.compiler.version=12.2',
-        'settings.os=Windows',
-        'settings.os_build=Windows',
-        'conf.tools.cmake.cmaketoolchain:generator=MinGW Makefiles',
-        # 'conf.tools.build:cxxflags=["-Wno-error=address"]',
-        #'conf.tools.build:cflags=["-Wno-error=address"]',
-    ]
-
 def root_dir():
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 
@@ -48,6 +15,10 @@ def build_dir():
     os.makedirs(result, exist_ok=True)
     return result
 
+def build_dir_fltk(btype):
+    result = os.path.join(root_dir(), 'build', 'fltk', btype)
+    os.makedirs(result, exist_ok=True)
+    return result
 
 def temp_dir():
     result = os.path.join(root_dir(), 'temp')
@@ -57,6 +28,12 @@ def temp_dir():
 
 def mingw_bin_dir():
     return os.path.join(build_dir(), 'mingw64', 'bin')
+
+def deeps_dir():
+    return os.path.join(root_dir(), 'dependencies')
+
+def fltk_dir():
+    return os.path.join(deeps_dir(), 'fltk')
 
 
 def download_toolset():
@@ -68,6 +45,25 @@ def download_toolset():
     if not os.path.exists(mingw_bin_dir()):
         print('Extracting Mingw')
         subprocess.check_call(['7z.exe', 'x', filepath], cwd=build_dir())
+
+def python_dir():
+    result = os.path.join(root_dir(), 'dexpert', 'bin')
+    if not os.path.exists(result):
+        os.makedirs(result, exist_ok=True)
+    return result
+
+def python_binary():
+    return os.path.join(python_dir(), 'python310.dll')
+
+def download_python():
+    url = 'https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip'
+    filepath = os.path.join(temp_dir(), "python3.10.zip")
+    if not os.path.exists(filepath):
+        print('Downloading embedded Python')
+        urllib.request.urlretrieve(url, filepath)
+    if not os.path.exists(python_binary()):
+        print('Extracting Python')
+        subprocess.check_call(['7z.exe', 'x', filepath], cwd=python_dir())
 
 
 def recreate_profile():
@@ -94,11 +90,6 @@ def ensure_have_tool(name, url, args):
     except:
         pass
 
-
-def ensure_have_conan():
-    ensure_have_tool('Conan', 'https://conan.io/', ['conan', '--version'])
-
-
 def ensure_have_7zip():
     ensure_have_tool('7-Zip', 'https://www.7-zip.org/', ['7z.exe'])
 
@@ -106,70 +97,93 @@ def ensure_have_7zip():
 def ensure_have_cmake():
     ensure_have_tool('CMake', 'https://cmake.org/download/', ['cmake', '--version'])
 
+def apply_patches():
+    try:
+        nullfile = open(os.devnull, 'w')
+        subprocess.check_call([
+            'git', 'apply', os.path.join(root_dir(), 'patches', 'fktl-git.patch')
+        ], cwd=fltk_dir(), stdout=nullfile, stderr=nullfile)
+    except Exception as e:
+        print(str(e))
 
-def build_envs():
-    settings = get_settings()
-    PATH = os.environ.get('PATH', '').split(';')
-    PATH.append(
-        mingw_bin_dir()
+def get_build_type(args):
+    if '--debug' in args:
+        return 'Debug'
+    else:
+        return 'Release'
+
+def cmake_args(args):
+    mingw_dir = mingw_bin_dir()
+    mingw_dir = mingw_dir.replace('\\', '/')
+    return [
+        f'-DCMAKE_BUILD_TYPE={get_build_type(args)}',
+        f'-DCMAKE_MAKE_PROGRAM={mingw_dir}/mingw32-make.exe',
+        f'-DCMAKE_C_COMPILER={mingw_dir}/x86_64-w64-mingw32-gcc.exe',
+        f'-DCMAKE_CXX_COMPILER={mingw_dir}/x86_64-w64-mingw32-g++.exe',
+        f'-DCMAKE_RC_COMPILER={mingw_dir}/windres.exe',
+        f'-DCMAKE_C_RANLIB={mingw_dir}/ranlib.exe',
+        f'-DCMAKE_CXX_RANLIB={mingw_dir}/ranlib.exe',
+    ]
+
+
+def build_fltk(args):
+    build_dir = build_dir_fltk(get_build_type(args))
+    subprocess.check_call(
+        ['cmake'] + cmake_args(args) + [os.path.join(root_dir(), 'dependencies'), '-G', 'MinGW Makefiles'], 
+        cwd=build_dir
     )
-    envs = { **os.environ }
-    connan_envs = {}
-    for line in settings:
-        pairs = line.split('=', maxsplit=1)
-        connan_envs[pairs[0]] = pairs[1]
-    envs['PATH'] = ';'.join(PATH)
-    for k in connan_envs.keys():
-        if k.startswith('env.'):
-            name = k.split('.', maxsplit=1)[1]
-            envs[name] = connan_envs[k]
-    return envs
+    subprocess.check_call([
+        'cmake', '--build', '.', '-j12'
+    ], cwd=build_dir)
+    subprocess.check_call([
+        'cmake', '--install', '.', '--prefix', os.path.join(build_dir, '..')
+    ] , cwd=build_dir)
+
+def build_diffusion_expert(args):
+    subprocess.check_call(['cmake'] + cmake_args(args) + ['..', '-G', 'MinGW Makefiles'], cwd=build_dir())
+    subprocess.check_call(['cmake', '--build', '.', '-j12'], cwd=build_dir())
+    subprocess.check_call([
+        'cmake', '--install', '.', '--prefix', os.path.join(build_dir(), 'dexpert')
+    ] , cwd=build_dir())
 
 
 def build(args):
-    envs = build_envs()
-    if '--debug' in args:
-        envs["DEBUG_ENABLED"] = "ON"
-
-    additionalArgs = []
-
+    apply_patches()
     if 'clean-first' in args:
-        additionalArgs = ['--clean-first']
+        cacheFiles = [
+            os.path.join(build_dir(), 'CMakeCache.txt'),
+            os.path.join(build_dir_fltk(), 'CMakeCache.txt')
+        ]
+        filesDirs = [
+            os.path.join(build_dir(), 'CMakeFiles'),
+            os.path.join(build_dir_fltk(), 'CMakeFiles')
+        ]
+        for cacheFile in cacheFiles:
+            if os.path.exists(cacheFile):
+                os.unlink(cacheFile)
+        for filesDir in filesDirs:
+            if os.path.exists(filesDir):
+                shutil.rmtree(filesDir)
 
-    if 'clean-cmake' in args:
-        cacheFile = os.path.join(build_dir(), 'CMakeCache.txt')
-        filesDir = os.path.join(build_dir(), 'CMakeFiles')
-        if os.path.exists(cacheFile):
-            os.unlink(cacheFile)
-        if os.path.exists(filesDir):
-            shutil.rmtree(filesDir)
+    build_fltk(args)
+    build_diffusion_expert(args)
 
-    subprocess.check_call([
-        'conan',
-        'install',
-        '..',
-        f'--profile={PROFILE_NAME}',
-        '--output-folder=build',
-        '--build=missing',
-    ], cwd=build_dir(), env=envs)
-    subprocess.check_call([
-        'cmake', '..', '-G', 'MinGW Makefiles'
-    ], cwd=build_dir(), env=envs)
-    subprocess.check_call([
-        'cmake', '--build', '.',  '--', '-j', '4'
-    ] + additionalArgs, cwd=build_dir(), env=envs)
-    subprocess.check_call([
-        'cmake', '--install', '.', '--prefix', os.path.join(build_dir(), '..', 'dexpert')
-    ] , cwd=build_dir(), env=envs)
-
+def publish_binaries():
+    source_dir = os.path.join(build_dir(), 'bin')
+    files = [
+        os.path.join(source_dir, 'diffusion-exp-win.exe'),
+        os.path.join(source_dir, 'diffusion-exp.exe'),
+    ]
+    for f in files:
+        shutil.copyfile(f, os.path.join(python_dir(), os.path.basename(f)))
 
 def main(args):
-    ensure_have_conan()
     ensure_have_7zip()
     ensure_have_cmake()
     download_toolset()
-    configure_profile()
+    download_python()
     build(args)
+    publish_binaries()
 
 if __name__ == '__main__':
     main(sys.argv)

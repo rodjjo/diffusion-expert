@@ -1,31 +1,18 @@
+import sys
 import gc
 import torch
 from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
+from utils.images import pil_as_dict, pil_from_dict, rgb_image_512x512
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
-from PIL import Image
-import PIL.ImageOps
 
 from dexpert import progress, progress_canceled, progress_title
 
 
 def report(message):
     progress_title(f'[Text To Image] - {message}')
-
-
-def image_from_dict(data: dict):
-    img = Image.frombytes(data['mode'], (data['width'], data['height']), data['data'])
-    if img.mode.lower() == 'rgba':
-        result = Image.new('RGB', (data['width'], data['height']),  (255, 255, 255))
-        result.paste(img, (0, 0), img) 
-        return result
-    return img
-
-
-def invert_image_from_dict(data: dict):
-    return PIL.ImageOps.invert(image_from_dict(data))
 
 
 @torch.no_grad()
@@ -65,14 +52,14 @@ def _run_pipeline(pipeline_type, params):
     latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
     
     generator = None if seed == -1  else torch.Generator(device=device).manual_seed(seed)
-    report("generating the variation" if variation_enabled else "generating the image")
-
-    report("creating the pipeline")
+    report("started")
 
     if pipeline_type == 'img2img' and input_mask is not None:
         pipeline_type = 'inpaint2img'
 
+    report("creating the pipeline")
     pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets) 
+    report("pipeline created")
 
     if pipeline_type == 'inpaint2img':
         if not current_model_is_in_painting():
@@ -104,7 +91,7 @@ def _run_pipeline(pipeline_type, params):
                     c['strength'] = 0
                 if c['strength'] > 2.0:
                     c['strength'] = 2.0
-                images.append(image_from_dict(c['image']))
+                images.append(pil_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
@@ -114,7 +101,7 @@ def _run_pipeline(pipeline_type, params):
             additional_args['controlnet_conditioning_scale'] = conds
     elif pipeline_type == 'img2img':
         additional_args = {
-            'image': image_from_dict(input_image),
+            'image': pil_from_dict(input_image),
             'strength': params['strength'],
         }
     elif pipeline_type == 'inpaint2img':
@@ -122,11 +109,11 @@ def _run_pipeline(pipeline_type, params):
             return {
                 "error": "The current model is not for in painting"
             }
-        image = image_from_dict(input_image)
+        image = pil_from_dict(input_image)
         if params.get("invert_mask"):
-            mask = image_from_dict(input_mask)
+            mask = pil_from_dict(input_mask)
         else:
-            mask = image_from_dict(input_mask)
+            mask = pil_from_dict(input_mask)
         additional_args = {
             'image': image,
             'mask_image': mask,
@@ -137,6 +124,7 @@ def _run_pipeline(pipeline_type, params):
 
     pipeline.to(device)
     latents_noise.to(device)
+    report("generating the variation" if variation_enabled else "generating the image")
     with torch.inference_mode(), torch.autocast(device):
         result = pipeline(
             prompt, 
@@ -153,16 +141,11 @@ def _run_pipeline(pipeline_type, params):
         with models_memory_checker():
             result = gfpgan_restore_faces(result)
     report("image generated")
-    return {
-            'data': result.tobytes(),
-            'width': result.width,
-            'height': result.height,
-            'mode': result.mode,
-        }
+    return pil_as_dict(result)
 
 
 def run_pipeline(mode: str, params: dict):
-    progress(0, 100, None)
+    progress(0, 100, {})
 
     try:
         data = _run_pipeline(mode, params)   
@@ -171,14 +154,7 @@ def run_pipeline(mode: str, params: dict):
         data = None
     gc.collect()
 
-    progress(100, 100, None)     
+    progress(100, 100, {})     
 
     return data
 
-
-def txt2img(params: dict):
-    return run_pipeline('txt2img', params)
-
-
-def img2img(params: dict):
-    return run_pipeline('img2img', params)

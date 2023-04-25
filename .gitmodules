@@ -1,0 +1,12 @@
+[submodule "fltk"]
+	path = dependencies/fltk
+	url = git@github.com:fltk/fltk.git
+[submodule "nlohmann_json"]
+	path = dependencies/nlohmann_json
+	url = git@github.com:nlohmann/json.git
+[submodule "cimg"]
+	path = dependencies/cimg
+	url = git@github.com:GreycLab/CImg.git
+[submodule "pybind11"]
+	path = dependencies/pybind11
+	url = https://github.com/pybind/pybind11.git

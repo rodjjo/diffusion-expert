@@ -22,6 +22,7 @@ std::shared_ptr<StableDiffusionState> get_sd_state() {
 
 StableDiffusionState::StableDiffusionState() {
     generators_.resize(MAX_GENERATORS);
+    reloadSdModelList();
 }
 
 StableDiffusionState::~StableDiffusionState() {
@@ -43,6 +44,7 @@ bool StableDiffusionState::reloadSdModelList() {
                 el.name = it->name;
                 el.path = it->path;
                 new_list.push_back(el);
+                printf("model: %s %s\n", it->name.c_str(), it->path.c_str());
             }
         } else {
             if (m) msg = m;
@@ -83,13 +85,13 @@ void StableDiffusionState::setSdModel(const std::string& name) {
     }
 }
 
-std::wstring StableDiffusionState::getSdModelPath(const std::string& name) {
+std::string StableDiffusionState::getSdModelPath(const std::string& name) {
     for (auto it = sdModels_.cbegin(); it != sdModels_.cend(); it++) {
         if (name == it->name) {
             return it->path;
         }
     }
-    return L"";
+    return "";
 }
 
 void StableDiffusionState::scroll_down_generators() {

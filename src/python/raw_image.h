@@ -6,6 +6,9 @@
 
 #include <memory>
 #include <Python.h>
+#include <pybind11/embed.h> 
+
+namespace py11 = pybind11;
 
 namespace dexpert {
 namespace py {
@@ -23,7 +26,7 @@ class RawImage {
  public:
     RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent=true);
     virtual ~RawImage();
-    void toPyDict(PyObject *dict);
+    void toPyDict(py11::dict &image);
     const unsigned char *buffer();
     image_format_t format();
     uint32_t h();
@@ -46,7 +49,7 @@ class RawImage {
 
 typedef std::shared_ptr<RawImage> image_ptr_t;
 
-image_ptr_t rawImageFromPyDict(PyObject * dict);
+image_ptr_t rawImageFromPyDict(py11::dict &image);
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha);
 
 }  // namespace py

@@ -9,6 +9,10 @@
 #include <thread>
 #include <memory>
 
+#include <pybind11/embed.h> 
+
+namespace py11 = pybind11;
+
 namespace dexpert {
 namespace py {
 
@@ -18,6 +22,8 @@ class PythonMachine;
 std::shared_ptr<PythonMachine> get_py();
 void py_main();
 void py_end();
+
+py11::module_ &getModule();
 
 class PythonMachine {
  private:
