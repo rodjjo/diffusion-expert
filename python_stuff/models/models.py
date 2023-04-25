@@ -32,6 +32,10 @@ def load_model(model_path: str):
         }
     gc.collect()
 
+usefp16 = {
+    True: torch.float16,
+    False: torch.float32
+}
 
 def create_pipeline(mode: str, model_path: str, controlnets = None):
     global CURRENT_PIPELINE
@@ -59,7 +63,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
                 continue
             print("Controlnet: ", c['mode'])
             control_model.append(ControlNetModel.from_pretrained(
-                model_repos[c['mode']], torch_dtype=torch.float16, cache_dir=CACHE_DIR
+                model_repos[c['mode']], torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR
             ))
 
         if len(control_model) == 1:

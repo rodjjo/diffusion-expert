@@ -157,16 +157,16 @@ bool Config::getUseFloat16() {
     return use_float16_;
 }
 
+void Config::setUseFloat16(bool value) {
+    use_float16_ = value;
+}
+
 bool Config::getUseGPU() {
     return use_gpu_;
 }
 
-void Config::setUseFloat16(bool value) {
-    use_gpu_ = value;
-}
-
 void Config::setUseGPU(bool value) {
-    use_float16_ = value;
+    use_gpu_ = value;
 }
 
 float Config::gfpgan_get_weight() {
@@ -291,8 +291,7 @@ bool Config::load() {
             if (sd.contains("use_float16")) {
                 use_float16_ = sd["use_float16"].get<bool>();
             }
-
-             if (sd.contains("use_gpu")) {
+            if (sd.contains("use_gpu")) {
                 use_gpu_ = sd["use_gpu"].get<bool>();
             }
         }
