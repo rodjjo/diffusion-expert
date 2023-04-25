@@ -21,7 +21,7 @@ std::shared_ptr<StableDiffusionState> get_sd_state();
 typedef struct {
     std::string name;
     std::string hash;
-    std::wstring path;
+    std::string path;
     size_t model_size;
 } model_info_t;
 
@@ -48,7 +48,7 @@ class StableDiffusionState {
     bool reloadSdModelList();
     const std::list<model_info_t> &getSdModels() const;
     void setSdModel(const std::string& name);
-    std::wstring getSdModelPath(const std::string& name);
+    std::string getSdModelPath(const std::string& name);
 
     // generation
     bool generatorAdd(std::shared_ptr<GeneratorBase> generator);
@@ -81,7 +81,7 @@ private:
     void scroll_up_generators();
 private:
     std::list<model_info_t> sdModels_;
-    std::wstring currentSdModel_;
+    std::string currentSdModel_;
     std::string last_error_;
     std::vector<generator_t> generators_;
 };

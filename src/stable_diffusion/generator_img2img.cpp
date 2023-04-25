@@ -9,7 +9,7 @@ namespace dexpert
  GeneratorImg2Image::GeneratorImg2Image(
         const std::string& prompt,
         const std::string& negative,
-        const std::wstring& model,
+        const std::string& model,
         controlnet_list_t controlnets,
         image_ptr_t image,
         image_ptr_t mask,

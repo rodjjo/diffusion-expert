@@ -6,28 +6,6 @@ import sys
 import build
 import copy_stuff
 
-
-def python_dir():
-    result = os.path.join(build.root_dir(), 'dexpert', 'bin')
-    if not os.path.exists(result):
-        os.makedirs(result, exist_ok=True)
-    return result
-
-
-def python_binary():
-    return os.path.join(python_dir(), 'python310.dll')
-
-
-def download_python():
-    url = 'https://www.python.org/ftp/python/3.10.9/python-3.10.9-embed-amd64.zip'
-    filepath = os.path.join(build.temp_dir(), "python3.10.zip")
-    if not os.path.exists(filepath):
-        print('Downloading embedded Python')
-        urllib.request.urlretrieve(url, filepath)
-    if not os.path.exists(python_binary()):
-        print('Extracting Python')
-        subprocess.check_call(['7z.exe', 'x', filepath], cwd=python_dir())
-
 def main():
     prefix = []
     if '--build' in sys.argv:
@@ -41,7 +19,6 @@ def main():
         prefix = [
             'build/mingw64/bin/gdb.exe'
         ]
-    download_python()
     subprocess.check_call(prefix + [
         'dexpert/bin/diffusion-exp.exe'
     ])

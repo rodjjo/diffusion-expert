@@ -64,7 +64,7 @@ const std::wstring& Config::pythonStuffDir() {
 
 const std::wstring& Config::pythonMainPy() {
     if (pythonStuffDir_.empty()) {
-        pythonMainPy_ = pythonStuffDir() + L"/main.py";
+        pythonMainPy_ = pythonStuffDir() + L"/entrypoint.py";
     }
     return pythonMainPy_;
 }

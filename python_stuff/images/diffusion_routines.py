@@ -1,3 +1,4 @@
+import sys
 import gc
 import torch
 from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
@@ -144,7 +145,7 @@ def _run_pipeline(pipeline_type, params):
 
 
 def run_pipeline(mode: str, params: dict):
-    progress(0, 100, None)
+    progress(0, 100, {})
 
     try:
         data = _run_pipeline(mode, params)   
@@ -153,14 +154,7 @@ def run_pipeline(mode: str, params: dict):
         data = None
     gc.collect()
 
-    progress(100, 100, None)     
+    progress(100, 100, {})     
 
     return data
 
-
-def txt2img(params: dict):
-    return run_pipeline('txt2img', params)
-
-
-def img2img(params: dict):
-    return run_pipeline('img2img', params)

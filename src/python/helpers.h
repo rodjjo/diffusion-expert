@@ -10,9 +10,11 @@
 #include <functional>
 
 #include <Python.h>
+#include <pybind11/embed.h>
 
 #include "src/python/raw_image.h"
-#include "src/python/python_module.h"
+
+namespace py11 = pybind11;
 
 namespace dexpert {
 namespace py {
@@ -20,7 +22,7 @@ namespace py {
 typedef struct  {
     std::string name;
     std::string hash;
-    std::wstring path;
+    std::string path;
     size_t size;
 } model_t;
 
@@ -36,7 +38,7 @@ class txt2img_config_t {
  public:
     const char *prompt = "";
     const char *negative = "";
-    const wchar_t *model = L"";
+    const char *model = "";
     int seed = -1;
     size_t width = 512;
     size_t height = 512;
@@ -48,7 +50,7 @@ class txt2img_config_t {
     bool enable_codeformer = false;
     std::list<control_net_t> controlnets;
     virtual ~txt2img_config_t() {};
-    virtual const void fill_prompt_dict(Dict *params, PythonModule &guard) const;
+    virtual const void fill_prompt_dict(py11::dict &params) const;
 };
 
 class img2img_config_t: public txt2img_config_t {
@@ -56,7 +58,7 @@ class img2img_config_t: public txt2img_config_t {
     RawImage *image = NULL;
     RawImage *mask = NULL;
     float strength = 0.8;
-    const void fill_prompt_dict(Dict *params, PythonModule &guard) const override;
+    const void fill_prompt_dict(py11::dict &params) const override;
 };
 
 
@@ -76,7 +78,7 @@ callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t
 callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb); 
 callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 
 
-callback_t list_models(const wchar_t* path, model_callback_t status_cb);
+callback_t list_models(const std::wstring& path, model_callback_t status_cb);
 
 }  // namespace py
 }  // namespace

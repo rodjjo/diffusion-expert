@@ -20,7 +20,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         GeneratorTxt2Image(
             const std::string& prompt,
             const std::string& negative,
-            const std::wstring& model,
+            const std::string& model,
             controlnet_list_t controlnets,
             int seed,
             size_t width,
@@ -44,7 +44,7 @@ class GeneratorTxt2Image: public GeneratorBase {
     private:
         std::string prompt_;
         std::string negative_;
-        std::wstring model_;
+        std::string model_;
         controlnet_list_t controlnets_;
         int seed_ = -1;
         size_t width_ = 512;

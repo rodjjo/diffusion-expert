@@ -5,7 +5,6 @@ import urllib.request
 
 PRINT_PREFIX = 'dependencies.installer:'
 
-
 def have_pip():
     try:
         import pip
