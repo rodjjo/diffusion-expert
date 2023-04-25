@@ -92,10 +92,7 @@ void MainWindow::initMenu() {
     // menu_->addItem([this] {  }, "", "File/Open");
     // menu_->addItem([this] {  }, "", "File/Save");
     //  menu_->addItem(noCall, "", "Edit");
-    menu_->addItem([this] { 
-        for (int i = 0; i < 100; i++)
-            pages_->textToImage(); 
-    }, "", "Run/Generate");
+    menu_->addItem([this] { pages_->textToImage(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
     //  menu_->addItem(noCall, "", "Help");

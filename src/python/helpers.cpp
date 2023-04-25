@@ -132,12 +132,18 @@ namespace dexpert
         {
             return [fn_name, &config, status_cb]
             {
-                py11::dict params;
-                config.fill_prompt_dict(params);
-                auto r = dexpert::py::getModule().attr(fn_name)(params);
-                py11::dict asimg = r.cast<py11::dict>();
-                auto img = dexpert::py::rawImageFromPyDict(asimg);
-                status_cb(true, NULL, img); // TODO: check error!
+                try {
+                    py11::dict params;
+                    config.fill_prompt_dict(params);
+                    auto r = dexpert::py::getModule().attr(fn_name)(params);
+                    py11::dict asimg = r.cast<py11::dict>();
+                    auto img = dexpert::py::rawImageFromPyDict(asimg);
+                    status_cb(true, errorFromPyDict(asimg, "Error generating the image"), img); // TODO: check error!
+                } catch(std::exception e) {
+                    static std::string es;
+                    es = e.what();
+                    status_cb(false, es.c_str(), image_ptr_t()); // TODO: check error!
+                }
             };
         }
 

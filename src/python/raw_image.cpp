@@ -181,6 +181,9 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
 }
 
 image_ptr_t rawImageFromPyDict(py11::dict &image) {
+    if (!image.contains("data")) {
+        return image_ptr_t();
+    }
     auto img_mode = image["mode"].cast<std::string>();
     auto format = img_gray_8bit;
     if (img_mode == "RGB")

@@ -151,7 +151,7 @@ def run_pipeline(mode: str, params: dict):
         data = _run_pipeline(mode, params)   
     except CancelException:
         print("Image generation canceled")
-        data = None
+        data = {"error": "Operation canceled by the user"}
     gc.collect()
 
     progress(100, 100, {})     
