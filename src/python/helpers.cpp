@@ -124,19 +124,17 @@ namespace dexpert
 
             if (!this->controlnets.empty())
             {
-                py11::sequence arr;
+                py11::list arr(0);
 
                 for (auto it = this->controlnets.begin(); it != this->controlnets.end(); it++)
                 {
                     py11::dict c;
                     py11::dict data;
-
                     it->image->toPyDict(data);
-
                     c["mode"] = it->mode;
                     c["image"] = data;
                     c["strength"] = it->strength;
-                    arr.attr("append")(c);
+                    arr.append(c);
                 }
                 params["controlnets"] = arr;
             }

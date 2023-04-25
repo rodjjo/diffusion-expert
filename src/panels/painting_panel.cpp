@@ -325,15 +325,16 @@ void PaintingPanel::openMask() {
         getSelectedMode() != painting_inpaint_not_masked &&
         getSelectedMode() != painting_pose &&
         getSelectedMode() != painting_canny &&
-        getSelectedMode() != painting_scribble
+        getSelectedMode() != painting_scribble &&
+        getSelectedMode() != painting_deepth
     ) {
         show_error("This mode does not allow masks!");
         return;
     }
     auto img = open_image_from_dialog();
     if (img) {
-        if (img->format() != dexpert::py::img_rgba) {
-            show_error("THe image does not have alpha channel.");
+        if (img->format() != dexpert::py::img_rgba && getSelectedMode() != painting_deepth) {
+            show_error("The image does not have alpha channel.");
             return;
         }
         if (getSelectedMode() == painting_inpaint_masked ||
@@ -541,7 +542,8 @@ bool PaintingPanel::ready() {
     }
     if (getSelectedMode() == painting_scribble ||
         getSelectedMode() == painting_canny || 
-        getSelectedMode() == painting_pose
+        getSelectedMode() == painting_pose ||
+        getSelectedMode() == painting_deepth
     ) {
         return ensureControlPresent();
     }

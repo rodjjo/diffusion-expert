@@ -48,7 +48,7 @@ def gfpgan_dwonload_model():
         report(f'downloading the model {filename} Please wait...')
         urllib.request.urlretrieve(url, f'{model_path}.tmp', show_progress)
         shutil.move(f'{model_path}.tmp', model_path)
-        progress(0, 100, None)
+        progress(0, 100, {})
 
 @contextmanager
 def enter_gfgan_model_dir():
@@ -63,7 +63,7 @@ def enter_gfgan_model_dir():
 
 def gfpgan_restore_faces(image):
     report("restoring faces in the image. Please wait")
-    progress(0, 100, None)
+    progress(0, 100, {})
     open_cv_image = cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
     with enter_gfgan_model_dir():
         restorer = GFPGANer(
