@@ -180,6 +180,73 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
     incVersion();
 }
 
+ void RawImage::paste(RawImage *image) {
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    img.draw_image(0, 0, src.get_resize(image->w(), image->h()));
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+}
+
+void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
+    int w = this->w();
+    int h = this->h();
+    if (zoom < 0.001) {
+        zoom = 0.001;
+    }
+
+    w /= zoom;
+    h /= zoom;
+
+    // keep the area inside the source image    
+    if (x < 0) {
+        x = 0;
+    }
+    if (y < 0) {
+        y = 0;
+    }
+    if (w <= 0 || h <= 0 || x >= image->w() || y >= image->h())  {
+        return;
+    }
+    if (x + w > image->w()) {
+        w = image->w() - x;
+    }
+    if (y + h > image->h()) {
+        h = image->h() - y;
+    }
+    memset(this->buffer_, 255, this->buffer_len_); // turn this image white
+    if (h < 0 || w < 0) {
+        return;
+    }
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> self(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+
+    src.permute_axes("yzcx");
+    self.permute_axes("yzcx");
+    float ratio, invert_w, invert_h;
+
+    if (w > h) {
+        ratio = h / (float)w;
+        invert_w = w * zoom;
+        invert_h = invert_w * ratio;
+    } else {
+        ratio = w / (float)h;
+        invert_h = h * zoom;
+        invert_w = invert_h * ratio;
+    }
+    self.draw_image(0, 0, src.get_crop(x, y, x + w, y + h).get_resize(invert_w, invert_h));
+    if (invert_w < this->w()) {
+        self.draw_rectangle(invert_w, 0, this->w(), this->h(), no_color_rgba);
+    }
+    if (invert_h < this->h()) {
+        self.draw_rectangle(0, invert_h, this->w(), this->h(), no_color_rgba);
+    }
+    self.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+}
+
 image_ptr_t rawImageFromPyDict(py11::dict &image) {
     if (!image.contains("data")) {
         return image_ptr_t();
@@ -198,6 +265,7 @@ image_ptr_t rawImageFromPyDict(py11::dict &image) {
         format
     );
 }
+
 
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha) {
     return std::make_shared<RawImage>(

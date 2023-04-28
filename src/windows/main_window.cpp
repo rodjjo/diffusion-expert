@@ -29,6 +29,8 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     initToolbar();
 
+    image_editor_ = new ImagePanel(0, 0, 1, 1);
+
     wnd->end();
 
     alignComponents();
@@ -57,10 +59,12 @@ void MainWindow::initMenu() {
     toolsPanel_->end();
     callback_t noCall = []{};
 
-    // menu_->addItem(noCall, "", "File/New");
-    // menu_->addItem([this] {  }, "", "File/Open");
-    // menu_->addItem([this] {  }, "", "File/Save");
-    //  menu_->addItem(noCall, "", "Edit");
+    menu_->addItem(noCall, "", "File/New");
+    menu_->addItem([this] {
+        image_editor_->open(image_type_image);
+    }, "", "File/Open");
+    menu_->addItem(noCall, "", "File/Save");
+    menu_->addItem(noCall, "", "Edit");
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
@@ -74,6 +78,7 @@ void MainWindow::alignComponents() {
     toolsPanel_->size(w, menu_->h());
     menu_->position(0, 0);
     menu_->size(w, toolsPanel_->h());
+    image_editor_->resize(120, toolsPanel_->h() + 5, w - 125, h - 15 - toolsPanel_->h());
 }
 
 void MainWindow::editConfig() {

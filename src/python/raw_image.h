@@ -33,6 +33,8 @@ class RawImage {
     uint32_t w();
     size_t getVersion();
     void incVersion();
+    void paste(RawImage *image);
+    void pasteFrom(int x, int y, float zoom, RawImage *image);
     std::shared_ptr<RawImage> duplicate();
     std::shared_ptr<RawImage> removeBackground(bool white);
     std::shared_ptr<RawImage> removeAlpha();

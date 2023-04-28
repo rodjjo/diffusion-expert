@@ -18,6 +18,7 @@
 
 #include "src/windows/main_menu.h"
 #include "src/python/wrapper.h"
+#include "src/controls/image_panel.h"
 
 namespace dexpert {
 
@@ -38,6 +39,7 @@ class MainWindow : Fl_Menu_Window {
  private:
     Fl_Group  *toolsPanel_ = NULL;
     MainMenu *menu_ = NULL;
+    ImagePanel *image_editor_;
 };
 
 

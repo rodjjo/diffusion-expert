@@ -359,6 +359,7 @@ void FramePanel::draw_mask() {
     int format = GL_RGB;
     get_buffer(&buffer, &w, &h, &format, editor_mode_);
     draw_buffer(buffer, w, h, format); 
+    float pixel_zoom = view_port().raster_zoom(w, h);
     if (should_draw_brush_) {
         glBegin(GL_LINE_LOOP);
         float theta;
@@ -380,8 +381,8 @@ void FramePanel::draw_mask() {
                 glColor3f(1, 1, 1);
             }
             theta = (2.0f * 3.1415926f) * float(ii) / float(36);
-            x = brush_size_ * cosf(theta);
-            y = brush_size_ * sinf(theta);
+            x = (brush_size_ * pixel_zoom) * cosf(theta);
+            y = (brush_size_ * pixel_zoom) * sinf(theta);
             wx = ((x + cx) * sx) - 1;
             wy = 1 - ((y + cy) * sy);
             glVertex2f(wx, wy);
