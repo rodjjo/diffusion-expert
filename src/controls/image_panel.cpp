@@ -5,9 +5,8 @@
 #include <FL/gl.h>
 
 #include "src/dialogs/utils.h"
+#include "src/dialogs/common_dialogs.h"
 #include "src/controls/image_panel.h"
-
-
 
 namespace dexpert
 {
@@ -20,6 +19,7 @@ namespace dexpert
         const char *tool_labels[image_tool_count] = {
             "None",
             "Drag",
+            "Drag Floating Image"
             "Zoom",
             "Select",
             "Brush"
@@ -109,7 +109,7 @@ namespace dexpert
         else if (level > 3.0)
             level = 3.0;
         zoom_ = level;
-        setScroll(scroll_x_, scroll_y_);
+        scrollAgain();
     }
 
     float ImagePanel::getZoomLevel()
@@ -123,6 +123,21 @@ namespace dexpert
         }
     }
 
+    bool ImagePanel::isSelecting() {
+        return tool_ == image_tool_select && mouse_down_left_;
+    }
+
+    bool ImagePanel::isDragging() {
+         if (mouse_down_left_ && Fl::event_command() != 0) {
+            return true;
+         }
+         return tool_ == image_tool_drag && mouse_down_left_;
+    }
+
+    bool ImagePanel::isPainting() {
+        return (tool_ == image_tool_brush) && mouse_down_left_ && !isDragging();
+    }
+
     void ImagePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y, int from_x, int from_y){
         current_x_ = move_x;
         current_y_ = move_y;
@@ -133,22 +148,21 @@ namespace dexpert
         if (!ref) {
             return;
         }
-        if (tool_ == image_tool_drag && left_button) {
+        if (isDragging()) {
             int drag_x = (down_x - move_x) / zoom_;
             int drag_y = (down_y - move_y) / zoom_;
             setScroll(scroll_px_ + drag_x, scroll_py_ + drag_y);
-        } else if(tool_ == image_tool_select && left_button) {
+        } else if(isSelecting() && left_button) {
             selection_start_.x = down_x;
             selection_start_.y = down_y;
             selection_end_.x = move_x;
             selection_end_.y = move_y;
             should_redraw_ = true;
         }
-
     };
 
     void ImagePanel::mouse_down(bool left_button, bool right_button, int down_x, int down_y){
-        if (tool_ == image_tool_select && left_button) {
+        if (isSelecting() && left_button) {
             selection_start_.x = down_x;
             selection_start_.y = down_y;
             selection_end_.x = down_x;
@@ -158,7 +172,7 @@ namespace dexpert
     };
 
     void ImagePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y){
-        if (tool_ == image_tool_select && left_button) {
+        if (isSelecting() && left_button) {
             selection_start_.x = down_x;
             selection_start_.y = down_y;
             selection_end_.x = up_x;
@@ -173,6 +187,8 @@ namespace dexpert
                 selection_start_.y = selection_end_.y;
                 selection_end_.y = tmp;
             }
+            convertToImageCoords(&selection_start_.x, &selection_start_.y);
+            convertToImageCoords(&selection_end_.x, &selection_end_.y);
             should_redraw_ = true;
         }
     };
@@ -186,13 +202,36 @@ namespace dexpert
     };
 
     void ImagePanel::open(image_type_t layer) {
+        if (images_[image_type_paste]) {
+            show_error("Can not open with floating image being processed");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
+
         auto img = open_image_from_dialog();
         if (img) {
             images_[layer] = img;
             if (visible_r()) {
-                redraw();
+                scrollAgain();
             }
         }
+    }
+
+    void ImagePanel::clearPasteImage() {
+        images_[image_type_paste].reset();
+        image_coords_[image_type_paste].x = 0;
+        image_coords_[image_type_paste].y = 0;
+        scrollAgain();
+    }
+
+    void ImagePanel::pasteImage() {
+        if (!images_[image_type_paste] || !images_[image_type_image]) {
+            return;
+        }
+        images_[image_type_image]->pasteAt(image_coords_[image_type_paste].x, image_coords_[image_type_paste].y, images_[image_type_paste].get());
+        images_[image_type_paste].reset();
+        image_coords_[image_type_paste].x = 0;
+        image_coords_[image_type_paste].y = 0;
+        scrollAgain();
     }
 
     int ImagePanel::handle(int event)
@@ -274,7 +313,7 @@ namespace dexpert
 
     void ImagePanel::resize(int x, int y, int w, int h) {
         Fl_Gl_Window::resize(x, y, w, h);
-        setScroll(scroll_x_, scroll_x_);
+        scrollAgain();
     }
 
     RawImage* ImagePanel::get_cached_image(int layer) {
@@ -285,6 +324,7 @@ namespace dexpert
         if (original == NULL) {
             return NULL;
         }
+
         int w = this->w();
         int h = this->h();
         int remainder = w % 4;
@@ -385,38 +425,105 @@ namespace dexpert
         }
 
         if (hasSelection()) {
+            coordinate_t s1 = selection_start_;
+            coordinate_t s2 = selection_end_;
+            if (!isSelecting()) {
+                convertToScreenCoords(&s1.x, &s1.y);
+                convertToScreenCoords(&s2.x, &s2.y);
+            }
             glBegin(GL_LINE_LOOP);
             glColor3f(0, 0, 0);
-            glVertex2f(selection_start_.x * sx - 1.0, 1.0 - selection_start_.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
             glColor3f(1, 1, 1);
-            glVertex2f(selection_end_.x * sx - 1.0, 1.0 - selection_start_.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s1.y * sy);
             glColor3f(0, 0, 0);
-            glVertex2f(selection_end_.x * sx - 1.0, 1.0 - selection_end_.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s2.y * sy);
             glColor3f(1, 1, 1);
-            glVertex2f(selection_start_.x * sx - 1.0, 1.0 - selection_end_.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s2.y * sy);
             glColor3f(0, 0, 0);
-            glVertex2f(selection_start_.x * sx - 1.0, 1.0 - selection_start_.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
             glEnd();
         }
     }
 
+    void ImagePanel::resizeCanvas(uint32_t w, uint32_t h) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
+        for (int i = 0; i < image_type_count; i++) {
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeCanvas(w, h);
+            }
+        }
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeImages(uint32_t w, uint32_t h) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
+        for (int i = 0; i < image_type_count; i++) {
+                if (images_[i]) {
+                    images_[i] = images_[i]->resizeImage(w, h);
+                }
+            }
+        scrollAgain();
+    }
+
+    void ImagePanel::setBrushSize(uint8_t size) {
+        if (size > 32)
+            brush_size_ = 32;
+        else 
+            brush_size_ = size;
+        should_redraw_ = true;
+    }
+
+    uint8_t ImagePanel::getBrushSize() {
+        return brush_size_;
+    }
+
+    fcoordinate_t ImagePanel::getDrawingCoord() {
+        fcoordinate_t r;
+        auto ref = get_reference_image();
+        if (!ref) {
+            return r;
+        }
+        int refw = ref->w() * zoom_;
+        int refh = ref->h() * zoom_;
+        r.x = -1;
+        r.y = 1;
+        if (refw < this->w()) {
+            r.x = -(((2.0 / this->w()) * refw) / 2.0);
+        }
+        if (refh < this->h()) {
+            r.y = (((2.0 / this->h()) * refh) / 2.0);
+        }
+        return r;
+    }
+
+    coordinate_t ImagePanel::getDrawingCoordScreen() {
+        fcoordinate_t c_gl = getDrawingCoord();
+        c_gl.x += 1.0;
+        c_gl.y -= 1.0;
+        c_gl.y = -c_gl.y;
+        coordinate_t r;
+        r.x = (w() / 2.0) * c_gl.x;
+        r.y = (h() / 2.0) * c_gl.y;
+        return r;
+    }
+
     void ImagePanel::draw_buffer(RawImage *img) {
         auto ref = get_reference_image();
+
         if (!img || !ref) {
             return;
         }
 
-        int refw = ref->w() * zoom_;
-        int refh = ref->h() * zoom_;
-        float dx = -1;
-        float dy = 1;
-        if (refw < this->w()) {
-            dx = -(((2.0 / this->w()) * refw) / 2.0);
-        }
-        if (refh < this->h()) {
-            dy = (((2.0 / this->h()) * refh) / 2.0);
-        }
-        glRasterPos2f(dx, dy);
+        fcoordinate_t dcoord = getDrawingCoord();
+
+        glRasterPos2f(dcoord.x, dcoord.y);
         glPixelZoom(1, -1);
 
         if (img->w() % 4 == 0)
@@ -429,7 +536,6 @@ namespace dexpert
         glRasterPos2f(0.0f, 0.0f);
         glPixelZoom(1.0f, 1.0f);
     }
-
 
     void ImagePanel::draw_overlay()
     {
@@ -446,6 +552,48 @@ namespace dexpert
         return images_[image_type_mask].get();
     }
 
+    void ImagePanel::convertToImageCoords(int *x, int *y) {
+        RawImage *ref = get_reference_image();
+        if (!ref) {
+            return;
+        }
+        coordinate_t dcoord = getDrawingCoordScreen();
+        // remove the drawing coord
+        *x -= dcoord.x;
+        *y -= dcoord.y;
+     
+        *x /= zoom_;
+        *y /= zoom_;
+     
+        //*x += scroll_x_ ;
+        //*y += scroll_y_;
+        int xmove, ymove;
+        fix_scroll(&xmove, &ymove, 0, 0);
+        *x += xmove;
+        *y += ymove;
+    }
+
+    void ImagePanel::convertToScreenCoords(int *x, int *y) {
+        RawImage *ref = get_reference_image();
+        if (!ref) {
+            return;
+        }
+        coordinate_t dcoord = getDrawingCoordScreen();
+        // include the drawing coord
+        int xmove, ymove;
+        fix_scroll(&xmove, &ymove, 0, 0);
+        *x -= xmove;
+        *y -= ymove;
+        //*x -= scroll_x_;
+        //*y -= scroll_y_;
+
+        *x *= zoom_;
+        *y *= zoom_;
+
+        *x += dcoord.x;
+        *y += dcoord.y;
+    }
+
     void ImagePanel::fix_scroll(int *xmove, int *ymove, int px, int py) {
         RawImage *ref = get_reference_image();
         if (!ref) {
@@ -455,14 +603,30 @@ namespace dexpert
         }
         // the images scrolls from 0,0
         // we wan't zero to be its half
-        int scroll_x = scroll_x_ + (ref->w() / 2);
-        int scroll_y = scroll_y_ + (ref->h() / 2);
+        float half_x = (ref->w() / 2.0);
+        float half_y =  (ref->h() / 2.0);
+        int scroll_x = scroll_x_ + half_x;
+        int scroll_y = scroll_y_ + half_y;
+        px += half_x;
+        py += half_y;
         // now we are at the center of the image
         // we need to scroll down to up left coords of the screen
-        scroll_x -= (w() / zoom_ ) / 2;
-        scroll_y -= (h() / zoom_ ) / 2;
+        half_x = (w() / zoom_ ) / 2.0;
+        half_y = (h() / zoom_ ) / 2.0;
+        scroll_x -= half_x;
+        scroll_y -= half_y;
+        px -= half_x;
+        py -= half_y;
         *xmove = (scroll_x - px); 
         *ymove = (scroll_y - py); 
+        if (*xmove < 0) 
+            *xmove = 0;
+        if (*ymove < 0) 
+            *ymove = 0;
+    }
+    
+    void ImagePanel::scrollAgain() {
+        setScroll(scroll_x_, scroll_y_);
     }
 
     void ImagePanel::setScroll(int x, int y) {
@@ -507,8 +671,6 @@ namespace dexpert
         y = raster.y * (h() / 2.0);
     }
 
-    
-
     int ImagePanel::getScrollX() {
         return scroll_x_;
     }
@@ -531,6 +693,23 @@ namespace dexpert
             return tool_labels[value];
         }
         return "Invalid Tool";
+    }
+
+    coordinate_t ImagePanel::getReferenceSize() {
+        coordinate_t r;
+        auto ref = get_reference_image();
+        if (ref) {
+            r.x = ref->w();
+            r.y = ref->h();
+        }
+        return r;
+    }
+
+    bool ImagePanel::hasReference() {
+        if (get_reference_image()) {
+            return true;
+        }
+        return false;
     }
 
 } // namespace dexpert

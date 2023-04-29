@@ -19,6 +19,7 @@
 #include "src/windows/main_menu.h"
 #include "src/python/wrapper.h"
 #include "src/controls/image_panel.h"
+#include "src/controls/button.h"
 
 namespace dexpert {
 
@@ -27,19 +28,27 @@ class MainWindow : Fl_Menu_Window {
     MainWindow();
     ~MainWindow();
     int run();
+
  protected:
    void resize(int x, int y, int w, int h) override;
    int handle(int event) override;
-   
+
  private:
-  void initToolbar();
+  void initMenubar();
   void initMenu();
   void alignComponents();
   void editConfig();
+  void toolClicked(Button* btn);
+
  private:
-    Fl_Group  *toolsPanel_ = NULL;
+    Fl_Group  *menuPanel_ = NULL;
     MainMenu *menu_ = NULL;
     ImagePanel *image_editor_;
+    std::unique_ptr<Button> btn_none_;
+    std::unique_ptr<Button> btn_drag_;
+    std::unique_ptr<Button> btn_drag_float_;
+    std::unique_ptr<Button> btn_zoom_;
+    std::unique_ptr<Button> btn_select_;
 };
 
 

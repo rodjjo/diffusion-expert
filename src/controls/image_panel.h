@@ -16,6 +16,7 @@ typedef enum {
 typedef enum {
     image_tool_none,
     image_tool_drag,
+    image_tool_drag_paste,
     image_tool_zoom,
     image_tool_select,
     image_tool_brush,
@@ -27,6 +28,12 @@ typedef struct {
     int x = 0;
     int y = 0;
 } coordinate_t;
+
+
+typedef struct {
+    float x = 0.0;
+    float y = 0.0;
+} fcoordinate_t;
 
 namespace dexpert
 {
@@ -58,10 +65,21 @@ namespace dexpert
         void setTool(image_tool_t value);
         image_tool_t getTool();
         static const char* getToolLabel(image_tool_t value);
+        void resizeCanvas(uint32_t w, uint32_t h);
+        void resizeImages(uint32_t w, uint32_t h);
+        void setBrushSize(uint8_t size);
+        uint8_t getBrushSize();
+
+        coordinate_t getReferenceSize();
+        bool hasReference();
+
+        void clearPasteImage();
+        void pasteImage();
 
         bool hasSelection();
         void getSelection(int *x, int *y, int *x2, int *y2);
         void resize(int x, int y, int w, int h) override;
+
     protected:
         int handle(int event) override;
         void draw() override;
@@ -74,7 +92,11 @@ namespace dexpert
         virtual void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y);
         virtual void mouse_cancel();
         virtual void draw_next();
-        
+
+        bool isSelecting();
+        bool isDragging();
+        bool isPainting();
+
     private:
         static void imageRefresh(void *cbdata);
         void imageRefresh();
@@ -85,13 +107,20 @@ namespace dexpert
         void fix_scroll(int *xmove, int *ymove, int px, int py);
         void invalidate_caches();
 
+        void scrollAgain();
+        fcoordinate_t getDrawingCoord();
+        coordinate_t getDrawingCoordScreen();
+
+        void convertToImageCoords(int *x, int *y);
+        void convertToScreenCoords(int *x, int *y);
+        
     private:
         image_tool_t tool_ = image_tool_drag;
         int scroll_x_ = 0;
         int scroll_y_ = 0;
         int scroll_px_ = 0;
         int scroll_py_ = 0;
-        int brush_size_ = 16;
+        uint8_t brush_size_ = 16;
         float zoom_ = 0.5f;
         coordinate_t selection_start_ = {0,};
         coordinate_t selection_end_ = {0,};

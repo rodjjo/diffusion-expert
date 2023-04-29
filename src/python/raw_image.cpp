@@ -180,12 +180,22 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
     incVersion();
 }
 
- void RawImage::paste(RawImage *image) {
+ void RawImage::pasteFill(RawImage *image) {
     CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
     CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
     img.draw_image(0, 0, src.get_resize(image->w(), image->h()));
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+}
+
+void RawImage::pasteAt(int x, int y, RawImage *image) {
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    img.draw_image(x, y, src);
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
 }
@@ -245,6 +255,30 @@ void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     }
     self.permute_axes("cxyz");
     src.permute_axes("cxyz");
+}
+
+std::shared_ptr<RawImage> RawImage::resizeCanvas(uint32_t x, uint32_t y) {
+    std::shared_ptr<RawImage> result(new RawImage(NULL, x, y, this->format(), false));
+    CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    src.permute_axes("yzcx");
+    self.permute_axes("yzcx");
+    self.draw_image(0, 0, src);
+    self.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+    return result;
+}
+
+std::shared_ptr<RawImage> RawImage::resizeImage(uint32_t x, uint32_t y) {
+    std::shared_ptr<RawImage> result(new RawImage(NULL, x, y, this->format(), false));
+    CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    src.permute_axes("yzcx");
+    self.permute_axes("yzcx");
+    self.draw_image(0, 0, src.get_resize(x, y));
+    self.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+    return result;
 }
 
 image_ptr_t rawImageFromPyDict(py11::dict &image) {
