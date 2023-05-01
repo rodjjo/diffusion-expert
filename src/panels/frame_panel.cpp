@@ -243,7 +243,14 @@ void FramePanel::mouse_move(bool left_button, bool right_button, int down_x, int
     drawCircle(move_x, move_y, !left_button, !(left_button || right_button));
 }
 
-void FramePanel::drawCircle(int x, int y, bool clear, bool onscreen) {
+void FramePanel::mouse_down(bool left_button, bool right_button, int down_x, int down_y) {
+    if (Fl::event_shift() != 0) {
+        drawCircle(down_x, down_y, !left_button, !(left_button || right_button), true);
+        cancel_operations();
+    }
+}
+
+void FramePanel::drawCircle(int x, int y, bool clear, bool onscreen, bool flood) {
     should_draw_brush_ = false;
     if (src_type_ != image_src_self || editor_mode_ == image_edit_disabled || brush_size_ < 1) {
         return;
@@ -263,7 +270,13 @@ void FramePanel::drawCircle(int x, int y, bool clear, bool onscreen) {
             img->w(), img->h(), dexpert::point_t(x, y)
         );
         where.trunc_precision();
-        img->drawCircle(where.x, where.y, brush_size_, clear);
+        if (flood) {
+            if (image_ && editor_mode_ == image_edit_mask) {
+                img->fillWithMask(where.x, where.y, image_.get());
+            }
+        } else {
+            img->drawCircle(where.x, where.y, brush_size_, clear);
+        }
     }
 }
 

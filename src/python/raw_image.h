@@ -55,6 +55,7 @@ class RawImage {
     image_ptr_t resizeBottom(int value);
 
     void drawCircle(int x, int y, int radius, bool clear);
+    void fillWithMask(int x, int y, RawImage *mask);
 
  private:
     unsigned char *buffer_;

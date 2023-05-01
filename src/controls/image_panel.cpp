@@ -595,6 +595,14 @@ namespace dexpert
                 images_[i] = images_[i]->resizeLeft(value);
             }
         }
+        auto img = get_reference_image();
+        if (img) {
+            selection_start_.x = 0;
+            selection_start_.y = 0;
+            selection_end_.x = value * 2;
+            selection_end_.y = img->h();
+            restrictSelection(selection_end_, *img);
+        }
         scrollAgain();
     }
 
@@ -603,6 +611,14 @@ namespace dexpert
             if (images_[i]) {
                 images_[i] = images_[i]->resizeRight(value);
             }
+        }
+        auto img = get_reference_image();
+        if (img) {
+            selection_start_.x = img->w() - value* 2;
+            selection_start_.y = 0;
+            selection_end_.x = img->w();
+            selection_end_.y = img->h();
+            restrictSelection(selection_start_, *img);
         }
         scrollAgain();
     }
@@ -613,6 +629,14 @@ namespace dexpert
                 images_[i] = images_[i]->resizeBottom(value);
             }
         }
+        auto img = get_reference_image();
+        if (img) {
+            selection_start_.x = 0;
+            selection_start_.y = img->h() - value * 2;
+            selection_end_.x = img->w();
+            selection_end_.y = img->h();
+            restrictSelection(selection_start_, *img);
+        }
         scrollAgain();
     }
 
@@ -621,6 +645,14 @@ namespace dexpert
             if (images_[i]) {
                 images_[i] = images_[i]->resizeTop(value);
             }
+        }
+        auto img = get_reference_image();
+        if (img) {
+            selection_start_.x = 0;
+            selection_start_.y = 0;
+            selection_end_.x = img->w();
+            selection_end_.y = value * 2;
+            restrictSelection(selection_end_, *img);
         }
         scrollAgain();
     }

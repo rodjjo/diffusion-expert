@@ -182,6 +182,20 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
     incVersion();
 }
 
+void RawImage::fillWithMask(int x, int y, RawImage *mask) {
+    auto image = this->duplicate();
+    auto same_mask = mask->resizeCanvas(image->w(), image->h());
+    CImg<unsigned char> msk(same_mask->buffer(), format_channels[same_mask->format()], same_mask->w(), same_mask->h(), 1, true);
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    src.permute_axes("yzcx");   
+    msk.permute_axes("yzcx");
+    msk.fill("if(i0==255&&i1==255&&i2==255,255,0)", true);
+    src.draw_fill(x, y, black_color_rgba);
+    msk.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+    pasteAt(0, 0, same_mask.get(), image.get());
+}
+
  void RawImage::pasteFill(RawImage *image) {
     CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
     CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
