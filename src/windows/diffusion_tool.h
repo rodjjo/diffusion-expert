@@ -54,8 +54,8 @@ class DiffusionTool : public Fl_Window {
     std::unique_ptr<Button> cancelBtn_;
 };
 
-image_ptr_t get_stable_diffusion_image(RawImage *image = NULL);
-
+image_ptr_t get_stable_diffusion_image(RawImage *image);
+image_ptr_t get_stable_diffusion_image();
 
 } // namespace dexpert
 

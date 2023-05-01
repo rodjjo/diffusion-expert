@@ -192,11 +192,22 @@ RawImage *DiffusionTool::getInputImage() {
 }
 
 image_ptr_t get_stable_diffusion_image(RawImage *image) {
-    static DiffusionTool *window = NULL;
+    DiffusionTool *window = NULL;
     if (window == NULL) {
         window = new DiffusionTool();
     }
     window->setInputImage(image);
+    image_ptr_t r = window->run();
+    Fl::delete_widget(window);
+    Fl::do_widget_deletion();
+    return r;
+}
+
+image_ptr_t get_stable_diffusion_image() {
+    static DiffusionTool *window = NULL;
+    if (window == NULL) {
+        window = new DiffusionTool();
+    }
     image_ptr_t r = window->run();
     return r;
 }

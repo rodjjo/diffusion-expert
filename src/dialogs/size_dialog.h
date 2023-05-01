@@ -21,7 +21,7 @@ namespace dexpert
 
 class SizeWindow : public Fl_Window  {
  public:
-    SizeWindow(const char *title);
+    SizeWindow(const char *title, bool single_value);
     virtual ~SizeWindow();
     void setInitialSize(int x, int y);
     void retriveSize(int *x, int *y);
@@ -30,6 +30,7 @@ class SizeWindow : public Fl_Window  {
     void confirmOk();
  private:
     bool ok_confirmed_ = false;
+    bool single_value_ = false;
     Fl_Int_Input *width_;
     Fl_Int_Input *height_;
     std::unique_ptr<Button> btn_ok_;
@@ -37,6 +38,7 @@ class SizeWindow : public Fl_Window  {
 };
 
 bool getSizeFromDialog(const char *title, int *x, int *y);
+bool getSizeFromDialog(const char *title, int *x);
     
 } // namespace dexpert
 

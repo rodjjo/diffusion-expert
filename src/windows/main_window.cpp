@@ -10,7 +10,7 @@
 #include "src/windows/main_window.h"
 
 
-#define MIN_WIDTH 640
+#define MIN_WIDTH 860
 #define MIN_HEIGHT 480
 
 namespace dexpert {
@@ -72,6 +72,7 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     label_zoom_ = new Fl_Box(0, 0, 1, 1);
     label_select_ = new Fl_Box(0, 0, 1, 1);
     label_scroll_ = new Fl_Box(0, 0, 1, 1);
+    label_size_ = new Fl_Box(0, 0, 1, 1);
 
     bottomPanel_->end();
 
@@ -122,27 +123,18 @@ void MainWindow::initMenu() {
     menuPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem([this] {
-        newImage();
-    }, "", "File/New");
-    menu_->addItem([this] {
-        image_editor_->open(image_type_image);
-    }, "", "File/Open");
-    menu_->addItem(noCall, "", "File/Save");
-    menu_->addItem([this] {
-        auto selection = image_editor_->getSelectedImage(image_type_image);
-        if (selection) {
-            auto img = get_stable_diffusion_image(selection.get());
-            if (img) {
-                image_editor_->setPasteImageAtSelection(image_type_image, img.get());
-            }
-        } else {
-            show_error("Invalid selection. No image to process.");
-        }
-    }, "", "Edit/Edit Selection");
-
+    menu_->addItem([this] { newImage(); }, "", "File/New");
+    menu_->addItem([this] { openImage(); }, "", "File/Open");
+    menu_->addItem([this] { saveImage(); }, "", "File/Save");
+    menu_->addItem([this] { editSelection(); }, "", "Edit/Edit Selection");
     menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Edit/Anchor Selection");
     menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Edit/Discart Selection");
+    menu_->addItem([this] { resizeCanvas();  }, "", "Image/Resize Canvas");
+    menu_->addItem([this] { resizePicture(); }, "", "Image/Resize Picture");
+    menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize Left");
+    menu_->addItem([this] { resizeRight(); }, "", "Image/Resize Right");
+    menu_->addItem([this] { resizeTop(); }, "", "Image/Resize Top");
+    menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize Bottom");
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
@@ -174,9 +166,10 @@ void MainWindow::alignComponents() {
     btn_zoom_->position(5, btn_drag_float_->y() + btn_drag_float_->h() + 2);
     btn_select_->position(5, btn_zoom_->y() + btn_zoom_->h() + 2);
 
-    label_zoom_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
-    label_select_->resize(label_zoom_->x() + label_zoom_->w() + 2, label_zoom_->y(), 200, stabusbar_h - 4);
-    label_scroll_->resize(label_select_->x() + label_select_->w() + 2, label_zoom_->y(), 200, stabusbar_h - 4);
+    label_size_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
+    label_zoom_->resize(label_size_->x() + label_size_->w() + 2, label_size_->y(), 200, stabusbar_h - 4);
+    label_select_->resize(label_zoom_->x() + label_zoom_->w() + 2, label_size_->y(), 200, stabusbar_h - 4);
+    label_scroll_->resize(label_select_->x() + label_select_->w() + 2, label_size_->y(), 200, stabusbar_h - 4);
 }
 
 void MainWindow::editConfig() {
@@ -187,6 +180,78 @@ void MainWindow::newImage() {
     int szx = 512, szy = 512;
     if (getSizeFromDialog("Size of the new image", &szx, &szy)) {
         image_editor_->newImage(szx, szy);
+    }
+}
+
+void MainWindow::openImage() {
+    image_editor_->open(image_type_image);
+}
+
+void MainWindow::saveImage() {
+    image_editor_->save(image_type_image);
+}
+
+void MainWindow::resizeLeft() {
+    int size = 128;
+    if (getSizeFromDialog("Resize the left of the image:", &size)) {
+        image_editor_->resizeLeft(size);
+    }
+}
+
+void MainWindow::resizeRight() {
+    int size = 128;
+    if (getSizeFromDialog("Resize the right of the image:", &size)) {
+        image_editor_->resizeRight(size);
+    }
+}
+
+void MainWindow::resizeTop() {
+    int size = 128;
+    if (getSizeFromDialog("Resize the top of the image:", &size)) {
+        image_editor_->resizeTop(size);
+    }
+}
+
+void MainWindow::resizeBottom() {
+    int size = 128;
+    if (getSizeFromDialog("Resize the bottom of the image:", &size)) {
+        image_editor_->resizeBottom(size);
+    }
+}
+
+void MainWindow::resizePicture() {
+    auto img = image_editor_->getLayerImage(image_type_image);
+    if (!img) {
+        show_error("No image to resize. Open or create one!");
+        return;
+    }
+    int szx = img->w(), szy = img->h();
+    if (getSizeFromDialog("Size of the image", &szx, &szy)) {
+        image_editor_->resizeImages(szx, szy);
+    }
+}
+
+void MainWindow::resizeCanvas() {
+    auto img = image_editor_->getLayerImage(image_type_image);
+    if (!img) {
+        show_error("No image to resize. Open or create one!");
+        return;
+    }
+    int szx = img->w(), szy = img->h();
+    if (getSizeFromDialog("Size of the image", &szx, &szy)) {
+        image_editor_->resizeCanvas(szx, szy);
+    }
+}
+
+void MainWindow::editSelection() {
+    auto selection = image_editor_->getSelectedImage(image_type_image);
+    if (selection) {
+        auto img = get_stable_diffusion_image(selection.get());
+        if (img) {
+            image_editor_->setPasteImageAtSelection(image_type_image, img.get());
+        }
+    } else {
+        show_error("Invalid selection. No image to process.");
     }
 }
 
@@ -237,6 +302,9 @@ int MainWindow::run() {
 
 void MainWindow::updateScrollbar() {
     char buffer[512] = {0,};
+    coordinate_t rs = image_editor_->getReferenceSize();
+    sprintf(buffer, "Dimensions: [%d x %d]", rs.x, rs.y);
+    label_size_->copy_label(buffer);
     sprintf(buffer, "Zoom: %0.2f", image_editor_->getZoomLevel() * 100);
     label_zoom_->copy_label(buffer);
     int sx1 = 0, sx2 = 0, sy1 = 0, sy2 = 0;

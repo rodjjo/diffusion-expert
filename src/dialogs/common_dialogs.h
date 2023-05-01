@@ -19,6 +19,7 @@ response_t yes_nc(const char *message);
 void show_error(const char *message);
 const char *ask_value(const char *message);
 
+
 std::string choose_image_to_open(std::string* current_dir);
 std::string choose_image_to_save(std::string* current_dir);
 

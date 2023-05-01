@@ -107,8 +107,8 @@ namespace dexpert
     void restrictSelection(coordinate_t &coord, RawImage& img) {
         if (coord.x < 0) coord.x = 0;
         if (coord.y < 0) coord.y = 0;
-        if (coord.x >= img.w()) coord.x = img.w() - 1;
-        if (coord.y >= img.h()) coord.y = img.h() - 1;
+        if (coord.x > img.w()) coord.x = img.w();
+        if (coord.y > img.h()) coord.y = img.h();
     }
 
     image_ptr_t ImagePanel::getSelectedImage(image_type_t layer) {
@@ -262,6 +262,10 @@ namespace dexpert
             }
             convertToImageCoords(&selection_start_.x, &selection_start_.y);
             convertToImageCoords(&selection_end_.x, &selection_end_.y);
+            if (get_reference_image()) {
+                restrictSelection(selection_start_, *get_reference_image());
+                restrictSelection(selection_end_, *get_reference_image());
+            }
             should_redraw_ = true;
         }
     };
@@ -287,6 +291,15 @@ namespace dexpert
                 scrollAgain();
             }
         }
+    }
+
+    void ImagePanel::save(image_type_t layer) {
+        if (!images_[layer]) {
+            show_error("No image to save!");
+            return;
+        }
+
+        save_image_with_dialog(images_[layer]);
     }
 
     void ImagePanel::clearPasteImage() {
@@ -569,12 +582,49 @@ namespace dexpert
             return;  // wait the user to decide what he's going to do with the floating image
         }
         for (int i = 0; i < image_type_count; i++) {
-                if (images_[i]) {
-                    images_[i] = images_[i]->resizeImage(w, h);
-                }
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeImage(w, h);
             }
+        }
         scrollAgain();
     }
+
+    void ImagePanel::resizeLeft(int value) {
+        for (int i = 0; i < image_type_count; i++) {
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeLeft(value);
+            }
+        }
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeRight(int value) {
+        for (int i = 0; i < image_type_count; i++) {
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeRight(value);
+            }
+        }
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeBottom(int value) {
+        for (int i = 0; i < image_type_count; i++) {
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeBottom(value);
+            }
+        }
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeTop(int value) {
+        for (int i = 0; i < image_type_count; i++) {
+            if (images_[i]) {
+                images_[i] = images_[i]->resizeTop(value);
+            }
+        }
+        scrollAgain();
+    }
+
 
     void ImagePanel::setBrushSize(uint8_t size) {
         if (size > 32)

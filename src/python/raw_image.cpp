@@ -308,6 +308,30 @@ std::shared_ptr<RawImage> RawImage::ensureMultipleOf8() {
     return duplicate();
 }
 
+image_ptr_t RawImage::resizeLeft(int value) {
+    auto img = std::make_shared<RawImage>(
+        (const unsigned char *) NULL, this->w() + value, this->h(), img_rgba, false
+    );
+    img->pasteAt(value, 0, this);
+    return img;
+}
+
+image_ptr_t RawImage::resizeRight(int value) {
+    return resizeCanvas(this->w() + value, this->h());
+}
+
+image_ptr_t RawImage::resizeTop(int value) {
+    auto img = std::make_shared<RawImage>(
+        (const unsigned char *) NULL, this->w(), this->h() + value, img_rgba, false
+    );
+    img->pasteAt(0, value, this);
+    return img;
+}
+
+image_ptr_t RawImage::resizeBottom(int value) {
+    return resizeCanvas(this->w(), this->h() + value);
+}
+
 image_ptr_t rawImageFromPyDict(py11::dict &image) {
     if (!image.contains("data")) {
         return image_ptr_t();

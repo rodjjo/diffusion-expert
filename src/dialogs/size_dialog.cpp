@@ -6,12 +6,13 @@
 namespace dexpert
 {
 
-SizeWindow::SizeWindow(const char *title) : Fl_Window(0, 0, 300, 100, title) {
+SizeWindow::SizeWindow(const char *title, bool single_value) : Fl_Window(0, 0, 300, 100, title) {
+    single_value_ = single_value;
     this->position(Fl::w()/ 2 - this->w() / 2,  Fl::h() / 2 - this->h() / 2);
     this->set_modal();
 
-    width_ = new Fl_Int_Input( 5, 25, 120, 30, "Width:");
-    height_  = new Fl_Int_Input( width_->x() + width_->w() + 5, 25, 120, 30, "Height:");
+    width_ = new Fl_Int_Input(5, 25, 120, 30, single_value ? "Dimension:" : "Width:");
+    height_  = new Fl_Int_Input(width_->x() + width_->w() + 5, 25, 120, 30, "Height:");
     btn_ok_.reset(new Button(xpm::image(xpm::button_ok_16x16), [this] {
         confirmOk();
     }));
@@ -26,6 +27,9 @@ SizeWindow::SizeWindow(const char *title) : Fl_Window(0, 0, 300, 100, title) {
     btn_ok_->size(60, 30);
     btn_cancel_->position(w() - 5 - btn_cancel_->w(), h() - 5 - btn_cancel_->h());
     btn_ok_->position(btn_cancel_->x() - 5 - btn_ok_->w(), btn_cancel_->y());
+    if (single_value) {
+        height_->hide();
+    }
 }
 
 SizeWindow::~SizeWindow() {
@@ -40,8 +44,12 @@ void SizeWindow::setInitialSize(int x, int y) {
 }
 
 void SizeWindow::retriveSize(int *x, int *y) {
-    sscanf(width_->value(), "%d", x);
-    sscanf(height_->value(), "%d", y);
+    if (x != NULL) {
+        sscanf(width_->value(), "%d", x);
+    }
+    if (y != NULL) {
+        sscanf(height_->value(), "%d", y);
+    }
 }
 
 void SizeWindow::confirmOk() {
@@ -69,8 +77,8 @@ bool SizeWindow::run() {
 }
 
 bool getSizeFromDialog(const char *title, int *x, int *y) {
-    SizeWindow *wnd = new SizeWindow(title);
-    wnd->setInitialSize(*x, *y);
+    SizeWindow *wnd = new SizeWindow(title, y == NULL);
+    wnd->setInitialSize(*x, y != NULL ? *y : 512);
     bool result = wnd->run();
     if (result) {
         wnd->retriveSize(x, y);
@@ -78,6 +86,10 @@ bool getSizeFromDialog(const char *title, int *x, int *y) {
     Fl::delete_widget(wnd);
     Fl::do_widget_deletion();
     return result;
+}
+
+bool getSizeFromDialog(const char *title, int *x) {
+    return getSizeFromDialog(title, x, NULL);
 }
     
 } // namespace dexpert

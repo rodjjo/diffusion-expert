@@ -22,6 +22,9 @@ typedef enum {
 } image_format_t;
 
 
+class RawImage;
+typedef std::shared_ptr<RawImage> image_ptr_t;
+
 class RawImage {
  public:
     RawImage(const unsigned char *buffer, uint32_t w, uint32_t h, image_format_t format, bool fill_transparent=true);
@@ -38,13 +41,17 @@ class RawImage {
     void pasteAt(int x, int y, RawImage *image);
     void pasteAt(int x, int y, int w, int h, RawImage *image);
     
-    std::shared_ptr<RawImage> duplicate();
-    std::shared_ptr<RawImage> removeBackground(bool white);
-    std::shared_ptr<RawImage> removeAlpha();
-    std::shared_ptr<RawImage> resizeCanvas(uint32_t x, uint32_t y);
-    std::shared_ptr<RawImage> resizeImage(uint32_t x, uint32_t y);
-    std::shared_ptr<RawImage> getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
-    std::shared_ptr<RawImage> ensureMultipleOf8();
+    image_ptr_t duplicate();
+    image_ptr_t removeBackground(bool white);
+    image_ptr_t removeAlpha();
+    image_ptr_t resizeCanvas(uint32_t x, uint32_t y);
+    image_ptr_t resizeImage(uint32_t x, uint32_t y);
+    image_ptr_t getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+    image_ptr_t ensureMultipleOf8();
+    image_ptr_t resizeLeft(int value);
+    image_ptr_t resizeRight(int value);
+    image_ptr_t resizeTop(int value);
+    image_ptr_t resizeBottom(int value);
 
     void drawCircle(int x, int y, int radius, bool clear);
 
@@ -56,8 +63,6 @@ class RawImage {
     image_format_t format_;
     size_t version_;
 };
-
-typedef std::shared_ptr<RawImage> image_ptr_t;
 
 image_ptr_t rawImageFromPyDict(py11::dict &image);
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha);

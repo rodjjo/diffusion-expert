@@ -64,11 +64,16 @@ namespace dexpert
         int getScrollY();
         void zoomToFit(float &zoom, int &x, int &y);
         void open(image_type_t layer);
+        void save(image_type_t layer);
         void setTool(image_tool_t value);
         image_tool_t getTool();
         static const char* getToolLabel(image_tool_t value);
         void resizeCanvas(uint32_t w, uint32_t h);
         void resizeImages(uint32_t w, uint32_t h);
+        void resizeLeft(int value);
+        void resizeRight(int value);
+        void resizeBottom(int value);
+        void resizeTop(int value);
         void setBrushSize(uint8_t size);
         uint8_t getBrushSize();
         coordinate_t getReferenceSize();

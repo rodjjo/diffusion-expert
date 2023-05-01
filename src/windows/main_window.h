@@ -41,6 +41,15 @@ class MainWindow : Fl_Menu_Window {
   void toolClicked(Button* btn);
   void updateScrollbar();
   void newImage();
+  void openImage();
+  void saveImage();
+  void editSelection();
+  void resizeLeft();
+  void resizeRight();
+  void resizeTop();
+  void resizeBottom(); 
+  void resizePicture();
+  void resizeCanvas();
 
  private:
     Fl_Group *menuPanel_ = NULL;
@@ -49,6 +58,7 @@ class MainWindow : Fl_Menu_Window {
     Fl_Box * label_zoom_ = NULL;
     Fl_Box * label_select_ = NULL;
     Fl_Box * label_scroll_ = NULL;
+    Fl_Box * label_size_ = NULL;
     MainMenu *menu_ = NULL;
     ImagePanel *image_editor_;
     std::unique_ptr<Button> btn_none_;
