@@ -60,7 +60,7 @@ class PaintingPanel: public Fl_Group {
     image_ptr_t getImg2ImgMask();
     image_ptr_t getImg2ImgControl();
     float get_denoise_strength();
-    bool should_invert_mask_colors();
+    bool shouldInpaintMasked();
     bool ready();
     painting_mode_t getSelectedMode();
 

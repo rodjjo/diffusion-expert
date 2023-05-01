@@ -213,6 +213,7 @@ void Pages::textToImage() {
     if (inputImage_->getImg2ImgImage()) {
         auto img = inputImage_->getImg2ImgImage();
         auto mask = inputImage_->getImg2ImgMask();
+        bool inpaintMasked = inputImage_->shouldInpaintMasked();
 
         if (!img) {
             show_error("No input image to proceed!");
@@ -221,7 +222,7 @@ void Pages::textToImage() {
 
         img = img->duplicate();
 
-        if (mask) {
+        if (mask && inpaintMasked) {
             mask = mask->removeAlpha();
         }
 

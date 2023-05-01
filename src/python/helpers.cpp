@@ -107,6 +107,25 @@ namespace dexpert
             };
         }
 
+        callback_t upscale_image(RawImage *image, float scale, image_callback_t status_cb)
+        {
+            enable_progress_window(false);
+            return [status_cb, image, scale]
+            {
+                try {
+                    py11::dict d;
+                    py11::dict params;
+                    image->toPyDict(d);
+                    auto r = dexpert::py::getModule().attr("gfpgan_upscale")(d, py11::float_(scale), params);
+                    py11::dict d2 = r.cast<py11::dict>();
+                    auto img = dexpert::py::rawImageFromPyDict(d2);
+                    status_cb(true, NULL, img); // TODO: check error!
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                }
+            };
+        }
+
         const void txt2img_config_t::fill_prompt_dict(py11::dict &params) const
         {
             params["prompt"] = this->prompt;

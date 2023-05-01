@@ -139,8 +139,7 @@ def _run_pipeline(pipeline_type, params):
 
     if restore_faces:
         progress(99, 100, pil_as_dict(result)) 
-        with models_memory_checker():
-            result = gfpgan_restore_faces(result)
+        result = gfpgan_restore_faces(result)
     report("image generated")
     return pil_as_dict(result)
 

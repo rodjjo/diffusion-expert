@@ -3,6 +3,7 @@ from images.diffusion_routines import run_pipeline
 from utils.settings import set_user_settings 
 from images.pre_process import pre_process_image
 from images.filesystem import save_image, open_image
+from models.my_gfpgan import gfpgan_restore_faces, gfpgan_upscale
 from dependencies.installer import have_dependencies, install_dependencies
 
 

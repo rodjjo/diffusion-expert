@@ -27,8 +27,6 @@ typedef enum {
 
 typedef enum {
    gfpgan_arch_clean,
-   gfpgan_arch_bilinear,
-   gfpgan_arch_original,
    gfpgan_arch_restore_former,
    // keep gfpgan_arch_count at the end
    gfpgan_arch_count 

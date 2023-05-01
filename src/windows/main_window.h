@@ -50,6 +50,7 @@ class MainWindow : Fl_Menu_Window {
   void resizeBottom(); 
   void resizePicture();
   void resizeCanvas();
+  void upScale(float scale);
 
  private:
     Fl_Group *menuPanel_ = NULL;

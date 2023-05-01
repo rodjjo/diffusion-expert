@@ -86,6 +86,7 @@ namespace dexpert
         void getMouseXY(int *x, int *y);
         void newImage(int w, int h);
         void noSelection();
+        void upScale(float scale);
     protected:
         int handle(int event) override;
         void draw() override;

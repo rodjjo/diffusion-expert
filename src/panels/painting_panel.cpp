@@ -561,7 +561,7 @@ bool PaintingPanel::ready() {
 }
 
 
-bool PaintingPanel::should_invert_mask_colors() {
+bool PaintingPanel::shouldInpaintMasked() {
     return getSelectedMode() == painting_inpaint_masked;
 }
 

@@ -7,6 +7,8 @@
 #include "src/dialogs/utils.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/controls/image_panel.h"
+#include "src/python/helpers.h"
+#include "src/python/wrapper.h"
 
 namespace dexpert
 {
@@ -909,6 +911,30 @@ namespace dexpert
         setZoomLevel(1.0);
         images_[image_type_image].reset(new RawImage(NULL, w, h, dexpert::py::img_rgba, false));
         setScroll(0, 0);
+    }
+
+    void ImagePanel::upScale(float scale) {
+        auto img = images_[image_type_image].get();
+        if (!img) {
+            return;
+        }
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, 
+            [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
+                if (!success) {
+                    show_error(message);
+                } else if (image) {
+                    images_[image_type_image] = image;
+                } else {
+                    show_error("Unknown error, upscaler fail. No image was returned");
+                }
+        }));
+
+        for (int i = 0; i < image_type_count; i++) {
+            if (i != image_type_image) {
+                images_[i].reset();
+            }
+        }
+        scrollAgain();
     }
 
 } // namespace dexpert
