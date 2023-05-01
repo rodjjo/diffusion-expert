@@ -36,12 +36,16 @@ class RawImage {
     void pasteFill(RawImage *image);
     void pasteFrom(int x, int y, float zoom, RawImage *image);
     void pasteAt(int x, int y, RawImage *image);
-
+    void pasteAt(int x, int y, int w, int h, RawImage *image);
+    
     std::shared_ptr<RawImage> duplicate();
     std::shared_ptr<RawImage> removeBackground(bool white);
     std::shared_ptr<RawImage> removeAlpha();
     std::shared_ptr<RawImage> resizeCanvas(uint32_t x, uint32_t y);
     std::shared_ptr<RawImage> resizeImage(uint32_t x, uint32_t y);
+    std::shared_ptr<RawImage> getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+    std::shared_ptr<RawImage> ensureMultipleOf8();
+
     void drawCircle(int x, int y, int radius, bool clear);
 
  private:

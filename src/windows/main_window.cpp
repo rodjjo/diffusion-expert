@@ -1,6 +1,8 @@
 #include "src/windows/console_viewer.h"
 #include "src/windows/config_window.h"
 #include "src/windows/diffusion_tool.h"
+#include "src/dialogs/common_dialogs.h"
+#include "src/dialogs/size_dialog.h"
 #include "src/python/helpers.h"
 #include "src/config/config.h"
 #include "src/data/xpm.h"
@@ -29,9 +31,18 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     wnd->begin();
 
-    image_editor_ = new ImagePanel(0, 0, 1, 1);
+    image_editor_ = new ImagePanel(0, 0, 1, 1, [this] {
+        updateScrollbar();
+    });
 
     initMenubar();
+    
+    leftPanel_ = new Fl_Group(0, 0, 1, 1);
+    leftPanel_->end();
+    bottomPanel_ = new Fl_Group(0, 0, 1, 1);
+    bottomPanel_->end();
+
+    leftPanel_->begin();
 
     btn_none_.reset(new Button(xpm::image(xpm::editor_apply), [this] { 
         toolClicked(btn_none_.get());
@@ -54,7 +65,20 @@ MainWindow::MainWindow():  Fl_Menu_Window(
         image_editor_->setTool(image_tool_select);
     }));
 
+    leftPanel_->end();
+
+    bottomPanel_->begin();
+    
+    label_zoom_ = new Fl_Box(0, 0, 1, 1);
+    label_select_ = new Fl_Box(0, 0, 1, 1);
+    label_scroll_ = new Fl_Box(0, 0, 1, 1);
+
+    bottomPanel_->end();
+
     wnd->end();
+
+    leftPanel_->box(FL_DOWN_BOX);
+    bottomPanel_->box(FL_DOWN_BOX);
 
     btn_none_->position(1, 1);
     btn_drag_->position(1, 1);
@@ -98,12 +122,27 @@ void MainWindow::initMenu() {
     menuPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem(noCall, "", "File/New");
+    menu_->addItem([this] {
+        newImage();
+    }, "", "File/New");
     menu_->addItem([this] {
         image_editor_->open(image_type_image);
     }, "", "File/Open");
     menu_->addItem(noCall, "", "File/Save");
-    menu_->addItem(noCall, "", "Edit");
+    menu_->addItem([this] {
+        auto selection = image_editor_->getSelectedImage(image_type_image);
+        if (selection) {
+            auto img = get_stable_diffusion_image(selection.get());
+            if (img) {
+                image_editor_->setPasteImageAtSelection(image_type_image, img.get());
+            }
+        } else {
+            show_error("Invalid selection. No image to process.");
+        }
+    }, "", "Edit/Edit Selection");
+
+    menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Edit/Anchor Selection");
+    menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Edit/Discart Selection");
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
@@ -114,10 +153,11 @@ void MainWindow::alignComponents() {
     menuPanel_->position(0, 0);
     int w = this->w();
     int h = this->h();
+    int stabusbar_h = 30;
     menuPanel_->size(w, menu_->h());
     menu_->position(0, 0);
     menu_->size(w, menuPanel_->h());
-    image_editor_->resize(40, menuPanel_->h() + 5, w - 50, h - 15 - menuPanel_->h());
+    image_editor_->resize(40, menuPanel_->h() + 5, w - 50, h - 15 - menuPanel_->h() - stabusbar_h);
 
     btn_none_->size(30, 30);
     btn_drag_->size(30, 30);
@@ -125,15 +165,29 @@ void MainWindow::alignComponents() {
     btn_zoom_->size(30, 30);
     btn_select_->size(30, 30);
 
-    btn_none_->position(5, menuPanel_->y() + menuPanel_->h() + 2);
+    leftPanel_->resize(3, image_editor_->y(), image_editor_->x() - 6, image_editor_->h());
+    bottomPanel_->resize(3, image_editor_->y() + image_editor_->h() + 3, w - 10, stabusbar_h);
+
+    btn_none_->position(5, leftPanel_->y() +2);
     btn_drag_->position(5, btn_none_->y() + btn_none_->h() + 2);
     btn_drag_float_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
     btn_zoom_->position(5, btn_drag_float_->y() + btn_drag_float_->h() + 2);
     btn_select_->position(5, btn_zoom_->y() + btn_zoom_->h() + 2);
+
+    label_zoom_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
+    label_select_->resize(label_zoom_->x() + label_zoom_->w() + 2, label_zoom_->y(), 200, stabusbar_h - 4);
+    label_scroll_->resize(label_select_->x() + label_select_->w() + 2, label_zoom_->y(), 200, stabusbar_h - 4);
 }
 
 void MainWindow::editConfig() {
     show_configuration(); 
+}
+
+void MainWindow::newImage() {
+    int szx = 512, szy = 512;
+    if (getSizeFromDialog("Size of the new image", &szx, &szy)) {
+        image_editor_->newImage(szx, szy);
+    }
 }
 
 void MainWindow::resize(int x, int y, int w, int h) {
@@ -179,6 +233,19 @@ int MainWindow::handle(int event) {
 int MainWindow::run() {
     int result = Fl::run();
     return result;
+}
+
+void MainWindow::updateScrollbar() {
+    char buffer[512] = {0,};
+    sprintf(buffer, "Zoom: %0.2f", image_editor_->getZoomLevel() * 100);
+    label_zoom_->copy_label(buffer);
+    int sx1 = 0, sx2 = 0, sy1 = 0, sy2 = 0;
+    image_editor_->getSelection(&sx1, &sy1, &sx2, &sy2);
+    sprintf(buffer, "Sel: (%d,%d, %d, %d) %d x %d", sx1, sy1, sx2, sy2, sx2 - sx1, sy2 - sy1);
+    label_select_->copy_label(buffer);
+    image_editor_->getMouseXY(&sx1, &sy1);
+    sprintf(buffer, "Mouse: %d x %d ", sx1, sy1);
+    label_scroll_->copy_label(buffer);
 }
 
 }  // namespace dexpert

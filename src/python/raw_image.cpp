@@ -200,6 +200,16 @@ void RawImage::pasteAt(int x, int y, RawImage *image) {
     src.permute_axes("cxyz");
 }
 
+void RawImage::pasteAt(int x, int y, int w, int h, RawImage *image) {
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    img.draw_image(x, y, src.get_resize(w, h));
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+}
+
 void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     int w = this->w();
     int h = this->h();
@@ -211,12 +221,6 @@ void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     h /= zoom;
 
     // keep the area inside the source image    
-    if (x < 0) {
-        x = 0;
-    }
-    if (y < 0) {
-        y = 0;
-    }
     if (w <= 0 || h <= 0 || x >= image->w() || y >= image->h())  {
         return;
     }
@@ -281,6 +285,29 @@ std::shared_ptr<RawImage> RawImage::resizeImage(uint32_t x, uint32_t y) {
     return result;
 }
 
+std::shared_ptr<RawImage> RawImage::getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+    std::shared_ptr<RawImage> result(new RawImage(NULL, w, h, this->format(), false));
+    CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    src.permute_axes("yzcx");
+    self.permute_axes("yzcx");
+    self.draw_image(0, 0, src.get_crop(x, y, x + w, y + h));
+    self.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+    return result;
+}
+
+std::shared_ptr<RawImage> RawImage::ensureMultipleOf8() {
+    int diff_w = this->w() % 8;
+    int diff_h = this->h() % 8;
+    if (diff_w > 0 || diff_h > 0) {
+        auto result = this->resizeImage(this->w() + diff_w, this->h() + diff_h);
+        result->pasteAt(0, 0, this);
+        return result;
+    } 
+    return duplicate();
+}
+
 image_ptr_t rawImageFromPyDict(py11::dict &image) {
     if (!image.contains("data")) {
         return image_ptr_t();
@@ -300,13 +327,11 @@ image_ptr_t rawImageFromPyDict(py11::dict &image) {
     );
 }
 
-
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha) {
     return std::make_shared<RawImage>(
         (const unsigned char *) NULL, w, h, enable_alpha ? img_rgba : img_rgb
     );
 }
-
 
 
 } // namespace py

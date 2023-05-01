@@ -37,7 +37,8 @@ class PromptPanel: public Fl_Group {
     bool shouldRestoreFaces();
     bool shouldUseCodeformer();
     bool ready(bool require_prompt);
-    
+    void setImageSize(int w, int h);
+
  private:
     void alignComponents();
     void refreshModels();

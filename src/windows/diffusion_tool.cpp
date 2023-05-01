@@ -159,7 +159,7 @@ void DiffusionTool::gotoSelectedPage() {
     int idx = page_browser_->value();
     if (idx > 0)  {
         idx -= 1;
-        pages_->goPage(pages_->getPageIndex(idx));
+        pages_->goPage(pages_->getPageAtIndex(idx));
     } 
     page_browser_->deselect();
     page_browser_->select(pages_->visibleIndex() + 1);
@@ -167,20 +167,37 @@ void DiffusionTool::gotoSelectedPage() {
 }
 
 image_ptr_t DiffusionTool::run() {
-    image_ptr_t r;
+    this->show();
     while (this->shown()) {
         Fl::wait(0.001);
     }
-    return r;
+    RawImage *img = pages_->getInputImage();
+    if (img) {
+        return img->duplicate();
+    }
+    return image_ptr_t();
 }
 
+void DiffusionTool::setInputImage(RawImage *image) {
+    if (!image) {
+        return;
+    }
+    pages_->setInputImage(image);
+    page_browser_->value(pages_->getIndexAtPage(pages_->activePage()));
+    gotoSelectedPage();
+}
 
-image_ptr_t get_stable_diffusion_image() {
-    
-    DiffusionTool *window = new DiffusionTool();
+RawImage *DiffusionTool::getInputImage() {
+    return pages_->getInputImage();
+}
+
+image_ptr_t get_stable_diffusion_image(RawImage *image) {
+    static DiffusionTool *window = NULL;
+    if (window == NULL) {
+        window = new DiffusionTool();
+    }
+    window->setInputImage(image);
     image_ptr_t r = window->run();
-    Fl::delete_widget(window);        
-    Fl::do_widget_deletion();
     return r;
 }
 

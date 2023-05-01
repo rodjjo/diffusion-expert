@@ -39,9 +39,16 @@ class MainWindow : Fl_Menu_Window {
   void alignComponents();
   void editConfig();
   void toolClicked(Button* btn);
+  void updateScrollbar();
+  void newImage();
 
  private:
-    Fl_Group  *menuPanel_ = NULL;
+    Fl_Group *menuPanel_ = NULL;
+    Fl_Group *leftPanel_ = NULL;
+    Fl_Group *bottomPanel_ = NULL;
+    Fl_Box * label_zoom_ = NULL;
+    Fl_Box * label_select_ = NULL;
+    Fl_Box * label_scroll_ = NULL;
     MainMenu *menu_ = NULL;
     ImagePanel *image_editor_;
     std::unique_ptr<Button> btn_none_;

@@ -120,7 +120,7 @@ bool Pages::goPage(page_t page) {
     return result;
 }
 
-page_t Pages::getPageIndex(int index) {
+page_t Pages::getPageAtIndex(int index) {
     int page_number = 0;
     for (int i = 0; i < page_max; ++i) {
          if (isVisible((page_t) i)) {
@@ -131,6 +131,21 @@ page_t Pages::getPageIndex(int index) {
         }
     }
     return page_prompts;
+}
+
+int Pages::getIndexAtPage(page_t page) {
+    if (!isVisible(page)) {
+        return 0;
+    }
+    int index = 0;
+    for (int i = 0; i < page_max; ++i) {
+        if (page == i) {
+            return index;
+        }
+        if (isVisible((page_t) i)) 
+            ++index;
+    }
+    return 0;
 }
 
 page_t Pages::activePage() {
@@ -148,6 +163,15 @@ int Pages::visibleIndex() {
         }
     }
     return page_prompts;
+}
+
+void Pages::setInputImage(RawImage *img) {
+    goPage(page_input_image);
+    inputImage_->setImage(img);
+}
+
+RawImage *Pages::getInputImage() {
+    return inputImage_->getImage();
 }
 
 void Pages::textToImage() {

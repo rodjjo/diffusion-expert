@@ -96,12 +96,7 @@ int PromptPanel::getWidth() {
         width_->value("2048");
         return 2048;
     }
-    if (result % 8) {
-        result += 8 - result % 8;
-        char buffer[30] = {0,};
-        sprintf(buffer, "%d", result);
-        width_->value(buffer);
-    }
+
     return result;
 }
 
@@ -115,12 +110,6 @@ int PromptPanel::getHeight() {
     if (result > 2048) {
         height_->value("2048");
         return 2048;
-    }
-    if (result % 8) {
-        result += 8 - result % 8;
-        char buffer[30] = {0,};
-        sprintf(buffer, "%d", result);
-        height_->value(buffer);
     }
     return result;
 }
@@ -221,7 +210,6 @@ void PromptPanel::alignComponents() {
         120,
         25
     ); 
-
 }
 
 void PromptPanel::resize(int x, int y, int w, int h) {
@@ -284,6 +272,14 @@ bool PromptPanel::shouldRestoreFaces() {
 
 bool PromptPanel::shouldUseCodeformer() {
     return codeformer_->value() != 0;
+}
+
+void PromptPanel::setImageSize(int w, int h) {
+    char buffer[30] = {0,};
+    sprintf(buffer, "%d", w);
+    width_->value(buffer);
+    sprintf(buffer, "%d", h);
+    height_->value(buffer);
 }
 
 } // namespace dexpert

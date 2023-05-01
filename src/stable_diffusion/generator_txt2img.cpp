@@ -90,6 +90,9 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     dexpert::py::get_py()->execute_callback(gen_cb);
 
     if (image) {
+        if (image->w() != width_ || image->h() != height_) {
+            image = image->getCrop(0, 0, width_, height_);
+        }
         if (enable_variation == 0) {
             setImage(image, params.seed);
         } else  {

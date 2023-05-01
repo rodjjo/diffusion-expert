@@ -416,8 +416,18 @@ void PaintingPanel::newMask() {
 void PaintingPanel::setImage(RawImage *image) {
     if (image) {
         image_panel_->setImage(image->duplicate());
+        if (getSelectedMode() == paiting_disabled) {
+            mode_->value(painting_img2img);
+            modeSelected();
+            prompt_->setImageSize(image->w(), image->h());
+        }
     }
 }
+
+RawImage *PaintingPanel::getImage() {
+    return image_panel_->getImage().get();
+}
+
 
 bool PaintingPanel::ensureControlPresent() {
      if (image_panel_->getControlImage()) {

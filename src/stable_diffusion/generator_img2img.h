@@ -52,6 +52,8 @@ class GeneratorImg2Image: public GeneratorBase {
         std::string model_;
         controlnet_list_t controlnets_;
         int seed_ = -1;
+        size_t image_orig_w_ = 512;
+        size_t image_orig_h_ = 512;
         size_t width_ = 512;
         size_t height_ = 512;
         size_t steps_ = 50;

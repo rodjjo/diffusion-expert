@@ -53,7 +53,8 @@ class PaintingPanel: public Fl_Group {
     virtual ~PaintingPanel();
     void resize(int x, int y, int w, int h) override;
     void setImage(RawImage *image);
-    
+    RawImage *getImage();
+
     std::shared_ptr<ControlNet> getControlnet();
     image_ptr_t getImg2ImgImage();
     image_ptr_t getImg2ImgMask();

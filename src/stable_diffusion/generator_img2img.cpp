@@ -38,7 +38,15 @@ namespace dexpert
         restore_faces_(restore_faces), 
         enable_codeformer_(enable_codeformer)
         {
+    image_orig_w_ = image_->w();
+    image_orig_h_ = image_->h();
 
+    if (image_ && (image_->w() % 8 > 0 || image_->h() % 8 > 0)) {
+        image_ = image_->ensureMultipleOf8();
+    }
+    if (mask_ && (mask_->w() % 8 > 0 || mask_->h() % 8 > 0)) {
+        mask_ = mask_->ensureMultipleOf8();
+    }
 }
 
 std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
@@ -111,6 +119,9 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     dexpert::py::get_py()->execute_callback(gen_cb);
 
     if (image) {
+        if (image->w() != image_orig_w_ || image_->h() != image_orig_h_) {
+            image = image->getCrop(0, 0, image_orig_w_, image_orig_h_);
+        }
         if (enable_variation == 0) {
             setImage(image, params.seed);
         } else  {

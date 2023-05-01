@@ -12,8 +12,6 @@
 #include <FL/Fl_Select_Browser.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Box.H>
-#include <FL/Fl_Native_File_Chooser.H>
-#include <FL/fl_ask.H>
 #include <FL/Fl_Tabs.H>
 
 #include "src/controls/button.h"
@@ -29,6 +27,9 @@ class DiffusionTool : public Fl_Window {
     DiffusionTool();
     ~DiffusionTool();
     image_ptr_t run();
+    void setInputImage(RawImage *image);
+    RawImage *getInputImage();
+
  protected:
    void resize(int x, int y, int w, int h) override;
    int handle(int event) override;
@@ -53,7 +54,7 @@ class DiffusionTool : public Fl_Window {
     std::unique_ptr<Button> cancelBtn_;
 };
 
-image_ptr_t get_stable_diffusion_image();
+image_ptr_t get_stable_diffusion_image(RawImage *image = NULL);
 
 
 } // namespace dexpert

@@ -44,6 +44,7 @@ def _run_pipeline(pipeline_type, params):
 
     if height % 8 != 0:
         height += 8 - height % 8
+
     variation_enabled = params.get('var_stren', 0) > 0
     var_stren = params.get("var_stren", 0)
     subseed = params['variation'] if variation_enabled else None

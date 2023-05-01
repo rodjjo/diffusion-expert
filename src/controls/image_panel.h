@@ -1,6 +1,8 @@
 #ifndef SRC_CONTROLS_IMAGE_PANEL_H
 #define SRC_CONTROLS_IMAGE_PANEL_H
 
+#include <functional>
+
 #include "src/panels/opengl_panel.h"
 #include "src/python/raw_image.h"
 
@@ -37,14 +39,15 @@ typedef struct {
 
 namespace dexpert
 {
+
+    typedef std::function<void()> callback_t;
+
     class ImagePanel : public Fl_Gl_Window
     {
     public:
-        ImagePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+        ImagePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h, callback_t on_change);
         virtual ~ImagePanel();
-
         void setBackgroundColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-
         void setLayerVisible(image_type_t layer, bool visible);
         bool getLayerVisible(image_type_t layer);
         void setLayerEditable(image_type_t layer, bool visible);
@@ -52,16 +55,15 @@ namespace dexpert
         image_type_t getActiveLayer();
         void setLayerImage(image_type_t layer, image_ptr_t image);
         RawImage* getLayerImage(image_type_t layer);
+        image_ptr_t getSelectedImage(image_type_t layer);
+        void setPasteImageAtSelection(image_type_t layer, RawImage *img);
         void setZoomLevel(float level);
         float getZoomLevel();
         void setScroll(int x, int y);
         int getScrollX();
         int getScrollY();
-
         void zoomToFit(float &zoom, int &x, int &y);
-
         void open(image_type_t layer);
-
         void setTool(image_tool_t value);
         image_tool_t getTool();
         static const char* getToolLabel(image_tool_t value);
@@ -69,17 +71,16 @@ namespace dexpert
         void resizeImages(uint32_t w, uint32_t h);
         void setBrushSize(uint8_t size);
         uint8_t getBrushSize();
-
         coordinate_t getReferenceSize();
         bool hasReference();
-
         void clearPasteImage();
         void pasteImage();
-
         bool hasSelection();
         void getSelection(int *x, int *y, int *x2, int *y2);
         void resize(int x, int y, int w, int h) override;
-
+        void getMouseXY(int *x, int *y);
+        void newImage(int w, int h);
+        void noSelection();
     protected:
         int handle(int event) override;
         void draw() override;
@@ -104,7 +105,7 @@ namespace dexpert
 
         RawImage* get_cached_image(int layer);
         RawImage* get_reference_image();
-        void fix_scroll(int *xmove, int *ymove, int px, int py);
+        void fix_scroll(int *xmove, int *ymove);
         void invalidate_caches();
 
         void scrollAgain();
@@ -115,13 +116,15 @@ namespace dexpert
         void convertToScreenCoords(int *x, int *y);
         
     private:
-        image_tool_t tool_ = image_tool_drag;
+        callback_t on_change_;
+        image_tool_t tool_ = image_tool_none;
+        bool mouse_changed_ = false;
         int scroll_x_ = 0;
         int scroll_y_ = 0;
         int scroll_px_ = 0;
         int scroll_py_ = 0;
         uint8_t brush_size_ = 16;
-        float zoom_ = 0.5f;
+        float zoom_ = 1.0f;
         coordinate_t selection_start_ = {0,};
         coordinate_t selection_end_ = {0,};
         uint8_t background_color_[4] = {0, 0, 0, 255};
@@ -129,13 +132,16 @@ namespace dexpert
         size_t cache_versions_[image_type_count] = {0,};
         bool valid_caches_[image_type_count] = {0,};
         image_ptr_t caches_[image_type_count];
-        coordinate_t image_coords_[image_type_count] = {0,};  // positionate the image in relation the image zero
+        coordinate_t paste_coords_;  // positionate the image in relation the image zero
         coordinate_t image_sizes_[image_type_count] = {0,}; // fake the image size, if different of zero
         image_ptr_t images_[image_type_count];
         bool image_visible_[image_type_count] = {0,};
         bool image_editable_[image_type_count] = {0,};
 
     private:
+        bool mouse_down_control_ = false;
+        bool mouse_down_shift_ = false;
+        bool mouse_down_alt_ = false;
         bool should_redraw_ = false;
         bool mouse_down_left_ = false;
         bool mouse_down_right_ = false;
