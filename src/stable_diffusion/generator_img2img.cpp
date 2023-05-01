@@ -119,9 +119,16 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     dexpert::py::get_py()->execute_callback(gen_cb);
 
     if (image) {
+        if (mask_.get() != NULL && image_.get() != NULL) {
+            // I do not want stable diffusion to change non masked pixels
+            auto invert = mask_->resizeCanvas(image_->w(), image_->h())->removeAlpha();
+            image->pasteAt(0, 0, invert.get(), image_.get());
+        }
+
         if (image->w() != image_orig_w_ || image_->h() != image_orig_h_) {
             image = image->getCrop(0, 0, image_orig_w_, image_orig_h_);
         }
+
         if (enable_variation == 0) {
             setImage(image, params.seed);
         } else  {

@@ -151,7 +151,9 @@ std::shared_ptr<RawImage> RawImage::removeAlpha() {
 
     tmp.permute_axes("yzcx");
     img.permute_axes("yzcx");
-    tmp.fill("if(i3==0,255,i)", true); // remove the transparency
+    if (src_channels == 4) {
+        tmp.fill("if(i3==0,255,i)", true); // remove the transparency
+    }
     img.draw_image(0, 0, tmp); 
     // replace white per black and black per white
     img.fill("if((i0==i1&&i0==i2)&&(i0==255||i0==0),if(i0==0,255,0),i)", true);
@@ -196,6 +198,19 @@ void RawImage::pasteAt(int x, int y, RawImage *image) {
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
     img.draw_image(x, y, src);
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+}
+
+void RawImage::pasteAt(int x, int y, RawImage *mask, RawImage *image) {
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> msk(mask->buffer(), format_channels[mask->format()], mask->w(), mask->h(), 1, true);
+    CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    msk.permute_axes("yzcx");
+    img.draw_image(x, y, 0, 0, src, msk, 1, 255);
+    msk.permute_axes("cxyz");
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
 }
@@ -300,11 +315,16 @@ std::shared_ptr<RawImage> RawImage::getCrop(uint32_t x, uint32_t y, uint32_t w, 
 std::shared_ptr<RawImage> RawImage::ensureMultipleOf8() {
     int diff_w = this->w() % 8;
     int diff_h = this->h() % 8;
+
     if (diff_w > 0 || diff_h > 0) {
+        if (diff_w > 0) diff_w = 8 - diff_w;
+        if (diff_h > 0) diff_h = 8 - diff_h;
         auto result = this->resizeImage(this->w() + diff_w, this->h() + diff_h);
         result->pasteAt(0, 0, this);
+        printf("Image resized from %dx%d to %dx%d\n", this->w(), this->h(), result->w(), result->h());
         return result;
     } 
+
     return duplicate();
 }
 

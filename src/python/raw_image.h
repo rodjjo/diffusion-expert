@@ -39,6 +39,7 @@ class RawImage {
     void pasteFill(RawImage *image);
     void pasteFrom(int x, int y, float zoom, RawImage *image);
     void pasteAt(int x, int y, RawImage *image);
+    void pasteAt(int x, int y, RawImage *mask, RawImage *image);
     void pasteAt(int x, int y, int w, int h, RawImage *image);
     
     image_ptr_t duplicate();
