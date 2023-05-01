@@ -937,4 +937,21 @@ namespace dexpert
         scrollAgain();
     }
 
+    void ImagePanel::restoreSelectionFace() {
+        auto img = getSelectedImage(image_type_image);
+        if (!img) {
+            show_error("No Selection!");
+            return;
+        }
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, 
+            [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
+                if (!success) {
+                    show_error(message);
+                } else if (image) {
+                    setPasteImageAtSelection(image_type_image, image.get());
+                } else {
+                    show_error("Unknown error, upscaler fail. No image was returned");
+                }
+        }));
+    }
 } // namespace dexpert

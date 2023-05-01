@@ -135,9 +135,11 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { resizeRight(); }, "", "Image/Resize Right");
     menu_->addItem([this] { resizeTop(); }, "", "Image/Resize Top");
     menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize Bottom");
+    menu_->addItem([this] { restoreSelectionFace(); }, "", "Image/Restore selected face");
     menu_->addItem([this] { upScale(2.0); }, "", "Image/2x Upscale");
     menu_->addItem([this] { upScale(3.0); }, "", "Image/3x Upscale");
     menu_->addItem([this] { upScale(4.0); }, "", "Image/4x Upscale");
+
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     // menu_->addItem(noCall, "", "Tools");
@@ -196,6 +198,10 @@ void MainWindow::saveImage() {
 
 void MainWindow::upScale(float scale) {
     image_editor_->upScale(scale);
+}
+
+void MainWindow::restoreSelectionFace() {
+    image_editor_->restoreSelectionFace();
 }
 
 void MainWindow::resizeLeft() {
