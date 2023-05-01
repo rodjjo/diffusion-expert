@@ -178,7 +178,7 @@ image_ptr_t DiffusionTool::run() {
     return image_ptr_t();
 }
 
-void DiffusionTool::setInputImage(RawImage *image) {
+void DiffusionTool::setInitialImage(RawImage *image) {
     if (!image) {
         return;
     }
@@ -196,7 +196,7 @@ image_ptr_t get_stable_diffusion_image(RawImage *image) {
     if (window == NULL) {
         window = new DiffusionTool();
     }
-    window->setInputImage(image);
+    window->setInitialImage(image);
     image_ptr_t r = window->run();
     Fl::delete_widget(window);
     Fl::do_widget_deletion();

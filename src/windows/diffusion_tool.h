@@ -27,7 +27,7 @@ class DiffusionTool : public Fl_Window {
     DiffusionTool();
     ~DiffusionTool();
     image_ptr_t run();
-    void setInputImage(RawImage *image);
+    void setInitialImage(RawImage *image);
     RawImage *getInputImage();
 
  protected:
@@ -44,6 +44,7 @@ class DiffusionTool : public Fl_Window {
   void refreshBrowser();
   static void pageChangeCallback(Fl_Widget* widget, void *cbdata);
   static void gotoPromptPage(void *cbdata);
+
  private:
     Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
