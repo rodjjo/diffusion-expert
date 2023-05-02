@@ -30,6 +30,13 @@ void viewport_t::update() {
     glGetIntegerv(GL_VIEWPORT, vp_);
 }
 
+void viewport_t::update(uint32_t w, uint32_t h) {
+    vp_[0] = 0;
+    vp_[1] = 0;
+    vp_[2] = w;
+    vp_[3] = h;
+}
+
 viewport_t viewport_t::from_gl() {
     int vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);

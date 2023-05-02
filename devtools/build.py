@@ -66,21 +66,6 @@ def download_python():
         subprocess.check_call(['7z.exe', 'x', filepath], cwd=python_dir())
 
 
-def recreate_profile():
-    try:
-        subprocess.check_call(['conan', 'profile', 'new', PROFILE_NAME])
-    except Exception:
-        pass
-
-def configure_profile():
-    recreate_profile()
-    settings = get_settings()
-    for l in settings:
-        subprocess.check_call([
-            'conan', 'profile', 'update', l, PROFILE_NAME
-        ])
-
-
 def ensure_have_tool(name, url, args):
     try:
         subprocess.check_call(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

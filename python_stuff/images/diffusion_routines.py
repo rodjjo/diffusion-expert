@@ -44,6 +44,7 @@ def _run_pipeline(pipeline_type, params):
 
     if height % 8 != 0:
         height += 8 - height % 8
+
     variation_enabled = params.get('var_stren', 0) > 0
     var_stren = params.get("var_stren", 0)
     subseed = params['variation'] if variation_enabled else None
@@ -102,8 +103,26 @@ def _run_pipeline(pipeline_type, params):
     elif pipeline_type == 'img2img':
         additional_args = {
             'image': pil_from_dict(input_image),
+            'width': width, 
+            'height': height,
             'strength': params['strength'],
         }
+        if len(controlnets):
+            images = []
+            conds = []
+            for c in controlnets:
+                if c['strength'] < 0:
+                    c['strength'] = 0
+                if c['strength'] > 2.0:
+                    c['strength'] = 2.0
+                images.append(pil_from_dict(c['image']))
+                conds.append(c['strength'])
+            if len(images) == 1:
+                images = images[0]
+            if len(conds) == 1:
+                conds = conds[0]
+            additional_args['controlnet_conditioning_image'] = images
+            additional_args['controlnet_conditioning_scale'] = conds
     elif pipeline_type == 'inpaint2img':
         if not current_model_is_in_painting():
             return {
@@ -121,7 +140,22 @@ def _run_pipeline(pipeline_type, params):
             'height': height,
             'latents': latents_noise,
         }
-
+        if len(controlnets):
+            images = []
+            conds = []
+            for c in controlnets:
+                if c['strength'] < 0:
+                    c['strength'] = 0
+                if c['strength'] > 2.0:
+                    c['strength'] = 2.0
+                images.append(pil_from_dict(c['image']))
+                conds.append(c['strength'])
+            if len(images) == 1:
+                images = images[0]
+            if len(conds) == 1:
+                conds = conds[0]
+            additional_args['controlnet_conditioning_image'] = images
+            additional_args['controlnet_conditioning_scale'] = conds
     pipeline.to(device)
     latents_noise.to(device)
     report("generating the variation" if variation_enabled else "generating the image")
@@ -137,9 +171,8 @@ def _run_pipeline(pipeline_type, params):
         ).images[0]
 
     if restore_faces:
-        progress(99, 100, result) 
-        with models_memory_checker():
-            result = gfpgan_restore_faces(result)
+        progress(99, 100, pil_as_dict(result)) 
+        result = gfpgan_restore_faces(result)
     report("image generated")
     return pil_as_dict(result)
 

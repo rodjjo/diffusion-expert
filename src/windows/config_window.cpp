@@ -18,8 +18,6 @@ namespace {
 
     const char *gpgan_archs[gfpgan_arch_count] = {
         "clean",
-        "bilinear",
-        "original",
         "RestoreFormer"
     };
 }

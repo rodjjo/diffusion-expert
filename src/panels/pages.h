@@ -11,6 +11,7 @@
 #include "src/panels/painting_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/panels/results_panel.h"
+#include "src/python/raw_image.h"
 
 namespace dexpert
 {
@@ -35,12 +36,16 @@ class Pages: public Fl_Group {
     int pageCount();
     bool goPage(page_t page);
     int visibleIndex();
-    page_t getPageIndex(int index);
+    page_t getPageAtIndex(int index);
+    int getIndexAtPage(page_t page);
     page_t activePage();
+
     const char *pageTitle(page_t page);
     void textToImage();
     void loadConfig();
-
+    void setInputImage(RawImage *img);
+    RawImage *getInputImage();
+    
  protected:
     void resize(int x, int y, int w, int h) override;
 

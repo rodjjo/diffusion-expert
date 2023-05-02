@@ -29,7 +29,9 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
 
     this->begin();
 
-    promptPanel_ = new PromptPanel(0, 0, 1, 1);
+    promptPanel_ = new PromptPanel(0, 0, 1, 1, [this] {
+        this->textToImage();
+    });
     pages_[page_prompts] = promptPanel_;
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
@@ -37,7 +39,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_results] = resultsPanel_;
 
     for (int i = 0; i < 4; i++) {
-        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, true);
+        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, inputImage_, true);
         pages_[page_controlnet1 + i] = controlNets_[i];
     }
     
@@ -118,7 +120,7 @@ bool Pages::goPage(page_t page) {
     return result;
 }
 
-page_t Pages::getPageIndex(int index) {
+page_t Pages::getPageAtIndex(int index) {
     int page_number = 0;
     for (int i = 0; i < page_max; ++i) {
          if (isVisible((page_t) i)) {
@@ -129,6 +131,21 @@ page_t Pages::getPageIndex(int index) {
         }
     }
     return page_prompts;
+}
+
+int Pages::getIndexAtPage(page_t page) {
+    if (!isVisible(page)) {
+        return 0;
+    }
+    int index = 0;
+    for (int i = 0; i < page_max; ++i) {
+        if (page == i) {
+            return index;
+        }
+        if (isVisible((page_t) i)) 
+            ++index;
+    }
+    return 0;
 }
 
 page_t Pages::activePage() {
@@ -146,6 +163,15 @@ int Pages::visibleIndex() {
         }
     }
     return page_prompts;
+}
+
+void Pages::setInputImage(RawImage *img) {
+    goPage(page_input_image);
+    inputImage_->setImage(img);
+}
+
+RawImage *Pages::getInputImage() {
+    return inputImage_->getImage();
 }
 
 void Pages::textToImage() {
@@ -187,6 +213,7 @@ void Pages::textToImage() {
     if (inputImage_->getImg2ImgImage()) {
         auto img = inputImage_->getImg2ImgImage();
         auto mask = inputImage_->getImg2ImgMask();
+        bool inpaintMasked = inputImage_->shouldInpaintMasked();
 
         if (!img) {
             show_error("No input image to proceed!");
@@ -195,7 +222,7 @@ void Pages::textToImage() {
 
         img = img->duplicate();
 
-        if (mask) {
+        if (mask && inpaintMasked) {
             mask = mask->removeAlpha();
         }
 
@@ -214,7 +241,8 @@ void Pages::textToImage() {
             promptPanel_->getVariationStrength(),
             inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
-            promptPanel_->shouldUseCodeformer()
+            promptPanel_->shouldUseCodeformer(),
+            getConfig().inpaint_get_mask_blur()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(

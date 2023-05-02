@@ -57,6 +57,9 @@ namespace dexpert
     bool gfpgan_get_paste_back();
     void gfpgan_set_paste_back(bool value);
 
+    float inpaint_get_mask_blur();
+    void inpaint_set_mask_blur(float value);
+
     std::string& lastImageSaveDir();
     std::string& lastImageOpenDir();
 
@@ -87,6 +90,7 @@ namespace dexpert
     bool gfpgan_only_center_face_ = false;
     bool gfpgan_has_aligned_ = false;
     bool gfpgan_paste_back_ = true;
+    float inpaint_mask_blur_ = 4.0;
     int controlnetCount_ = 0;
     bool safeFilterEnabled_ = true;
     std::string scheduler_ = "PNDMScheduler";

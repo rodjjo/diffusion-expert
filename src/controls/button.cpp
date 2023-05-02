@@ -9,7 +9,7 @@ Button::Button(const char *label, callback_t callback) {
     button_ = new Fl_Button(0, 0, 1, 1, label);
     callback_ = callback;
     button_->clear_visible_focus();
-    button_->callback(button_callback, &callback_);
+    button_->callback(button_callback, this);
 }
 
 Button::Button(std::shared_ptr<Fl_Image> image, callback_t callback) {
@@ -19,7 +19,24 @@ Button::Button(std::shared_ptr<Fl_Image> image, callback_t callback) {
     button_->clear_visible_focus();
     button_->image(image_.get());
     button_->align(FL_ALIGN_IMAGE_BACKDROP);
-    button_->callback(button_callback, &callback_);
+    button_->callback(button_callback, this);
+}
+
+bool Button::down() {
+    if (!down_up_) {
+        return false;
+    }
+    return button_->value() != 0;
+}
+
+void Button::down(bool value) {
+    if (down_up_) {
+        button_->value((int)value);
+    }
+}
+
+void Button::enableDownUp()  {
+    down_up_ = true;
 }
 
 int Button::x() {
@@ -43,9 +60,14 @@ void Button::position(int px, int py) {
 }
 
 void Button::button_callback(Fl_Widget* widget, void *userdata) {
-    widget->deactivate();
-    (*static_cast<callback_t *>(userdata))();
-    widget->activate();
+    ((Button *) userdata)->button_callback();
+}
+
+void Button::button_callback() {
+    down(!down());
+    if (callback_) {
+        callback_();
+    }
 }
 
 int Button::h() {

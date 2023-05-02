@@ -77,12 +77,13 @@ protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, int buffer_type) override;
     RawImage *getDrawingImage(int buffer_type);
     void draw_next() override;
+    void mouse_down(bool left_button, bool right_button, int down_x, int down_y) override;
     void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) override;
     void mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y) override;
     void draw_mask();
 
 private:
-    void drawCircle(int x, int y, bool clear, bool onscreen);
+    void drawCircle(int x, int y, bool clear, bool onscreen, bool flood = false);
     void update_cache(const unsigned char **buffer, uint32_t *w, uint32_t *h, int channels, size_t version);
     void get_button_coords(frame_button_t *b, float *x, float *y, int *w, int *h);
     frame_button_t *get_button_mouse(int x, int y);

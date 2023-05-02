@@ -75,6 +75,8 @@
 #include "src/data/xpm/menu/mask_16x16.xpm"
 #include "src/data/xpm/menu/file_new_16x16.xpm"
 #include "src/data/xpm/menu/marionette_16x16.xpm"
+#include "src/data/xpm/select.xpm"
+#include "src/data/xpm/drag_icon.xpm"
 
 
 #pragma GCC diagnostic pop
@@ -149,7 +151,9 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { edit_16x16, edit_16x16_xpm},
     { mask_16x16, mask_16x16_xpm},
     { file_new_16x16, file_new_16x16_xpm},
-    { marionette_16x16, marionette_16x16_xpm}
+    { marionette_16x16, marionette_16x16_xpm},
+    { drag_icon, drag_icon_xpm},
+    { select_icon, select_xpm}
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

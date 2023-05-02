@@ -46,20 +46,22 @@ typedef enum {
    brush_size_count
 } brush_size_t;
 
+class PaintingPanel;
 
 class PaintingPanel: public Fl_Group {
  public:
-    PaintingPanel(int x, int y, int w, int h, PromptPanel *prompt, bool only_control_net=false);
+    PaintingPanel(int x, int y, int w, int h, PromptPanel *prompt, PaintingPanel *inputPanel = NULL, bool only_control_net=false);
     virtual ~PaintingPanel();
     void resize(int x, int y, int w, int h) override;
     void setImage(RawImage *image);
-    
+    RawImage *getImage();
+
     std::shared_ptr<ControlNet> getControlnet();
     image_ptr_t getImg2ImgImage();
     image_ptr_t getImg2ImgMask();
     image_ptr_t getImg2ImgControl();
     float get_denoise_strength();
-    bool should_invert_mask_colors();
+    bool shouldInpaintMasked();
     bool ready();
     painting_mode_t getSelectedMode();
 
@@ -73,6 +75,7 @@ class PaintingPanel: public Fl_Group {
  private:
     void alignComponents();
     void saveImage();
+    void useInputImage();
     void saveMask();
     void openImage();
     void newMask();
@@ -89,6 +92,7 @@ class PaintingPanel: public Fl_Group {
 
  private:
     bool only_control_net_;
+    PaintingPanel *inputPanel_;
     PromptPanel *prompt_;
     Fl_Group *left_bar_;
     Fl_Choice *mode_;
@@ -101,6 +105,7 @@ class PaintingPanel: public Fl_Group {
     FramePanel *image_panel_;
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;
+    std::unique_ptr<Button> btnInput_;
     std::unique_ptr<Button> btnNewMask_;
     std::unique_ptr<Button> btnOpenMask_;
     std::unique_ptr<Button> btnSaveMask_;

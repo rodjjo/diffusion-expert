@@ -21,6 +21,7 @@ class viewport_t {
     static viewport_t from_gl();
     // refresh view port
     void update();
+    void update(uint32_t w, uint32_t h);
 
     int & operator[] (int index) {
         return vp_[index];

@@ -2,14 +2,18 @@
 #include "src/stable_diffusion/state.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/config/config.h"
+#include "src/data/xpm.h"
 
 namespace dexpert
 {
 
-PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
+PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : Fl_Group(x, y, w, h), on_generate_(on_generate) {
     this->begin();
     positivePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Prompt");
     negativePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Negative Prompt");
+    generateBtn_.reset(new Button(xpm::image(xpm::button_play), [this] {
+        this->on_generate_();
+    }));
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
     steps_ = new Fl_Int_Input(0, 0, 1, 1, "Steps");
     guidance_ = new Fl_Float_Input(0, 0, 1, 1, "CFG");
@@ -34,8 +38,9 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : Fl_Group(x, y, w, h) {
     models_->align(FL_ALIGN_TOP_LEFT);
     var_strength_->align(FL_ALIGN_TOP_LEFT);
 
-    positivePrompt_->value("An astronaut riding a horse at the moon");
+    positivePrompt_->value("an astronaut riding a horse at the moon");
     negativePrompt_->value("drawing,cartoon,3d,render,rendering");
+    generateBtn_->tooltip("Generate a new image.");
 
     seed_->value("-1");
     steps_->value("50");
@@ -91,12 +96,7 @@ int PromptPanel::getWidth() {
         width_->value("2048");
         return 2048;
     }
-    if (result % 8) {
-        result += 8 - result % 8;
-        char buffer[30] = {0,};
-        sprintf(buffer, "%d", result);
-        width_->value(buffer);
-    }
+
     return result;
 }
 
@@ -110,12 +110,6 @@ int PromptPanel::getHeight() {
     if (result > 2048) {
         height_->value("2048");
         return 2048;
-    }
-    if (result % 8) {
-        result += 8 - result % 8;
-        char buffer[30] = {0,};
-        sprintf(buffer, "%d", result);
-        height_->value(buffer);
     }
     return result;
 }
@@ -149,11 +143,17 @@ float PromptPanel::getVariationStrength() {
 }
 
 void PromptPanel::alignComponents() {
-    positivePrompt_->resize(x() + 5, y() + 25, w() - 10, 50);
+
+    positivePrompt_->resize(x() + 5, y() + 25, w() - 67, 50);
+    generateBtn_->position(
+        positivePrompt_->x() + positivePrompt_->w() + 5, 
+        positivePrompt_->y()
+    );
+    generateBtn_->size(50, 50);
     negativePrompt_->resize(
         x() + 5, 
         positivePrompt_->y() + positivePrompt_->h() + 25, 
-        w() - 10, 
+        positivePrompt_->w(), 
         positivePrompt_->h()
     );
     seed_->resize(
@@ -210,7 +210,6 @@ void PromptPanel::alignComponents() {
         120,
         25
     ); 
-
 }
 
 void PromptPanel::resize(int x, int y, int w, int h) {
@@ -273,6 +272,14 @@ bool PromptPanel::shouldRestoreFaces() {
 
 bool PromptPanel::shouldUseCodeformer() {
     return codeformer_->value() != 0;
+}
+
+void PromptPanel::setImageSize(int w, int h) {
+    char buffer[30] = {0,};
+    sprintf(buffer, "%d", w);
+    width_->value(buffer);
+    sprintf(buffer, "%d", h);
+    height_->value(buffer);
 }
 
 } // namespace dexpert

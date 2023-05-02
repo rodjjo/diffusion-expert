@@ -109,7 +109,7 @@ int Config::windowYPos() {
 }
 
 int Config::windowWidth() {
-    return 720;
+    return 860;
 }
 
 int Config::windowHeight() {
@@ -223,6 +223,19 @@ std::string& Config::lastImageSaveDir() {
 
 std::string& Config::lastImageOpenDir() {
     return last_image_open_dir_;
+}
+
+float Config::inpaint_get_mask_blur() {
+    return inpaint_mask_blur_;
+}
+
+void Config::inpaint_set_mask_blur(float value) {
+    if (value < 0)
+        value = 0;
+    if (value > 20) 
+        value = 20;
+
+    inpaint_mask_blur_ = value;
 }
 
 bool Config::save() {

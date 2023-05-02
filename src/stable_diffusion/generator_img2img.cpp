@@ -21,7 +21,8 @@ namespace dexpert
         float var_stren,
         float image_strength,
         bool restore_faces,
-        bool enable_codeformer
+        bool enable_codeformer,
+        float mask_blur_size
     ) : prompt_(prompt), 
         negative_(negative), 
         model_(model), 
@@ -36,9 +37,18 @@ namespace dexpert
         var_strength_(var_stren),
         image_strength_(image_strength),
         restore_faces_(restore_faces), 
-        enable_codeformer_(enable_codeformer)
+        enable_codeformer_(enable_codeformer),
+        mask_blur_size_(mask_blur_size)
         {
+    image_orig_w_ = image_->w();
+    image_orig_h_ = image_->h();
 
+    if (image_ && (image_->w() % 8 > 0 || image_->h() % 8 > 0)) {
+        image_ = image_->ensureMultipleOf8();
+    }
+    if (mask_ && (mask_->w() % 8 > 0 || mask_->h() % 8 > 0)) {
+        mask_ = mask_->ensureMultipleOf8();
+    }
 }
 
 std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
@@ -58,7 +68,8 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
         this->var_strength_,
         this->image_strength_,
         this->restore_faces_,
-        this->enable_codeformer_
+        this->enable_codeformer_,
+        this->mask_blur_size_
     ));
     return d;
 }
@@ -70,6 +81,8 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     image_ptr_t image;
 
     dexpert::py::img2img_config_t params;
+
+    image_ptr_t blur_mask;
 
     params.prompt = prompt_.c_str();
     params.negative = negative_.c_str();
@@ -83,7 +96,11 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.height = height_;
 
     params.image = image_.get();
-    params.mask = mask_.get();
+    if (mask_) {
+        blur_mask = mask_->blur(mask_blur_size_);
+    }
+
+    params.mask = blur_mask.get();
     params.strength = image_strength_;
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;
@@ -111,6 +128,17 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     dexpert::py::get_py()->execute_callback(gen_cb);
 
     if (image) {
+        if (mask_.get() != NULL && image_.get() != NULL) {
+            blur_mask = mask_->removeAlpha()->blur(mask_blur_size_)->resizeCanvas(image_->w(), image_->h());
+            // I do not want stable diffusion to change non masked pixels
+            // auto invert = mask_->resizeCanvas(image_->w(), image_->h())->removeAlpha();
+            image->pasteAt(0, 0, blur_mask.get(), image_.get());
+        }
+
+        if (image->w() != image_orig_w_ || image_->h() != image_orig_h_) {
+            image = image->getCrop(0, 0, image_orig_w_, image_orig_h_);
+        }
+
         if (enable_variation == 0) {
             setImage(image, params.seed);
         } else  {

@@ -88,4 +88,4 @@ def pre_process_image(mode: str, data: dict) -> dict:
         elif mode == 'deepth':
             report("extracting deepth")
             return image_to_deepth(im)
-    return None
+    return {}

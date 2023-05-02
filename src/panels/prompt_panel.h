@@ -4,6 +4,7 @@
 #ifndef SRC_PANELS_PROMPT_PANEL_H_
 #define SRC_PANELS_PROMPT_PANEL_H_
 
+#include <functional>
 #include <string>
 
 #include <FL/Fl_Group.H>
@@ -13,12 +14,16 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Check_Button.H>
 
+#include "src/controls/button.h"
+
 namespace dexpert
 {
 
+typedef std::function<void()>  callback_t;
+
 class PromptPanel: public Fl_Group {
  public:
-    PromptPanel(int x, int y, int w, int h);
+    PromptPanel(int x, int y, int w, int h, callback_t on_generate);
     virtual ~PromptPanel();
     const char *getPrompt();
     const char *getNegativePrompt();
@@ -32,7 +37,8 @@ class PromptPanel: public Fl_Group {
     bool shouldRestoreFaces();
     bool shouldUseCodeformer();
     bool ready(bool require_prompt);
-    
+    void setImageSize(int w, int h);
+
  private:
     void alignComponents();
     void refreshModels();
@@ -41,6 +47,7 @@ class PromptPanel: public Fl_Group {
     void resize(int x, int y, int w, int h) override;
 
  private:
+   callback_t on_generate_;
    Fl_Multiline_Input *positivePrompt_;
    Fl_Multiline_Input *negativePrompt_;
    Fl_Int_Input *seed_;
@@ -52,6 +59,7 @@ class PromptPanel: public Fl_Group {
    Fl_Choice *models_;
    Fl_Check_Button *restore_face_;
    Fl_Check_Button *codeformer_;
+   std::unique_ptr<Button> generateBtn_;
 };
 
 
