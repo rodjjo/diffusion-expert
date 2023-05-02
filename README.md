@@ -11,7 +11,7 @@ It uses a interface written in C++ with a embedded Python interpreter.
 *Result*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-2.jpg)
 
-*Progress with image preview and cancel button*   
+*Outpaint example*   
 ![Ubuntu screenshot](https://github.com/rodjjo/diffusion-expert/raw/main/docs/images/difusion-expert-pre-alpha-3.jpg)
 
 
