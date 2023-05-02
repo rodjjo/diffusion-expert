@@ -107,14 +107,14 @@ void RawImage::incVersion() {
     ++version_;
 }
 
-std::shared_ptr<RawImage> RawImage::duplicate() {
+image_ptr_t RawImage::duplicate() {
     return std::make_shared<RawImage>(
         buffer_, w_, h_, format_
     );
 }
 
-std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
-    std::shared_ptr<RawImage> r;
+image_ptr_t RawImage::removeBackground(bool white) {
+    image_ptr_t r;
     r.reset(new RawImage(NULL, w_, h_, img_rgba, false));
     int src_channels = format_channels[format_];
   
@@ -138,8 +138,8 @@ std::shared_ptr<RawImage> RawImage::removeBackground(bool white) {
     return r;
 }
 
-std::shared_ptr<RawImage> RawImage::removeAlpha() {
-    std::shared_ptr<RawImage> r;
+image_ptr_t RawImage::removeAlpha() {
+    image_ptr_t r;
 
     r.reset(new RawImage(NULL, w_, h_, img_rgb));
 
@@ -290,8 +290,8 @@ void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     src.permute_axes("cxyz");
 }
 
-std::shared_ptr<RawImage> RawImage::resizeCanvas(uint32_t x, uint32_t y) {
-    std::shared_ptr<RawImage> result(new RawImage(NULL, x, y, this->format(), false));
+image_ptr_t RawImage::resizeCanvas(uint32_t x, uint32_t y) {
+    image_ptr_t result(new RawImage(NULL, x, y, this->format(), false));
     CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
     src.permute_axes("yzcx");
@@ -302,8 +302,8 @@ std::shared_ptr<RawImage> RawImage::resizeCanvas(uint32_t x, uint32_t y) {
     return result;
 }
 
-std::shared_ptr<RawImage> RawImage::resizeImage(uint32_t x, uint32_t y) {
-    std::shared_ptr<RawImage> result(new RawImage(NULL, x, y, this->format(), false));
+image_ptr_t RawImage::resizeImage(uint32_t x, uint32_t y) {
+    image_ptr_t result(new RawImage(NULL, x, y, this->format(), false));
     CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
     src.permute_axes("yzcx");
@@ -314,8 +314,8 @@ std::shared_ptr<RawImage> RawImage::resizeImage(uint32_t x, uint32_t y) {
     return result;
 }
 
-std::shared_ptr<RawImage> RawImage::getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
-    std::shared_ptr<RawImage> result(new RawImage(NULL, w, h, this->format(), false));
+image_ptr_t RawImage::getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+    image_ptr_t result(new RawImage(NULL, w, h, this->format(), false));
     CImg<unsigned char> src(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
     src.permute_axes("yzcx");
@@ -326,7 +326,16 @@ std::shared_ptr<RawImage> RawImage::getCrop(uint32_t x, uint32_t y, uint32_t w, 
     return result;
 }
 
-std::shared_ptr<RawImage> RawImage::ensureMultipleOf8() {
+image_ptr_t RawImage::blur(int size) {
+    image_ptr_t result = this->duplicate();
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    self.permute_axes("yzcx");
+    self.blur(4.0, 4.0, 0.0, 1, true);
+    self.permute_axes("cxyz");
+    return result;
+}
+
+image_ptr_t RawImage::ensureMultipleOf8() {
     int diff_w = this->w() % 8;
     int diff_h = this->h() % 8;
 

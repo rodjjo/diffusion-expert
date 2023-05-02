@@ -8,10 +8,13 @@ from diffusers import (
         StableDiffusionInpaintPipeline,
         ControlNetModel
     )
+
 import torch
 from models.paths import CACHE_DIR
 from utils.settings import get_setting
 from models.loader import load_stable_diffusion_model
+from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
+from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
 
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
@@ -47,7 +50,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
             mode != CURRENT_PIPELINE.get("mode"):
         CURRENT_PIPELINE = {}
         gc.collect()
-        controlnets = controlnets or [] if mode == 'txt2img' else []
+        controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') else []
         control_model = []
         have_controlnet = False
         model_repos = {
@@ -74,7 +77,14 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
                 **CURRENT_MODEL_PARAMS['params'],
                 'controlnet': control_model,
             }
-            pipe = StableDiffusionControlNetPipeline(**params)
+
+            if mode == 'txt2img':
+                pipe = StableDiffusionControlNetPipeline(**params)
+            elif mode == 'inpaint2img':
+                pipe = StableDiffusionControlNetInpaintImg2ImgPipeline(**params)
+            else:
+                pipe = StableDiffusionControlNetImg2ImgPipeline(**params)
+
         elif mode == 'img2img':
             pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
         elif mode == 'inpaint2img':

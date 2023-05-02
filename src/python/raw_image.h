@@ -53,6 +53,7 @@ class RawImage {
     image_ptr_t resizeRight(int value);
     image_ptr_t resizeTop(int value);
     image_ptr_t resizeBottom(int value);
+    image_ptr_t blur(int size);
 
     void drawCircle(int x, int y, int radius, bool clear);
     void fillWithMask(int x, int y, RawImage *mask);

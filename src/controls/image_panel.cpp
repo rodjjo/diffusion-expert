@@ -215,8 +215,10 @@ namespace dexpert
         }
 
         if (isDragging()) {
-            int drag_x = (down_x - move_x) / zoom_;
-            int drag_y = (down_y - move_y) / zoom_;
+            convertToImageCoords(&down_x, &down_y);
+            convertToImageCoords(&move_x, &move_y);
+            int drag_x = down_x - move_x;
+            int drag_y = down_y - move_y;
             setScroll(scroll_px_ + drag_x, scroll_py_ + drag_y);
         } else if(isSelecting() && left_button) {
             selection_start_.x = down_x;
@@ -748,12 +750,8 @@ namespace dexpert
         // remove the drawing coord
         *x -= dcoord.x;
         *y -= dcoord.y;
-     
         *x /= zoom_;
         *y /= zoom_;
-     
-        //*x += scroll_x_ ;
-        //*y += scroll_y_;
         int xmove, ymove;
         fix_scroll(&xmove, &ymove);
         *x += xmove;
@@ -771,12 +769,8 @@ namespace dexpert
         fix_scroll(&xmove, &ymove);
         *x -= xmove;
         *y -= ymove;
-        //*x -= scroll_x_;
-        //*y -= scroll_y_;
-
         *x *= zoom_;
         *y *= zoom_;
-
         *x += dcoord.x;
         *y += dcoord.y;
     }
@@ -796,10 +790,10 @@ namespace dexpert
         int scroll_y = scroll_y_ + half_y;
         // now we are at the center of the image
         // we need to scroll down to up left coords of the screen
-        half_x = (w() / zoom_ ) / 2.0;
-        half_y = (h() / zoom_ ) / 2.0;
-        scroll_x -= half_x;
-        scroll_y -= half_y;
+        float half_x2 = (w() / zoom_ ) / 2.0;
+        float half_y2 = (h() / zoom_ ) / 2.0;
+        scroll_x -= half_x2;
+        scroll_y -= half_y2;
         *xmove = (scroll_x); 
         *ymove = (scroll_y); 
         if (*xmove < 0) 
@@ -817,10 +811,13 @@ namespace dexpert
         if (!img) {
             return;
         }
+
         int halfx = img->w() / 2;
         int halfy = img->h() / 2;
+
         int halfsx = (this->w() / 2) / zoom_;
         int halfsy = (this->h() / 2) / zoom_;
+
         if (x + halfsx > halfx) {
             x = halfx - halfsx;
         }

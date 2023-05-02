@@ -39,7 +39,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_results] = resultsPanel_;
 
     for (int i = 0; i < 4; i++) {
-        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, true);
+        controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, inputImage_, true);
         pages_[page_controlnet1 + i] = controlNets_[i];
     }
     
@@ -241,7 +241,8 @@ void Pages::textToImage() {
             promptPanel_->getVariationStrength(),
             inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
-            promptPanel_->shouldUseCodeformer()
+            promptPanel_->shouldUseCodeformer(),
+            getConfig().inpaint_get_mask_blur()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(

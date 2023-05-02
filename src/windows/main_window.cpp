@@ -140,6 +140,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
 
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
+    menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
     
     //  menu_->addItem(noCall, "", "Help");
 }
@@ -313,7 +314,8 @@ void MainWindow::updateScrollbar() {
     coordinate_t rs = image_editor_->getReferenceSize();
     sprintf(buffer, "Dimensions: [%d x %d]", rs.x, rs.y);
     label_size_->copy_label(buffer);
-    sprintf(buffer, "Zoom: %0.2f", image_editor_->getZoomLevel() * 100);
+    sprintf(buffer, "Zoom: %0.0f%%", image_editor_->getZoomLevel() * 100);
+    //sprintf(buffer, "Zoom: %0.1f Scroll [%d, %d]", image_editor_->getZoomLevel() * 100, image_editor_->getScrollX(), image_editor_->getScrollY());
     label_zoom_->copy_label(buffer);
     int sx1 = 0, sx2 = 0, sy1 = 0, sy2 = 0;
     image_editor_->getSelection(&sx1, &sy1, &sx2, &sy2);
