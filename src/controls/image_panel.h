@@ -18,7 +18,6 @@ typedef enum {
 typedef enum {
     image_tool_none,
     image_tool_drag,
-    image_tool_drag_paste,
     image_tool_zoom,
     image_tool_select,
     image_tool_brush,

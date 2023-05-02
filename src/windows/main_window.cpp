@@ -44,23 +44,19 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     leftPanel_->begin();
 
-    btn_none_.reset(new Button(xpm::image(xpm::editor_apply), [this] { 
+    btn_none_.reset(new Button("", [this] { 
         toolClicked(btn_none_.get());
         image_editor_->setTool(image_tool_none);
     }));
-    btn_drag_.reset(new Button(xpm::image(xpm::cursor_drag), [this] { 
+    btn_drag_.reset(new Button(xpm::image(xpm::drag_icon), [this] { 
         toolClicked(btn_drag_.get());
         image_editor_->setTool(image_tool_drag);
-    }));
-    btn_drag_float_.reset(new Button(xpm::image(xpm::cursor_drag), [this] { 
-        toolClicked(btn_drag_float_.get());
-        image_editor_->setTool(image_tool_drag_paste);
     }));
     btn_zoom_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] { 
         toolClicked(btn_zoom_.get());
         image_editor_->setTool(image_tool_zoom);
     }));
-    btn_select_.reset(new Button(xpm::image(xpm::cursor_resize), [this] {
+    btn_select_.reset(new Button(xpm::image(xpm::select_icon), [this] {
         toolClicked(btn_select_.get());
         image_editor_->setTool(image_tool_select);
     }));
@@ -83,21 +79,19 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     btn_none_->position(1, 1);
     btn_drag_->position(1, 1);
-    btn_drag_float_->position(1, 1);
     btn_zoom_->position(1, 1);
     btn_select_->position(1, 1);
 
     btn_none_->tooltip("Disable tools");
     btn_drag_->tooltip("Drag tool");
-    btn_drag_float_->tooltip("Drag the floating image");
     btn_zoom_->tooltip("Zoom tool");
     btn_select_->tooltip("Select tool");
 
     btn_none_->enableDownUp();
     btn_drag_->enableDownUp();
-    btn_drag_float_->enableDownUp();
     btn_zoom_->enableDownUp();
     btn_select_->enableDownUp();
+    btn_none_->down(true);
 
     wnd->resizable(wnd);
 
@@ -126,23 +120,27 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { newImage(); }, "", "File/New");
     menu_->addItem([this] { openImage(); }, "", "File/Open");
     menu_->addItem([this] { saveImage(); }, "", "File/Save");
-    menu_->addItem([this] { editSelection(); }, "", "Edit/Edit Selection");
-    menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Edit/Anchor Selection");
-    menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Edit/Discart Selection");
+    menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit");
+    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
+    menu_->addItem([this] { editSelection(); }, "", "Selection/Use AI Editor");
+    menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
+    menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Selection/Discart changes");
     menu_->addItem([this] { resizeCanvas();  }, "", "Image/Resize Canvas");
     menu_->addItem([this] { resizePicture(); }, "", "Image/Resize Picture");
-    menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize Left");
-    menu_->addItem([this] { resizeRight(); }, "", "Image/Resize Right");
-    menu_->addItem([this] { resizeTop(); }, "", "Image/Resize Top");
-    menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize Bottom");
+    menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize direction/Left");
+    menu_->addItem([this] { resizeRight(); }, "", "Image/Resize direction/Right");
+    menu_->addItem([this] { resizeTop(); }, "", "Image/Resize direction/Top");
+    menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize direction/Bottom");
     menu_->addItem([this] { restoreSelectionFace(); }, "", "Image/Restore selected face");
-    menu_->addItem([this] { upScale(2.0); }, "", "Image/2x Upscale");
-    menu_->addItem([this] { upScale(3.0); }, "", "Image/3x Upscale");
-    menu_->addItem([this] { upScale(4.0); }, "", "Image/4x Upscale");
+    menu_->addItem([this] { upScale(1.5); }, "", "Image/Upscale/1.5x");
+    menu_->addItem([this] { upScale(2.0); }, "", "Image/Upscale/2x");
+    menu_->addItem([this] { upScale(2.5); }, "", "Image/Upscale/2.5x");
+    menu_->addItem([this] { upScale(3.0); }, "", "Image/Upscale/3x");
+    menu_->addItem([this] { upScale(3.5); }, "", "Image/Upscale/3.5x");
+    menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
 
-    menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Run/Generate");
-    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
-    // menu_->addItem(noCall, "", "Tools");
+    menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
+    
     //  menu_->addItem(noCall, "", "Help");
 }
 
@@ -158,7 +156,6 @@ void MainWindow::alignComponents() {
 
     btn_none_->size(30, 30);
     btn_drag_->size(30, 30);
-    btn_drag_float_->size(30, 30);
     btn_zoom_->size(30, 30);
     btn_select_->size(30, 30);
 
@@ -167,8 +164,7 @@ void MainWindow::alignComponents() {
 
     btn_none_->position(5, leftPanel_->y() +2);
     btn_drag_->position(5, btn_none_->y() + btn_none_->h() + 2);
-    btn_drag_float_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
-    btn_zoom_->position(5, btn_drag_float_->y() + btn_drag_float_->h() + 2);
+    btn_zoom_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
     btn_select_->position(5, btn_zoom_->y() + btn_zoom_->h() + 2);
 
     label_size_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
@@ -278,7 +274,6 @@ void MainWindow::toolClicked(Button* btn) {
     Button* buttons[] = {
         btn_none_.get(),
         btn_drag_.get(),
-        btn_drag_float_.get(),
         btn_zoom_.get(),
         btn_select_.get(),
     };
@@ -322,7 +317,11 @@ void MainWindow::updateScrollbar() {
     label_zoom_->copy_label(buffer);
     int sx1 = 0, sx2 = 0, sy1 = 0, sy2 = 0;
     image_editor_->getSelection(&sx1, &sy1, &sx2, &sy2);
-    sprintf(buffer, "Sel: (%d,%d, %d, %d) %d x %d", sx1, sy1, sx2, sy2, sx2 - sx1, sy2 - sy1);
+    if (sx1 != sx2 && sy1 != sy2) {
+        sprintf(buffer, "Sel: (%d,%d, %d, %d) %d x %d", sx1, sy1, sx2, sy2, sx2 - sx1, sy2 - sy1);
+    } else {
+        sprintf(buffer, "Sel: no selection");
+    }
     label_select_->copy_label(buffer);
     image_editor_->getMouseXY(&sx1, &sy1);
     sprintf(buffer, "Mouse: %d x %d ", sx1, sy1);

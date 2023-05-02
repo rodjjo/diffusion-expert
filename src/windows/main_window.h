@@ -65,7 +65,6 @@ class MainWindow : Fl_Menu_Window {
     ImagePanel *image_editor_;
     std::unique_ptr<Button> btn_none_;
     std::unique_ptr<Button> btn_drag_;
-    std::unique_ptr<Button> btn_drag_float_;
     std::unique_ptr<Button> btn_zoom_;
     std::unique_ptr<Button> btn_select_;
 };

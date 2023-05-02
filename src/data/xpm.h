@@ -81,6 +81,8 @@ typedef enum {
     mask_16x16,
     file_new_16x16,
     marionette_16x16,
+    drag_icon,
+    select_icon,
     // keep no_image at the end
     no_image
 } xpm_t;

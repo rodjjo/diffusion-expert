@@ -28,11 +28,18 @@ class SizeWindow : public Fl_Window  {
     bool run();
  private:
     void confirmOk();
+    void proportionalChanged();
+    static void valueChangedCb(Fl_Widget *wd, void *cbdata);
+    void valueChangedCb(Fl_Widget *wd);
  private:
+    float proportion_ = 1.0;
+    bool changing_proportion_ = false;
+    bool proportion_to_x_ = true;
     bool ok_confirmed_ = false;
     bool single_value_ = false;
     Fl_Int_Input *width_;
     Fl_Int_Input *height_;
+    std::unique_ptr<Button> btn_proportion_;
     std::unique_ptr<Button> btn_ok_;
     std::unique_ptr<Button> btn_cancel_;
 };

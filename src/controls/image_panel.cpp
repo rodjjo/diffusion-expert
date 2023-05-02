@@ -21,7 +21,6 @@ namespace dexpert
         const char *tool_labels[image_tool_count] = {
             "None",
             "Drag",
-            "Drag Floating Image"
             "Zoom",
             "Select",
             "Brush"
