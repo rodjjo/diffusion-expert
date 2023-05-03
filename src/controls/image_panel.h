@@ -87,6 +87,8 @@ namespace dexpert
         void noSelection();
         void upScale(float scale);
         void restoreSelectionFace();
+        void cropToSelection();
+        void resizeSelection(int w, int h);
     protected:
         int handle(int event) override;
         void draw() override;

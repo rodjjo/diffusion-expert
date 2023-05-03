@@ -44,8 +44,9 @@ class SizeWindow : public Fl_Window  {
     std::unique_ptr<Button> btn_cancel_;
 };
 
-bool getSizeFromDialog(const char *title, int *x, int *y);
 bool getSizeFromDialog(const char *title, int *x);
+bool getSizeFromDialog(const char *title, int *x, int *y);
+
     
 } // namespace dexpert
 
