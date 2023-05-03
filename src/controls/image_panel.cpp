@@ -42,6 +42,9 @@ namespace dexpert
         vp_[3] = this->h();
         valid(0);
         Fl::add_timeout(0.01, ImagePanel::imageRefresh, this);
+        for (int i = 0; i < image_type_count; ++i) {
+            image_visible_[i] = true;
+        }  
     }
 
     ImagePanel::~ImagePanel()
@@ -51,10 +54,15 @@ namespace dexpert
 
     void ImagePanel::imageRefresh(void *cbdata) {
         ((ImagePanel *) cbdata)->imageRefresh();
-        Fl::repeat_timeout(0.10, ImagePanel::imageRefresh, cbdata); // retrigger timeout
+        Fl::repeat_timeout(0.018, ImagePanel::imageRefresh, cbdata); // retrigger timeout
     }
 
     void ImagePanel::imageRefresh() {
+        if (drawing_changed_) {
+            drawing_changed_ = false;
+            applyBrush(draw_x_, draw_y_, drawing_clear_);
+        }
+
         if (should_redraw_) {
             should_redraw_ = false;
             mouse_changed_ = false;
@@ -73,6 +81,7 @@ namespace dexpert
     void ImagePanel::setLayerVisible(image_type_t layer, bool visible)
     {
         image_visible_[layer] = visible;
+        scrollAgain();
     }
 
     bool ImagePanel::getLayerVisible(image_type_t layer)
@@ -80,24 +89,15 @@ namespace dexpert
         return image_visible_[layer];
     }
 
-    void ImagePanel::setLayerEditable(image_type_t layer, bool visible)
+    void ImagePanel::setLayerEditable(image_type_t layer, bool value)
     {
-        image_editable_[layer] = visible;
-    }
-
-    void ImagePanel::setActiveLayer(image_type_t layer)
-    {
-        active_layer_ = layer;
-    }
-
-    image_type_t ImagePanel::getActiveLayer()
-    {
-        return active_layer_;
+        image_editable_[layer] = value;
     }
 
     void ImagePanel::setLayerImage(image_type_t layer, image_ptr_t image)
     {
         images_[layer] = image;
+        scrollAgain();
     }
 
     RawImage *ImagePanel::getLayerImage(image_type_t layer)
@@ -192,7 +192,7 @@ namespace dexpert
     }
 
     bool ImagePanel::isPainting() {
-        return (tool_ == image_tool_brush) && mouse_down_left_ && !isDragging();
+        return (edit_type_ != edit_type_none) && (tool_ == image_tool_brush) && (mouse_down_left_ || mouse_down_right_)  && !isDragging();
     }
 
     void ImagePanel::getMouseXY(int *x, int *y) {
@@ -201,13 +201,54 @@ namespace dexpert
         convertToImageCoords(x, y);
     }
 
+    void ImagePanel::applyBrush(int mousex, int mousey, bool clear) {
+        getMouseXY(&mousex, &mousey);
+        RawImage *img = NULL;
+
+        uint8_t color[4] = { 0, 0, 0, 0};
+        uint8_t bgcolor[4] = {255, 255, 255, 255};
+        
+        color[3] = 255;
+        bgcolor[3] = 0;
+        
+        if (edit_type_ == edit_type_image) {
+            color[0] = brush_color_[0];
+            color[1] = brush_color_[1];
+            color[2] = brush_color_[2];
+            img = images_[image_type_image].get();
+        } else if (edit_type_ == edit_type_mask) { 
+            img = images_[image_type_mask].get();
+        } else if (edit_type_ == edit_type_controlnet) { 
+            img = images_[image_type_controlnet].get();
+            if (controlnet_image_type_ == controlnet_segmentation) {
+                color[0] = brush_color_[0];
+                color[1] = brush_color_[1];
+                color[2] = brush_color_[2];
+            }
+        }
+
+        if (!img) {
+            should_redraw_ = true;
+            return;
+        }
+
+        img->drawCircleColor(mousex, mousey, brush_size_, color, bgcolor, clear);
+        should_redraw_ = true;
+    }
 
     void ImagePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y, int from_x, int from_y){
         current_x_ = move_x;
         current_y_ = move_y;
         mouse_changed_ = true;
-        if (tool_ == image_tool_brush) {
-            should_redraw_ = true;
+        if (isPainting()) {
+            drawing_changed_ = true;
+            drawing_clear_ = !left_button && right_button;
+            draw_x_ = move_x;
+            draw_y_ = move_y;
+        } else {
+            if (tool_ == image_tool_brush && edit_type_ != edit_type_none) {
+                should_redraw_ = true;
+            }
         }
         auto ref = get_reference_image();
         if (!ref) {
@@ -233,7 +274,9 @@ namespace dexpert
         if (isDragging()) {
             return;
         }
-
+        if (isPainting()) {
+            applyBrush(down_x, down_y, !left_button && right_button);
+        }
         if (isSelecting() && left_button) {
             selection_start_.x = down_x;
             selection_start_.y = down_y;
@@ -320,7 +363,7 @@ namespace dexpert
         images_[image_type_paste].reset();
         paste_coords_.x = 0;
         paste_coords_.y = 0;
-        selection_start_ = selection_end_;
+        noSelection();
         scrollAgain();
     }
 
@@ -482,6 +525,9 @@ namespace dexpert
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         RawImage *img; 
         for (int i = 0; i < image_type_count; ++i) {
+            if (!image_visible_[i]) {
+                continue;
+            }
             img = get_cached_image(i);
             if (img) {
                 draw_buffer(img);
@@ -833,7 +879,7 @@ namespace dexpert
         scroll_x_ = x;
         scroll_y_ = y;
         invalidate_caches();
-        should_redraw_ = true;
+        should_redraw_ = visible_r();
     }
 
     void ImagePanel::zoomToFit(float &zoom, int &x, int &y) {
@@ -914,6 +960,7 @@ namespace dexpert
         if (!img) {
             return;
         }
+
         dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, 
             [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
                 if (!success) {
@@ -930,6 +977,7 @@ namespace dexpert
                 images_[i].reset();
             }
         }
+
         scrollAgain();
     }
 
@@ -963,7 +1011,7 @@ namespace dexpert
             }
         }
         images_[image_type_image] = img;
-        selection_end_ = selection_start_;
+        noSelection();
         scrollAgain();
     }
 
@@ -971,5 +1019,33 @@ namespace dexpert
         selection_end_.x = selection_start_.x + w;
         selection_end_.y = selection_start_.y + h;
         scrollAgain();
+    }
+
+    controlnet_type_t ImagePanel::getControlnetImageType() {
+        return controlnet_image_type_;
+    }
+
+    void ImagePanel::setControlnetImageType(controlnet_type_t value) {
+        controlnet_image_type_ = value;
+    }
+
+    edit_type_t ImagePanel::getEditType() {
+        return edit_type_;
+    }
+
+    void ImagePanel::setEditType(edit_type_t value) {
+        edit_type_ = value;
+    }
+
+    void ImagePanel::setBrushColor(uint8_t r, uint8_t g, uint8_t b) {
+        brush_color_[0] = r;
+        brush_color_[1] = g;
+        brush_color_[2] = b;
+    }
+
+    void ImagePanel::getBrushColor(uint8_t *r, uint8_t *g, uint8_t *b) {
+        *r = brush_color_[0];
+        *g = brush_color_[1];
+        *b = brush_color_[2];
     }
 } // namespace dexpert

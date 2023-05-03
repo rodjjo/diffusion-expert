@@ -211,19 +211,23 @@ void Pages::textToImage() {
 
     std::shared_ptr<GeneratorBase> g;
     if (inputImage_->getImg2ImgImage()) {
-        auto img = inputImage_->getImg2ImgImage();
-        auto mask = inputImage_->getImg2ImgMask();
+        auto imgRaw = inputImage_->getImg2ImgImage();
+        auto maskRaw = inputImage_->getImg2ImgMask();
         bool inpaintMasked = inputImage_->shouldInpaintMasked();
 
-        if (!img) {
+        if (!imgRaw) {
             show_error("No input image to proceed!");
             return;
         }
 
-        img = img->duplicate();
+        auto img = imgRaw->duplicate();
 
-        if (mask && inpaintMasked) {
-            mask = mask->removeAlpha();
+        image_ptr_t mask;
+
+        if (maskRaw && inpaintMasked) {
+            mask = maskRaw->removeAlpha();
+        } else {
+            mask = maskRaw->duplicate();
         }
 
         g.reset(new GeneratorImg2Image(

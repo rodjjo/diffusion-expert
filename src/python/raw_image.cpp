@@ -162,7 +162,7 @@ image_ptr_t RawImage::removeAlpha() {
     return r;
 }
 
-void RawImage::drawCircle(int x, int y, int radius, bool clear) {
+void RawImage::drawCircleColor(int x, int y, int radius, uint8_t color[4], uint8_t bgcolor[4], bool clear) {
     if (x < 0) x = 0;
     if (y < 0) y = 0;
     if (x >= w_) x = w_ - 1;
@@ -171,15 +171,23 @@ void RawImage::drawCircle(int x, int y, int radius, bool clear) {
     CImg<unsigned char> img(buffer_, src_channels, w_, h_, 1, true);
     img.permute_axes("yzcx");
     if (clear) {
-        if (format_ == img_rgba)
-            img.draw_circle(x, y, radius, no_color_rgba);
-        else
-            img.draw_circle(x, y, radius, white_color_rgba);
+        img.draw_circle(x, y, radius, bgcolor);
     } else {
-        img.draw_circle(x, y, radius, black_color_rgba);
+        img.draw_circle(x, y, radius, color);
     }
     img.permute_axes("cxyz");
     incVersion();
+}
+
+void RawImage::drawCircle(int x, int y, int radius, bool clear) {
+    if (clear) {
+        if (format_ == img_rgba)
+            drawCircleColor(x, y, radius, black_color_rgba, no_color_rgba, true);
+        else
+            drawCircleColor(x, y, radius, black_color_rgba, white_color_rgba, true);
+    } else {
+        drawCircleColor(x, y, radius, black_color_rgba, white_color_rgba, false);
+    }
 }
 
 void RawImage::fillWithMask(int x, int y, RawImage *mask) {

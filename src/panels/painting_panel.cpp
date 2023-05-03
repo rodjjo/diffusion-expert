@@ -48,14 +48,14 @@ namespace {
     };
 }
 
+
 PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, PaintingPanel *inputPanel, bool only_control_net): 
         Fl_Group(x, y, w, h), 
         prompt_(prompt), 
         inputPanel_(inputPanel),
         only_control_net_(only_control_net) {
     this->begin();
-    image_panel_ = new FramePanel(0, 0, 1, 1);
-    image_panel_->setImageSource(image_src_self);
+    image_panel_ = new ImagePanel(0, 0, 1, 1, [] {});
     left_bar_ = new Fl_Group(0, 0, 1, 1);
     left_bar_->begin();
     label_image_ = new Fl_Box(0, 0, 1, 1, "Image");
@@ -180,20 +180,18 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
         btnInput_->hide();
     }
 
+    image_panel_->setTool(image_tool_brush);
+    image_panel_->setBackgroundColor(255, 255, 255, 255);
+
     alignComponents();
     enableControls();
-    Fl::add_timeout(0.01, PaintingPanel::imageRefresh, this);
     brushSelected();
 }
 
 PaintingPanel::~PaintingPanel() {
-    Fl::remove_timeout(PaintingPanel::imageRefresh, this);
+
 }
 
-void PaintingPanel::imageRefresh(void *cbdata) {
-    ((PaintingPanel*) cbdata)->image_panel_->redrawIfModified();
-    Fl::repeat_timeout(0.10, PaintingPanel::imageRefresh, cbdata); // retrigger timeout
-}
 
 void PaintingPanel::resize(int x, int y, int w, int h) {
     Fl_Group::resize(x, y, w, h);
@@ -314,32 +312,21 @@ void PaintingPanel::enableControls() {
 }
 
 void PaintingPanel::saveImage() {
-    auto img = image_panel_->getImage();
-    if (img) {
-        save_image_with_dialog(img);
-    }
+    image_panel_->save(image_type_image);
 }
 
 void PaintingPanel::saveMask() {
-    image_ptr_t img;
     if (getSelectedMode() == painting_inpaint_masked || 
         getSelectedMode() == painting_inpaint_not_masked) {
-        img = image_panel_->getMask();
+        image_panel_->save(image_type_mask);
     } else {
-        img = image_panel_->getControlImage();
-    }
-    if (img) {
-        save_image_with_dialog(img);
+        image_panel_->save(image_type_controlnet);
     }
 }
 
 void PaintingPanel::openImage() {
-    auto img = open_image_from_dialog();
-    if (img) {
-        image_panel_->setImage(img);
-    }
+    image_panel_->open(image_type_image);
     modeSelected();
-    image_panel_->redraw();
 }
 
 void PaintingPanel::openMask() {
@@ -362,9 +349,9 @@ void PaintingPanel::openMask() {
         if (getSelectedMode() == painting_inpaint_masked ||
             getSelectedMode() == painting_inpaint_not_masked
         ) {
-            image_panel_->setMask(img);
+            image_panel_->setLayerImage(image_type_mask, img);
         } else {
-            image_panel_->setControlImg(img);
+            image_panel_->setLayerImage(image_type_controlnet, img);
         }
     }
     modeSelected();
@@ -384,25 +371,22 @@ void PaintingPanel::modeSelected(Fl_Widget *widget, void *cbdata) {
 }
 
 void PaintingPanel::modeSelected() {
+    image_panel_->setTool(image_tool_brush);
+    image_panel_->setLayerVisible(image_type_image, draw_image_check_->value() == 1);
     switch (getSelectedMode()) {
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
-            image_panel_->setMaskDrawing(true);
-            image_panel_->setImageDrawing(draw_image_check_->value() == 1);
-            image_panel_->editMask();
+            image_panel_->setEditType(edit_type_mask);
         break;
         case painting_pose:
         case painting_canny:
         case painting_scribble:
         case painting_deepth:
-            image_panel_->setMaskDrawing(true);
-            image_panel_->setImageDrawing(draw_image_check_->value() == 1);
-            image_panel_->editControlImage();
+            image_panel_->setEditType(edit_type_controlnet);
         break;
         default:
-            image_panel_->setMaskDrawing(false);
-            image_panel_->setImageDrawing(true);
-            image_panel_->disableEditor();
+            image_panel_->setTool(image_tool_none);
+            image_panel_->setEditType(edit_type_none);
         break;
     }
     enableControls();
@@ -412,22 +396,22 @@ void PaintingPanel::newMask() {
     if (getSelectedMode() == painting_inpaint_masked ||
         getSelectedMode() == painting_inpaint_not_masked
     ) {
-        bool should_continue = image_panel_->getMask() ? false : true;
+        bool should_continue = image_panel_->getLayerImage(image_type_mask) ? false : true;
         should_continue = (should_continue || ask("Do you want to create a new mask ?"));
         if (should_continue) {
-            image_panel_->setMask(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
-            image_panel_->editMask();
+            image_panel_->setLayerImage(image_type_mask, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->setEditType(edit_type_mask);
             image_panel_->redraw();
         }
     } else if (getSelectedMode() == painting_pose ||
         getSelectedMode() == painting_canny ||
         getSelectedMode() == painting_scribble
     ) {
-        bool should_continue = image_panel_->getControlImage() ? false : true;
+        bool should_continue = image_panel_->getLayerImage(image_type_controlnet) ? false : true;
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
         if (should_continue) {
-            image_panel_->setControlImg(dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
-            image_panel_->editControlImage();
+            image_panel_->setLayerImage(image_type_controlnet, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+            image_panel_->setEditType(edit_type_controlnet);
             image_panel_->redraw();
         }
     } else {
@@ -437,7 +421,7 @@ void PaintingPanel::newMask() {
 
 void PaintingPanel::setImage(RawImage *image) {
     if (image) {
-        image_panel_->setImage(image->duplicate());
+        image_panel_->setLayerImage(image_type_image, image->duplicate());
         if (getSelectedMode() == paiting_disabled) {
             mode_->value(painting_img2img);
             modeSelected();
@@ -450,12 +434,12 @@ void PaintingPanel::setImage(RawImage *image) {
 }
 
 RawImage *PaintingPanel::getImage() {
-    return image_panel_->getImage().get();
+    return image_panel_->getLayerImage(image_type_image);
 }
 
 
 bool PaintingPanel::ensureControlPresent() {
-     if (image_panel_->getControlImage()) {
+     if (image_panel_->getLayerImage(image_type_controlnet)) {
         return true;
     }
     show_error("There is no image to proceed");
@@ -463,7 +447,7 @@ bool PaintingPanel::ensureControlPresent() {
 }
 
 bool PaintingPanel::ensureImagePresent() {
-    if (image_panel_->getImage()) {
+    if (image_panel_->getLayerImage(image_type_image)) {
         return true;
     }
     show_error("There is no image to proceed");
@@ -471,7 +455,7 @@ bool PaintingPanel::ensureImagePresent() {
 }
 
 bool PaintingPanel::ensureMaskPresent() {
-    if (image_panel_->getMask()) {
+    if (image_panel_->getLayerImage(image_type_mask)) {
         return true;
     }
     show_error("There is no mask to proceed");
@@ -491,7 +475,7 @@ void PaintingPanel::pre_process(const char* method) {
     dexpert::py::get_py()->execute_callback(
         dexpert::py::pre_process_image(
             method,
-            image_panel_->getImage().get(),
+            image_panel_->getLayerImage(image_type_image),
             [&msg, &success, &img] (bool suc, const char *message, dexpert::py::image_ptr_t image) {
                 msg = message;
                 success = suc;
@@ -515,11 +499,8 @@ void PaintingPanel::pre_process(const char* method) {
             img = img->removeBackground(getSelectedMode() != painting_pose);
         }
 
-        image_panel_->setControlImg(img);
-        image_panel_->editControlImage();
-        image_panel_->setMaskDrawing(true);
-        image_panel_->setImageDrawing(draw_image_check_->value() == 1);
-        image_panel_->redraw();
+        image_panel_->setLayerImage(image_type_controlnet, img);
+        image_panel_->setEditType(edit_type_controlnet);
     }
 }
 
@@ -539,32 +520,32 @@ void PaintingPanel::extractDeepth() {
     pre_process("deepth");
 }
 
-image_ptr_t PaintingPanel::getImg2ImgImage() {
+RawImage* PaintingPanel::getImg2ImgImage() {
     switch (getSelectedMode())
     {
         case painting_img2img:
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
-            return image_panel_->getImage();
+            return image_panel_->getLayerImage(image_type_image);
         break;
     } 
 
-    return image_ptr_t();
+    return NULL;
 }
 
-image_ptr_t PaintingPanel::getImg2ImgMask() {
+RawImage* PaintingPanel::getImg2ImgMask() {
     switch (getSelectedMode())
     {
         case painting_img2img:
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
-            return image_panel_->getMask();
+            return image_panel_->getLayerImage(image_type_mask);
         break;
         
         default:
             break;
     }
-    return image_ptr_t();
+    return NULL;
 }
 
 bool PaintingPanel::ready() {
@@ -596,12 +577,13 @@ std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
 
     if (mode != NULL) {
         if (ensureControlPresent()) {
-            auto img = image_panel_->getControlImage();
+            auto img = image_panel_->getLayerImage(image_type_controlnet);
+            image_ptr_t target;
             if (getSelectedMode() == painting_deepth)
-                img = img->duplicate();
+                target = img->duplicate();
             else
-                img = img->removeAlpha();
-            result.reset(new ControlNet(mode, img));
+                target = img->removeAlpha();
+            result.reset(new ControlNet(mode, target));
         }
     }
      

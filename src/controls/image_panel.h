@@ -25,6 +25,26 @@ typedef enum {
     image_tool_count
 } image_tool_t;
 
+typedef enum {
+    controlnet_scribble,
+    controlnet_canny,
+    controlnet_deepth,
+    controlnet_pose,
+    controlnet_segmentation,
+    // keep controlnet_type_count at the end
+    controlnet_type_count
+} controlnet_type_t;
+
+typedef enum {
+    edit_type_none,         // edit disabled
+    edit_type_image,        // the user can change the main image
+    edit_type_controlnet,   // the user can change the controlnet image
+    edit_type_mask,         // the user can change the mask
+
+    // keep edit_type_count at the end.
+    edit_type_count
+} edit_type_t;
+
 typedef struct {
     int x = 0;
     int y = 0;
@@ -50,8 +70,6 @@ namespace dexpert
         void setLayerVisible(image_type_t layer, bool visible);
         bool getLayerVisible(image_type_t layer);
         void setLayerEditable(image_type_t layer, bool visible);
-        void setActiveLayer(image_type_t layer);
-        image_type_t getActiveLayer();
         void setLayerImage(image_type_t layer, image_ptr_t image);
         RawImage* getLayerImage(image_type_t layer);
         image_ptr_t getSelectedImage(image_type_t layer);
@@ -74,8 +92,14 @@ namespace dexpert
         void resizeBottom(int value);
         void resizeTop(int value);
         void setBrushSize(uint8_t size);
+        void setBrushColor(uint8_t r, uint8_t g, uint8_t b);
+        void getBrushColor(uint8_t *r, uint8_t *g, uint8_t *b);
         uint8_t getBrushSize();
         coordinate_t getReferenceSize();
+        controlnet_type_t getControlnetImageType();
+        void setControlnetImageType(controlnet_type_t value);
+        edit_type_t getEditType();
+        void setEditType(edit_type_t value);
         bool hasReference();
         void clearPasteImage();
         void pasteImage();
@@ -89,6 +113,7 @@ namespace dexpert
         void restoreSelectionFace();
         void cropToSelection();
         void resizeSelection(int w, int h);
+
     protected:
         int handle(int event) override;
         void draw() override;
@@ -122,11 +147,17 @@ namespace dexpert
 
         void convertToImageCoords(int *x, int *y);
         void convertToScreenCoords(int *x, int *y);
+
+        void applyBrush(int mousex, int mousey, bool clear);
         
     private:
         callback_t on_change_;
         image_tool_t tool_ = image_tool_none;
         bool mouse_changed_ = false;
+        bool drawing_changed_ = false;
+        bool drawing_clear_ = false;
+        int draw_x_ = 0;
+        int draw_y_ = 0;
         int scroll_x_ = 0;
         int scroll_y_ = 0;
         int scroll_px_ = 0;
@@ -136,7 +167,9 @@ namespace dexpert
         coordinate_t selection_start_ = {0,};
         coordinate_t selection_end_ = {0,};
         uint8_t background_color_[4] = {0, 0, 0, 255};
-        image_type_t active_layer_ = image_type_count;
+        uint8_t brush_color_[4] = {0, 0, 0, 255};
+        controlnet_type_t controlnet_image_type_ = controlnet_canny;
+        edit_type_t edit_type_ = edit_type_none;
         size_t cache_versions_[image_type_count] = {0,};
         bool valid_caches_[image_type_count] = {0,};
         image_ptr_t caches_[image_type_count];
