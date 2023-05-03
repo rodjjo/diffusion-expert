@@ -125,6 +125,8 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { editSelection(); }, "", "Selection/Use AI Editor");
     menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
     menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Selection/Discart changes");
+    menu_->addItem([this] { image_editor_->cropToSelection(); }, "", "Selection/Crop to Selection");
+    menu_->addItem([this] { resizeSelection(); }, "", "Selection/Edit size");
     menu_->addItem([this] { resizeCanvas();  }, "", "Image/Resize Canvas");
     menu_->addItem([this] { resizePicture(); }, "", "Image/Resize Picture");
     menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize direction/Left");
@@ -199,6 +201,20 @@ void MainWindow::upScale(float scale) {
 
 void MainWindow::restoreSelectionFace() {
     image_editor_->restoreSelectionFace();
+}
+
+void MainWindow::resizeSelection() {
+    int x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    image_editor_->getSelection(&x1, &y1, &x2, &y2);
+    if (x1 == x2 && y1 == y2) {
+        show_error("No selection");
+        return;
+    }
+    int w = x2 - x1;
+    int h = y2 - y1;
+    if (getSizeFromDialog("Resize the selection area", &w, &h)) {
+        image_editor_->resizeSelection(w, h);
+    }
 }
 
 void MainWindow::resizeLeft() {

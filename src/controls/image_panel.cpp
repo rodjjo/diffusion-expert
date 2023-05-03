@@ -950,4 +950,26 @@ namespace dexpert
                 }
         }));
     }
+
+    void ImagePanel::cropToSelection() {
+        auto img = getSelectedImage(image_type_image);
+        if (!img) {
+            show_error("No Selection!");
+            return;
+        }
+        for (int i = 0; i < image_type_count; i++) {
+            if (i != image_type_image) {
+                images_[i].reset();
+            }
+        }
+        images_[image_type_image] = img;
+        selection_end_ = selection_start_;
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeSelection(int w, int h) {
+        selection_end_.x = selection_start_.x + w;
+        selection_end_.y = selection_start_.y + h;
+        scrollAgain();
+    }
 } // namespace dexpert

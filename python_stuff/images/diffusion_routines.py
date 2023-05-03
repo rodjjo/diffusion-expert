@@ -103,11 +103,11 @@ def _run_pipeline(pipeline_type, params):
     elif pipeline_type == 'img2img':
         additional_args = {
             'image': pil_from_dict(input_image),
-            'width': width, 
-            'height': height,
             'strength': params['strength'],
         }
         if len(controlnets):
+            additional_args['width'] = width
+            additional_args['height'] = height
             images = []
             conds = []
             for c in controlnets:
