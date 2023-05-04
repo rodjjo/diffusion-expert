@@ -13,6 +13,7 @@
 #include <FL/Fl_Float_Input.H>
 
 #include "src/controls/button.h"
+#include "src/controls/image_panel.h"
 #include "src/panels/frame_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/python/raw_image.h"
@@ -57,9 +58,9 @@ class PaintingPanel: public Fl_Group {
     RawImage *getImage();
 
     std::shared_ptr<ControlNet> getControlnet();
-    image_ptr_t getImg2ImgImage();
-    image_ptr_t getImg2ImgMask();
-    image_ptr_t getImg2ImgControl();
+    RawImage* getImg2ImgImage();
+    RawImage* getImg2ImgMask();
+    RawImage* getImg2ImgControl();
     float get_denoise_strength();
     bool shouldInpaintMasked();
     bool ready();
@@ -70,7 +71,6 @@ class PaintingPanel: public Fl_Group {
    void modeSelected();
    static void brushSelected(Fl_Widget *widget, void *cbdata);
    void brushSelected();
-   static void imageRefresh(void *cbdata);
 
  private:
     void alignComponents();
@@ -102,7 +102,7 @@ class PaintingPanel: public Fl_Group {
     Fl_Box* label_mask_;
     Fl_Box* label_control_;
     Fl_Check_Button *draw_image_check_;
-    FramePanel *image_panel_;
+    ImagePanel *image_panel_;
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;
     std::unique_ptr<Button> btnInput_;

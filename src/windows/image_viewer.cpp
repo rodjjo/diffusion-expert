@@ -13,7 +13,7 @@ ImageViewer::ImageViewer(image_ptr_t image) {
     window_ = new ModalWindow(0, 0, 1024, 860, "Preview the image");
     window_->enableExitShortcuts();
     window_->begin();
-    panel_ = new FramePanel(image_, 0, 0, 1024, 800);
+    panel_ = new ImagePanel(0, 0, 1024, 800, [] {});
     
     btnClose_.reset(new Button(xpm::image(xpm::button_cancel_16x16), [this] {
         window_->hide();
@@ -34,6 +34,7 @@ ImageViewer::ImageViewer(image_ptr_t image) {
     window_->end();
 
     window_->position(Fl::w() / 2 - window_->w() / 2, Fl::h() / 2 - window_->h() / 2);
+    panel_->setLayerImage(image_type_image, image);
 }
 
 ImageViewer::~ImageViewer() {

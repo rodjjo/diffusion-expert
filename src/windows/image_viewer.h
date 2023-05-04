@@ -8,10 +8,12 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Group.H>
 
+#include "src/controls/image_panel.h"
 #include "src/controls/button.h"
 #include "src/windows/modal_window.h"
 #include "src/panels/frame_panel.h"
 #include "src/python/raw_image.h"
+
 
 namespace dexpert
 {
@@ -26,7 +28,7 @@ class ImageViewer {
  private:
     image_ptr_t image_;
     ModalWindow *window_ = NULL;
-    FramePanel *panel_ = NULL;
+    ImagePanel *panel_ = NULL;
     std::unique_ptr<Button> btnSave_;
     std::unique_ptr<Button> btnClose_;
 };
