@@ -174,6 +174,10 @@ RawImage *Pages::getInputImage() {
     return inputImage_->getImage();
 }
 
+void Pages::refreshModels() {
+    promptPanel_->refreshModels();
+}
+
 void Pages::textToImage() {
     if (!promptPanel_->ready(false)) {
         return;
@@ -224,10 +228,12 @@ void Pages::textToImage() {
 
         image_ptr_t mask;
 
-        if (maskRaw && inpaintMasked) {
-            mask = maskRaw->removeAlpha();
-        } else {
-            mask = maskRaw->duplicate();
+        if (maskRaw) {
+            if (inpaintMasked) {
+                mask = maskRaw->removeAlpha();
+            } else {
+                mask = maskRaw->duplicate();
+            }
         }
 
         g.reset(new GeneratorImg2Image(
@@ -246,7 +252,8 @@ void Pages::textToImage() {
             inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
             promptPanel_->shouldUseCodeformer(),
-            getConfig().inpaint_get_mask_blur()
+            inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
+            inputImage_->getInpaintMode()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(

@@ -109,10 +109,12 @@ namespace dexpert
         void getMouseXY(int *x, int *y);
         void newImage(int w, int h);
         void noSelection();
+        void selectAll();
         void upScale(float scale);
         void restoreSelectionFace();
         void cropToSelection();
         void resizeSelection(int w, int h);
+        void close();
 
     protected:
         int handle(int event) override;

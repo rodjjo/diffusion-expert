@@ -338,7 +338,16 @@ image_ptr_t RawImage::blur(int size) {
     image_ptr_t result = this->duplicate();
     CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
     self.permute_axes("yzcx");
-    self.blur(4.0, 4.0, 0.0, 1, true);
+    self.blur(size, size, 0.0, 1, true);
+    self.permute_axes("cxyz");
+    return result;
+}
+
+image_ptr_t RawImage::erode(int size) {
+    image_ptr_t result = this->duplicate();
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    self.permute_axes("yzcx");
+    self.erode(size);
     self.permute_axes("cxyz");
     return result;
 }

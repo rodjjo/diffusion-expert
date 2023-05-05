@@ -40,7 +40,7 @@ class MainWindow : Fl_Menu_Window {
   void editConfig();
   void toolClicked(Button* btn);
   void updateScrollbar();
-  void newImage();
+  void newImage(bool fromStableDiffusion);
   void openImage();
   void saveImage();
   void editSelection();

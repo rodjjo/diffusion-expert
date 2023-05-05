@@ -38,10 +38,10 @@ class PromptPanel: public Fl_Group {
     bool shouldUseCodeformer();
     bool ready(bool require_prompt);
     void setImageSize(int w, int h);
-
+    void refreshModels();
+ 
  private:
     void alignComponents();
-    void refreshModels();
     
  protected:
     void resize(int x, int y, int w, int h) override;

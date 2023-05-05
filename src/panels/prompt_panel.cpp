@@ -7,6 +7,11 @@
 namespace dexpert
 {
 
+namespace {
+    std::string last_prompt;
+    std::string last_negative_prompt;
+}
+
 PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : Fl_Group(x, y, w, h), on_generate_(on_generate) {
     this->begin();
     positivePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Prompt");
@@ -38,8 +43,8 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : F
     models_->align(FL_ALIGN_TOP_LEFT);
     var_strength_->align(FL_ALIGN_TOP_LEFT);
 
-    positivePrompt_->value("an astronaut riding a horse at the moon");
-    negativePrompt_->value("drawing,cartoon,3d,render,rendering");
+    positivePrompt_->value(last_prompt.c_str());
+    negativePrompt_->value(last_negative_prompt.c_str());
     generateBtn_->tooltip("Generate a new image.");
 
     seed_->value("-1");
@@ -58,10 +63,12 @@ PromptPanel::~PromptPanel() {
 }
 
 const char *PromptPanel::getPrompt() {
+    last_prompt = positivePrompt_->value();
     return positivePrompt_->value();
 }
 
 const char *PromptPanel::getNegativePrompt() {
+    last_negative_prompt = negativePrompt_->value();
     return negativePrompt_->value();
 }
 
@@ -223,7 +230,7 @@ void PromptPanel::refreshModels() {
         return;
     }
     
-    const char *modelName = "";
+    std::string modelName = "";
     if (models_->value() >= 0) {
         modelName = models_->text(models_->value());
     } else {

@@ -61,12 +61,22 @@ class img2img_config_t: public txt2img_config_t {
     const void fill_prompt_dict(py11::dict &params) const override;
 };
 
+class model_urls_t {
+ public:
+    std::string url;
+    std::string displayName;
+    std::string description;
+    std::string filename;
+};
 
+typedef std::list<model_urls_t> model_url_list_t;
 
 typedef std::function<void()> callback_t;
 typedef std::function<void(bool success, const char *message)> status_callback_t;
 typedef std::function<void(bool success, const char *message, std::shared_ptr<RawImage> image)> image_callback_t;
 typedef std::function<void(bool success, const char *message, const model_list_t &models)> model_callback_t;
+typedef std::function<void(bool success, const char *message, const model_url_list_t &models)> model_url_callback_t;
+
 
 callback_t check_have_deps(status_callback_t status_cb);
 callback_t install_deps(status_callback_t status_cb);
@@ -80,6 +90,8 @@ callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb
 callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 
 
 callback_t list_models(const std::wstring& path, model_callback_t status_cb);
+callback_t model_urls(model_url_callback_t status_cb);
+callback_t download_model(const char *url, const char *filename, status_callback_t status_cb);
 
 }  // namespace py
 }  // namespace

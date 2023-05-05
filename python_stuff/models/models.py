@@ -1,5 +1,7 @@
 import gc
 import os
+import urllib
+import shutil
 from contextlib import contextmanager
 from diffusers import (
         StableDiffusionPipeline, 
@@ -10,11 +12,15 @@ from diffusers import (
     )
 
 import torch
-from models.paths import CACHE_DIR
+from models.paths import CACHE_DIR, MODELS_DIR
 from utils.settings import get_setting
 from models.loader import load_stable_diffusion_model
 from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
 from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
+
+from exceptions.exceptions import CancelException
+
+from dexpert import progress, progress_canceled, progress_title
 
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
@@ -39,6 +45,7 @@ usefp16 = {
     True: torch.float16,
     False: torch.float32
 }
+
 
 def create_pipeline(mode: str, model_path: str, controlnets = None):
     global CURRENT_PIPELINE
@@ -158,3 +165,37 @@ def current_model_is_in_painting():
     return CURRENT_MODEL_PARAMS.get('in_painting', False) is True
 
 
+def show_progress(block_num, block_size, total_size):
+    progress(block_num * block_size, total_size, {})
+    if progress_canceled():
+        raise CancelException()
+
+
+def report(message):
+    progress_title(f'[Model downloader] - {message}')
+
+
+def download_sd_model(url, filename):
+    progress(0, 100, {})
+    model_path = os.path.join(MODELS_DIR, filename)
+    if os.path.exists(model_path):
+        report(f'skipping {filename} model download. File exists')
+        return
+    report(f'URL: {url}')
+    report(f'downloading the model {filename} Please wait...')
+    try:
+        urllib.request.urlretrieve(url, f'{model_path}.tmp', show_progress)
+    except CancelException:
+        return
+    shutil.move(f'{model_path}.tmp', model_path)
+    progress(0, 100, {})
+
+
+def get_sd_model_urls():
+    return [{
+        'display_name': 'stable diffusion 1.5',
+        'description': 'The original stable diffusion model',
+        'format': 'fp32',
+        'filename': 'v1-5-pruned.safetensors',
+        'url': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors'
+    }]
