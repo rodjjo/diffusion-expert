@@ -18,8 +18,8 @@ namespace {
     std::mutex mtx_progress;
     image_ptr_t image;
 
-    int current_progress = 0;
-    int max_progress = 100;
+    float current_progress = 0;
+    float max_progress = 100;
 }
 
 ProgressWindow::ProgressWindow(bool preview_images) {
@@ -93,10 +93,13 @@ void set_progress_title(const char *title) {
         progress_label = title;
 }
 
-void set_progress(int progress, int max, image_ptr_t preview) {
+void set_progress(size_t progress, size_t max, image_ptr_t preview) {
     std::unique_lock<std::mutex> lk(mtx_progress);
-    current_progress = progress;
-    max_progress = max;
+    if (max < 1) {
+        max = 100;
+    }
+    max_progress = 100.0;
+    current_progress = (100.0 / max) * progress;
     if (preview) {
         image = preview;
     }

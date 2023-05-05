@@ -45,6 +45,7 @@ class Pages: public Fl_Group {
     void loadConfig();
     void setInputImage(RawImage *img);
     RawImage *getInputImage();
+    void refreshModels();
     
  protected:
     void resize(int x, int y, int w, int h) override;

@@ -54,6 +54,7 @@ class RawImage {
     image_ptr_t resizeTop(int value);
     image_ptr_t resizeBottom(int value);
     image_ptr_t blur(int size);
+    image_ptr_t erode(int size);
 
     void drawCircleColor(int x, int y, int radius, uint8_t color[4], uint8_t bgcolor[4], bool clear);
     void drawCircle(int x, int y, int radius, bool clear);

@@ -40,7 +40,7 @@ class ProgressWindow {
 };
 
 void set_progress_title(const char *title);
-void set_progress(int progress, int max, image_ptr_t preview);
+void set_progress(size_t progress, size_t max, image_ptr_t preview);
 bool should_cancel_progress();
 void enable_progress_window(bool preview_images=true);
 void show_progress_window();

@@ -13,6 +13,15 @@
 namespace dexpert
 {
 
+
+typedef enum {
+    inpaint_original,
+    inpaint_latent_other,
+    // keep inpaint_mode_count at the end
+    inpaint_mode_count
+} inpaint_mode_t;
+
+
 typedef std::function<void(bool success, const char* msg, image_ptr_t result)> generator_cb_t;
 
 class GeneratorBase {

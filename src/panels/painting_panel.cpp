@@ -46,6 +46,11 @@ namespace {
     const uint8_t brushes_sizes[brush_size_count] = {
         0, 1, 2, 4, 8, 16, 32
     };
+
+    const char *inpaint_modes[inpaint_mode_count] = {
+            "Original image",
+            "Other image"
+    };
 }
 
 
@@ -63,6 +68,9 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     label_control_ = new Fl_Box(0, 0, 1, 1, "Transformations");
     mode_ = new Fl_Choice(0, 0, 1, 1, "Mode");
     brushes_ = new Fl_Choice(0, 0, 1, 1, "Brush size");
+    blur_mask_ = new Fl_Check_Button(0, 0, 1, 1, "Blur mask");
+    inpaintMode_ = new Fl_Choice(0, 0, 1, 1, "Inpaint mode");
+
     denoise_ = new Fl_Float_Input(0, 0, 1, 1, "Similarity");
     btnOpen_.reset(new Button(xpm::image(xpm::directory_16x16), [this] {
        openImage(); 
@@ -121,7 +129,6 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     btnInput_->tooltip("Use the input image");
     btnInput_->position(1, 1);
     btnInput_->size(48, 30);
-    
 
     btnNewMask_->tooltip("New mask");
     btnNewMask_->position(1, 1);
@@ -164,13 +171,21 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     for (int i = 0; i < brush_size_count; ++i) {
         brushes_->add(brush_captions[i]);
     }
+
+    for (int i = 0; i < inpaint_mode_count-1; ++i) { // TODO: add suport to inpaint_latent_other and remove -1
+        inpaintMode_->add(inpaint_modes[i]);
+    }
     
+    inpaintMode_->align(FL_ALIGN_TOP);
+
     draw_image_check_->value(1);
+    inpaintMode_->value(0);
 
     mode_->value(paiting_disabled);
     mode_->align(FL_ALIGN_TOP);
     mode_->callback(modeSelected, this);
     draw_image_check_->callback(modeSelected, this);
+    inpaintMode_->callback(modeSelected, this);
 
     brushes_->align(FL_ALIGN_TOP);
     brushes_->value(5);
@@ -179,9 +194,14 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     if (!inputPanel_) {
         btnInput_->hide();
     }
+    
+    blur_mask_->hide();
+    inpaintMode_->hide();
 
     image_panel_->setTool(image_tool_brush);
     image_panel_->setBackgroundColor(255, 255, 255, 255);
+
+    blur_mask_->value(1);
 
     alignComponents();
     enableControls();
@@ -201,7 +221,6 @@ void PaintingPanel::resize(int x, int y, int w, int h) {
 void PaintingPanel::useInputImage() {
     if (inputPanel_) {
         setImage(inputPanel_->getImage());
-
     }
 }
 
@@ -244,6 +263,8 @@ void PaintingPanel::alignComponents() {
     btnDeepth_->position(btnPose_->x() + btnPose_->w() + 2, btnPose_->y());
 
     draw_image_check_->resize(left_bar_->x(), btnDeepth_->y() + btnDeepth_->h() + 3, left_bar_->w() - 2, 20);
+    blur_mask_->resize(left_bar_->x(), draw_image_check_->y() + draw_image_check_->h() + 3, left_bar_->w() - 2, 20);
+    inpaintMode_->resize(left_bar_->x(), blur_mask_->y() + blur_mask_->h() + 23, left_bar_->w() - 2, 20);
 }
 
 void PaintingPanel::enableControls() {
@@ -373,16 +394,33 @@ void PaintingPanel::modeSelected(Fl_Widget *widget, void *cbdata) {
 void PaintingPanel::modeSelected() {
     image_panel_->setTool(image_tool_brush);
     image_panel_->setLayerVisible(image_type_image, draw_image_check_->value() == 1);
+    image_panel_->setLayerVisible(image_type_mask, false);
+    image_panel_->setLayerVisible(image_type_controlnet, false);
+    image_panel_->setLayerVisible(image_type_paste, false);
+    blur_mask_->hide();
+    inpaintMode_->hide();
     switch (getSelectedMode()) {
         case painting_inpaint_masked:
-        case painting_inpaint_not_masked:
+        case painting_inpaint_not_masked: {
             image_panel_->setEditType(edit_type_mask);
+            blur_mask_->show();
+            inpaintMode_->show();
+            image_panel_->setLayerVisible(image_type_mask, true);
+            if (!image_panel_->getLayerImage(image_type_mask)) {
+                newMask();
+            }
+        }
         break;
         case painting_pose:
         case painting_canny:
         case painting_scribble:
-        case painting_deepth:
+        case painting_deepth: {
             image_panel_->setEditType(edit_type_controlnet);
+            image_panel_->setLayerVisible(image_type_controlnet, true);
+            if (!image_panel_->getLayerImage(image_type_controlnet) && getSelectedMode() != painting_deepth) {
+                newMask();
+            }
+        }
         break;
         default:
             image_panel_->setTool(image_tool_none);
@@ -601,6 +639,14 @@ float PaintingPanel::get_denoise_strength() {
     sprintf(buffer, "%0.1f", value);
     denoise_->value(buffer);
     return (100.0 - value) / 100.0; 
+}
+
+bool PaintingPanel::maskBlurEnabled() {
+    return blur_mask_->value() == 1;
+}
+
+inpaint_mode_t PaintingPanel::getInpaintMode() {
+    return (inpaint_mode_t)inpaintMode_->value();
 }
     
 } // namespace dexpert

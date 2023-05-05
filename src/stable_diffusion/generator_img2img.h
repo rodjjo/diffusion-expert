@@ -34,7 +34,8 @@ class GeneratorImg2Image: public GeneratorBase {
             float image_strength,
             bool restore_faces,
             bool enable_codeformer,
-            float mask_blur_size
+            float mask_blur_size,
+            inpaint_mode_t inpaint_mode
         );
 
         void generate(
@@ -62,6 +63,7 @@ class GeneratorImg2Image: public GeneratorBase {
         float var_strength_ = 0.1;
         float image_strength_ = 0.8;
         float mask_blur_size_ = 4.0;
+        inpaint_mode_t inpaint_mode_;
         bool restore_faces_ = false;
         bool enable_codeformer_ = false;
 };

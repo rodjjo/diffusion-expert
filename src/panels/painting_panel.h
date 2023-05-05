@@ -17,6 +17,7 @@
 #include "src/panels/frame_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/python/raw_image.h"
+#include "src/stable_diffusion/generator.h"
 #include "src/stable_diffusion/controlnet.h"
 
 namespace dexpert {
@@ -65,6 +66,8 @@ class PaintingPanel: public Fl_Group {
     bool shouldInpaintMasked();
     bool ready();
     painting_mode_t getSelectedMode();
+    bool maskBlurEnabled();
+    inpaint_mode_t getInpaintMode();
 
  private:
    static void modeSelected(Fl_Widget *widget, void *cbdata);
@@ -102,6 +105,8 @@ class PaintingPanel: public Fl_Group {
     Fl_Box* label_mask_;
     Fl_Box* label_control_;
     Fl_Check_Button *draw_image_check_;
+    Fl_Check_Button *blur_mask_;
+    Fl_Choice *inpaintMode_;
     ImagePanel *image_panel_;
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;

@@ -25,7 +25,7 @@ namespace
     py11::module_ *main_module = NULL;
 
 PYBIND11_EMBEDDED_MODULE(dexpert, m) {
-    m.def("progress", [](int p, int m, py11::dict image) {
+    m.def("progress", [](size_t p, size_t m, py11::dict image) {
         image_ptr_t img;
         if (image.contains("data")) {
             img = dexpert::py::rawImageFromPyDict(image);

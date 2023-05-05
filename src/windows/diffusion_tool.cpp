@@ -167,6 +167,7 @@ void DiffusionTool::gotoSelectedPage() {
 }
 
 image_ptr_t DiffusionTool::run() {
+    this->pages_->refreshModels();
     this->show();
     while (this->shown()) {
         Fl::wait(0.001);

@@ -3,6 +3,7 @@
 #include "src/windows/diffusion_tool.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/dialogs/size_dialog.h"
+#include "src/dialogs/model_downloader.h"
 #include "src/python/helpers.h"
 #include "src/config/config.h"
 #include "src/data/xpm.h"
@@ -117,10 +118,13 @@ void MainWindow::initMenu() {
     menuPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem([this] { newImage(); }, "", "File/New");
+    menu_->addItem([this] { newImage(false); }, "", "File/New");
+    menu_->addItem([this] { newImage(true); }, "", "File/New art");
     menu_->addItem([this] { openImage(); }, "", "File/Open");
     menu_->addItem([this] { saveImage(); }, "", "File/Save");
+    menu_->addItem([this] { image_editor_->close(); }, "", "File/Close");
     menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit");
+    menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
     menu_->addItem([this] { editSelection(); }, "", "Selection/Use AI Editor");
     menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
@@ -133,7 +137,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { resizeRight(); }, "", "Image/Resize direction/Right");
     menu_->addItem([this] { resizeTop(); }, "", "Image/Resize direction/Top");
     menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize direction/Bottom");
-    menu_->addItem([this] { restoreSelectionFace(); }, "", "Image/Restore selected face");
+    menu_->addItem([this] { restoreSelectionFace(); }, "", "Image/Restore Face");
     menu_->addItem([this] { upScale(1.5); }, "", "Image/Upscale/1.5x");
     menu_->addItem([this] { upScale(2.0); }, "", "Image/Upscale/2x");
     menu_->addItem([this] { upScale(2.5); }, "", "Image/Upscale/2.5x");
@@ -142,6 +146,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
 
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
+    menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
     
     //  menu_->addItem(noCall, "", "Help");
@@ -180,10 +185,18 @@ void MainWindow::editConfig() {
     show_configuration(); 
 }
 
-void MainWindow::newImage() {
-    int szx = 512, szy = 512;
-    if (getSizeFromDialog("Size of the new image", &szx, &szy)) {
-        image_editor_->newImage(szx, szy);
+void MainWindow::newImage(bool fromStableDiffusion) {
+    if (fromStableDiffusion) {
+        auto img = get_stable_diffusion_image();
+        if (img) {
+            image_editor_->close();
+            image_editor_->setLayerImage(image_type_image, img);
+        }
+    } else {
+        int szx = 512, szy = 512;
+        if (getSizeFromDialog("Size of the new image", &szx, &szy)) {
+            image_editor_->newImage(szx, szy);
+        }
     }
 }
 

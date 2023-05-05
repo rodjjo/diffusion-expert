@@ -58,11 +58,6 @@ namespace dexpert
     }
 
     void ImagePanel::imageRefresh() {
-        if (drawing_changed_) {
-            drawing_changed_ = false;
-            applyBrush(draw_x_, draw_y_, drawing_clear_);
-        }
-
         if (should_redraw_) {
             should_redraw_ = false;
             mouse_changed_ = false;
@@ -75,6 +70,10 @@ namespace dexpert
             if (on_change_) {
                 on_change_();
             }
+        }
+        if (drawing_changed_) {
+            drawing_changed_ = false;
+            applyBrush(draw_x_, draw_y_, drawing_clear_);
         }
     }
 
@@ -232,7 +231,11 @@ namespace dexpert
             return;
         }
 
-        img->drawCircleColor(mousex, mousey, brush_size_, color, bgcolor, clear);
+        if (Fl::event_shift() != 0 && images_[image_type_image].get() != NULL && edit_type_ == edit_type_mask) {
+            img->fillWithMask(mousex, mousey, images_[image_type_image].get());
+        } else {
+            img->drawCircleColor(mousex, mousey, brush_size_, color, bgcolor, clear);
+        }
         should_redraw_ = true;
     }
 
@@ -943,6 +946,21 @@ namespace dexpert
             return;
         }
         selection_start_ = selection_end_;
+        scrollAgain();
+    }
+
+    void ImagePanel::selectAll() {
+         if (images_[image_type_paste]) {
+            return;
+        }
+        auto r = get_reference_image();
+        if (r) {
+            selection_start_.x = 0;
+            selection_start_.y = 0;
+            selection_end_.x = r->w();
+            selection_end_.y = r->h();
+            scrollAgain();
+        }
     }
 
     void ImagePanel::newImage(int w, int h) {
@@ -1047,5 +1065,12 @@ namespace dexpert
         *r = brush_color_[0];
         *g = brush_color_[1];
         *b = brush_color_[2];
+    }
+
+    void ImagePanel::close() {
+        for (int i = 0; i < image_type_count; i++) {
+            images_[i].reset();
+        }
+        should_redraw_ = true;
     }
 } // namespace dexpert

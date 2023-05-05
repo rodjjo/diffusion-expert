@@ -25,13 +25,16 @@ BASE_DIR = os.path.join(UPSCALERS_DIR, 'gfpgan', 'weights')
 MODEL_FILE_NAME = 'GFPGANv1.4.pth'
 MODEL_PATH = os.path.join(BASE_DIR, MODEL_FILE_NAME)
 
+
 def report(message):
     progress_title(f'[GFPGAN Upscaler] - {message}')
+
 
 def show_progress(block_num, block_size, total_size):
     progress(block_num * block_size, total_size, {})
     if progress_canceled():
         raise CancelException()
+
 
 def gfpgan_dwonload_model():
     os.makedirs(BASE_DIR, exist_ok=True)
@@ -54,6 +57,7 @@ def gfpgan_dwonload_model():
         shutil.move(f'{model_path}.tmp', model_path)
         progress(0, 100, {})
 
+
 @contextmanager
 def enter_gfgan_model_dir():
     # gfpgan only downloads the models at the working directory
@@ -64,8 +68,10 @@ def enter_gfgan_model_dir():
     finally:
         os.chdir(current_dir)
 
+
 def param_or_setting(key, default, args):
     return  args.get(key, get_setting(key, default))
+
 
 def _gfpgan_upscale(image, scale, restore_bg, args):
     gfpgan_dwonload_model()

@@ -1,6 +1,5 @@
 #include <list>
 #include <Python.h>
-#include "src/python/error_handler.h"
 
 #include "src/config/config.h"
 #include "src/python/helpers.h"
@@ -230,6 +229,45 @@ namespace dexpert
                     status_cb(false, getError(e), model_list_t()); // TODO: check error!
                 }
 
+            };
+        }
+
+        callback_t model_urls(model_url_callback_t status_cb) {
+            return [status_cb]
+            {
+                try {
+                    model_url_list_t models;
+                    auto r = dexpert::py::getModule().attr("get_sd_model_urls")();
+                    auto seq = r.cast<py11::sequence>();
+                    for (size_t i = 0; i < seq.size(); ++i)
+                    {
+                        auto it = seq[i].cast<py11::dict>();
+                        model_urls_t model;
+                        model.url = it["url"].cast<std::string>();
+                        model.displayName = it["display_name"].cast<std::string>();
+                        model.description = it["description"].cast<std::string>();
+                        model.filename = it["filename"].cast<std::string>();
+                        models.push_back(model);
+                    }
+                    status_cb(true, NULL, models); // TODO: check error!
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e), model_url_list_t()); // TODO: check error!
+                }
+            };
+        }
+
+        callback_t download_model(const char *url, const char *filename, status_callback_t status_cb)
+        {
+            enable_progress_window(false);
+            return [status_cb, url, filename]()
+            {
+                try {
+                    dexpert::py::getModule().attr("download_sd_model")(url, filename);
+                    status_cb(true, NULL); // TODO: check error!
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e)); // TODO: check error!
+                }
             };
         }
 
