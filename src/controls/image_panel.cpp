@@ -671,6 +671,10 @@ namespace dexpert
     }
 
     void ImagePanel::resizeLeft(int value) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
         for (int i = 0; i < image_type_count; i++) {
             if (images_[i]) {
                 images_[i] = images_[i]->resizeLeft(value);
@@ -688,6 +692,10 @@ namespace dexpert
     }
 
     void ImagePanel::resizeRight(int value) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
         for (int i = 0; i < image_type_count; i++) {
             if (images_[i]) {
                 images_[i] = images_[i]->resizeRight(value);
@@ -705,6 +713,10 @@ namespace dexpert
     }
 
     void ImagePanel::resizeBottom(int value) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
         for (int i = 0; i < image_type_count; i++) {
             if (images_[i]) {
                 images_[i] = images_[i]->resizeBottom(value);
@@ -722,6 +734,10 @@ namespace dexpert
     }
 
     void ImagePanel::resizeTop(int value) {
+        if (images_[image_type_paste]) {
+            show_error("Can not resize with floating image");
+            return;  // wait the user to decide what he's going to do with the floating image
+        }
         for (int i = 0; i < image_type_count; i++) {
             if (images_[i]) {
                 images_[i] = images_[i]->resizeTop(value);

@@ -22,14 +22,15 @@ from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaint
 
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
-CURRENT_VAR_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
 def load_model(model_path: str):
     global CURRENT_MODEL_PARAMS
+    global CURRENT_PIPELINE
     if CURRENT_MODEL_PARAMS.get('path', '') != model_path:
         CURRENT_MODEL_PARAMS = {}
+        CURRENT_PIPELINE = {}
         gc.collect()
         params, in_painting = load_stable_diffusion_model(model_path)
         CURRENT_MODEL_PARAMS = {
@@ -47,7 +48,6 @@ usefp16 = {
 
 def create_pipeline(mode: str, model_path: str, controlnets = None):
     global CURRENT_PIPELINE
-    global CURRENT_VAR_PIPELINE
     load_model(model_path)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
@@ -105,7 +105,6 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
             'pipeline': pipe,
             'contronet': controlnet_modes
         }
-    CURRENT_VAR_PIPELINE = {}
     gc.collect()
     return CURRENT_PIPELINE['pipeline']
 
