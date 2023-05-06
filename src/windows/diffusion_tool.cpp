@@ -3,6 +3,7 @@
 #include "src/python/helpers.h"
 #include "src/config/config.h"
 #include "src/stable_diffusion/state.h"
+#include "src/dialogs/common_dialogs.h"
 
 #include "src/windows/diffusion_tool.h"
 
@@ -72,8 +73,12 @@ void DiffusionTool::initToolbar() {
        this->hide();
     }));
     confirmBtn_.reset(new Button(xpm::image(xpm::button_ok_16x16), [this] {
-       confirmed_ = true;
-       this->hide();
+         if (pages_->getInputImage()) {
+            confirmed_ = true;
+            this->hide();
+        } else {
+            show_error("Generate an image and select it first!");
+        }
     }));
     consoleBtn_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
        showConsoles("Console windows", true);
@@ -177,7 +182,7 @@ image_ptr_t DiffusionTool::run() {
     while (this->shown()) {
         Fl::wait(0.001);
     }
-    RawImage *img = pages_->getInputImage();
+    RawImage *img = confirmed_ ? pages_->getInputImage() : NULL;
     if (img) {
         return img->duplicate();
     }
@@ -186,10 +191,8 @@ image_ptr_t DiffusionTool::run() {
 
 void DiffusionTool::setInitialImage(RawImage *image) {
     if (!image) {
-        confirmBtn_->hide();
         return;
     }
-    confirmBtn_->show();
     pages_->setInputImage(image);
     page_browser_->value(pages_->getIndexAtPage(pages_->activePage()));
     gotoSelectedPage();

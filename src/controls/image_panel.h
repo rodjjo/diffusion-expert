@@ -20,6 +20,7 @@ typedef enum {
     image_tool_drag,
     image_tool_select,
     image_tool_brush,
+    // image_tool_smudge,
     // keep image_tool_count at the end
     image_tool_count
 } image_tool_t;
@@ -40,7 +41,6 @@ typedef enum {
     edit_type_paste,
     edit_type_controlnet,   // the user can change the controlnet image
     edit_type_mask,         // the user can change the mask
-
     // keep edit_type_count at the end.
     edit_type_count
 } edit_type_t;
