@@ -2,7 +2,6 @@
 #include <Windows.h>
 
 
-
 const std::wstring& executableDir() {
     static std::wstring executableDir_;
     if (executableDir_.empty()) {

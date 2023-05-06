@@ -19,6 +19,8 @@
 namespace dexpert
 {
 
+class PaintingPanel;
+
 typedef std::function<void()>  callback_t;
 
 class PromptPanel: public Fl_Group {
@@ -27,7 +29,7 @@ class PromptPanel: public Fl_Group {
     virtual ~PromptPanel();
     const char *getPrompt();
     const char *getNegativePrompt();
-    const char *getSdModel();
+    const char *getSdModel(bool for_inpainting);
     int getSeed();
     int getSteps();
     int getWidth();
@@ -39,14 +41,17 @@ class PromptPanel: public Fl_Group {
     bool ready(bool require_prompt);
     void setImageSize(int w, int h);
     void refreshModels();
+    void setImagePanel(PaintingPanel *panel);
  
  private:
     void alignComponents();
+    void interrogate(const char* model);
     
  protected:
     void resize(int x, int y, int w, int h) override;
 
  private:
+   PaintingPanel* image_panel_ = NULL;
    callback_t on_generate_;
    Fl_Multiline_Input *positivePrompt_;
    Fl_Multiline_Input *negativePrompt_;
@@ -57,9 +62,12 @@ class PromptPanel: public Fl_Group {
    Fl_Int_Input *width_;
    Fl_Int_Input *height_;
    Fl_Choice *models_;
+   Fl_Choice *modelsInpaint_;
    Fl_Check_Button *restore_face_;
    Fl_Check_Button *codeformer_;
    std::unique_ptr<Button> generateBtn_;
+   std::unique_ptr<Button> interrogateBtn1_;
+   std::unique_ptr<Button> interrogateBtn2_;
 };
 
 

@@ -60,11 +60,6 @@ bool StableDiffusionState::reloadSdModelList() {
 
     if (!success) {
         last_error_ = msg;
-    } else if (currentSdModel_.empty() && !sdModels_.empty()) {
-        setSdModel(getConfig().getLatestSdModel());
-        if (currentSdModel_.empty()) {
-            setSdModel(sdModels_.begin()->name);
-        }
     }
 
     return success;
@@ -72,17 +67,6 @@ bool StableDiffusionState::reloadSdModelList() {
 
 const std::list<model_info_t> &StableDiffusionState::getSdModels() const {
     return sdModels_;
-}
-
-void StableDiffusionState::setSdModel(const std::string& name) {
-    for (auto it = sdModels_.cbegin(); it != sdModels_.cend(); it++) {
-        if (name == it->name) {
-            currentSdModel_ = it->path;
-            getConfig().setLastSdModel(name);
-            getConfig().save();
-            break;
-        }
-    }
 }
 
 std::string StableDiffusionState::getSdModelPath(const std::string& name) {

@@ -49,6 +49,7 @@ namespace {
 
     const char *inpaint_modes[inpaint_mode_count] = {
             "Original image",
+            "Fill image",
             "Other image"
     };
 }
@@ -112,6 +113,16 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
         extractDeepth();
     }));
 
+    btnFgColor_.reset(new Button([this] {
+        uint8_t r = 0, g = 0, b = 0;
+        btnFgColor_->getColor(&r, &g, &b);
+        if (pickup_color("Foreground color", &r, &g, &b)) {
+            btnFgColor_->setColor(r, g, b);
+            modeSelected();
+        }
+    }));
+
+
     draw_image_check_ = new Fl_Check_Button(0, 0, 1, 1, "Show reference img");
 
     left_bar_->end();
@@ -158,9 +169,14 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     btnDeepth_->position(1, 1);
     btnDeepth_->size(35, 30);
 
+    btnFgColor_->tooltip("Set the brush color");
+    btnFgColor_->position(1, 1);
+    btnFgColor_->size(30, 30);
+
     denoise_->align(FL_ALIGN_TOP_LEFT);
     denoise_->tooltip("Image similarity %");
     denoise_->value("20");
+
 
     for (int i = 0; i < painting_mode_max; ++i) {
         if (!only_control_net || i == 0 || i >= painting_scribble) {
@@ -254,7 +270,8 @@ void PaintingPanel::alignComponents() {
     btnOpenMask_->position(btnNewMask_->x() + 1 + btnNewMask_->w(), btnNewMask_->y());
     btnSaveMask_->position(btnOpenMask_->x() + 1 + btnOpenMask_->w(), btnOpenMask_->y());
 
-    brushes_->resize(left_bar_->x() + 1, btnSaveMask_->y() + btnSaveMask_->h() + 23, left_bar_->w() - 2, 30);
+    brushes_->resize(left_bar_->x() + 1, btnSaveMask_->y() + btnSaveMask_->h() + 23, left_bar_->w() - 34, 30);
+    btnFgColor_->position(brushes_->x() + brushes_->w() + 2, brushes_->y());
     
     label_control_->resize(left_bar_->x(), brushes_->y() + brushes_->h() + 3, left_bar_->w() - 2, 30);
     btnScribble_->position(left_bar_->x(), brushes_->y() + brushes_->h() + 26);
@@ -268,7 +285,7 @@ void PaintingPanel::alignComponents() {
 }
 
 void PaintingPanel::enableControls() {
-    bool inpanting = false;
+    bool inpainting = false;
     bool image2image = false;
     bool controlnet = false;
 
@@ -278,7 +295,7 @@ void PaintingPanel::enableControls() {
 
     if (getSelectedMode() == painting_inpaint_masked ||
         getSelectedMode() == painting_inpaint_not_masked) {
-        inpanting = true;
+        inpainting = true;
     }
 
     if (getSelectedMode() == painting_canny ||
@@ -287,8 +304,14 @@ void PaintingPanel::enableControls() {
         getSelectedMode() == painting_deepth) {
         controlnet = true;     
     }
+
+    if (image2image && !inpainting) {
+        btnFgColor_->show();
+    } else {
+        btnFgColor_->hide();
+    }
     
-    if (inpanting | image2image | controlnet) {
+    if (inpainting | image2image | controlnet) {
         btnOpen_->enabled(true);    
         btnSave_->enabled(true);
         denoise_->activate();
@@ -300,7 +323,7 @@ void PaintingPanel::enableControls() {
     }
 
     if (!only_control_net_) {
-        if (inpanting | image2image) {
+        if (inpainting | image2image) {
             denoise_->activate();
         } else {
             denoise_->deactivate();
@@ -308,7 +331,7 @@ void PaintingPanel::enableControls() {
         }
     }
 
-    btnNewMask_->enabled(inpanting || controlnet);
+    btnNewMask_->enabled(inpainting || controlnet || image2image);
     btnOpenMask_->enabled(btnNewMask_->enabled());
     btnSaveMask_->enabled(btnNewMask_->enabled());
 
@@ -317,7 +340,7 @@ void PaintingPanel::enableControls() {
     btnPose_->enabled(controlnet);
     btnDeepth_->enabled(controlnet);
     
-    if (inpanting || controlnet) {
+    if (inpainting || controlnet) {
         brushes_->activate();
         draw_image_check_->activate();
     } else {
@@ -325,7 +348,11 @@ void PaintingPanel::enableControls() {
         draw_image_check_->deactivate();
     }
 
-    if (inpanting || image2image || controlnet) {
+    if (image2image) {
+        brushes_->activate();
+    }
+
+    if (inpainting || image2image || controlnet) {
         image_panel_->show();
     } else {
         image_panel_->hide();
@@ -347,6 +374,13 @@ void PaintingPanel::saveMask() {
 
 void PaintingPanel::openImage() {
     image_panel_->open(image_type_image);
+    image_panel_->adjustPasteImageSize();
+    if (prompt_) {
+        auto ref = image_panel_->getReferenceImage();
+        if (ref) {
+            prompt_->setImageSize(ref->w(), ref->h());
+        }
+    }
     modeSelected();
 }
 
@@ -374,6 +408,10 @@ void PaintingPanel::openMask() {
         } else {
             image_panel_->setLayerImage(image_type_controlnet, img);
         }
+        auto pic = image_panel_->getLayerImage(image_type_image);
+        if (!pic) {
+            prompt_->setImageSize(img->w(), img->h());
+        }
     }
     modeSelected();
     image_panel_->redraw();
@@ -400,17 +438,32 @@ void PaintingPanel::modeSelected() {
     blur_mask_->hide();
     inpaintMode_->hide();
     switch (getSelectedMode()) {
+        case painting_img2img: {
+            image_panel_->setEditType(edit_type_paste);
+            uint8_t r, g, b;
+            btnFgColor_->getColor(&r, &g, &b);
+            image_panel_->setBrushColor(r, g, b);
+            image_panel_->setLayerVisible(image_type_image, true);
+            image_panel_->setLayerVisible(image_type_paste, true);
+            if (!image_panel_->getLayerImage(image_type_paste)) {
+                newMask();
+            }
+        }
+        break;
+
         case painting_inpaint_masked:
         case painting_inpaint_not_masked: {
             image_panel_->setEditType(edit_type_mask);
             blur_mask_->show();
             inpaintMode_->show();
             image_panel_->setLayerVisible(image_type_mask, true);
+            image_panel_->setLayerVisible(image_type_paste, draw_image_check_->value() == 1);
             if (!image_panel_->getLayerImage(image_type_mask)) {
                 newMask();
             }
         }
         break;
+
         case painting_pose:
         case painting_canny:
         case painting_scribble:
@@ -422,6 +475,7 @@ void PaintingPanel::modeSelected() {
             }
         }
         break;
+
         default:
             image_panel_->setTool(image_tool_none);
             image_panel_->setEditType(edit_type_none);
@@ -432,13 +486,21 @@ void PaintingPanel::modeSelected() {
 
 void PaintingPanel::newMask() {
     if (getSelectedMode() == painting_inpaint_masked ||
-        getSelectedMode() == painting_inpaint_not_masked
+        getSelectedMode() == painting_inpaint_not_masked ||
+        getSelectedMode() == painting_img2img
     ) {
-        bool should_continue = image_panel_->getLayerImage(image_type_mask) ? false : true;
+        image_type_t tp = (getSelectedMode() == painting_img2img ? image_type_paste : image_type_mask);
+        bool should_continue = image_panel_->getLayerImage(tp) ? false : true;
         should_continue = (should_continue || ask("Do you want to create a new mask ?"));
         if (should_continue) {
-            image_panel_->setLayerImage(image_type_mask, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
-            image_panel_->setEditType(edit_type_mask);
+            if (getSelectedMode() == painting_img2img) {
+                image_panel_->setLayerImage(image_type_paste, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+                image_panel_->setEditType(edit_type_paste);
+                image_panel_->adjustPasteImageSize();
+            } else {
+                image_panel_->setLayerImage(image_type_mask, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
+                image_panel_->setEditType(edit_type_mask);
+            }
             image_panel_->redraw();
         }
     } else if (getSelectedMode() == painting_pose ||
@@ -460,6 +522,7 @@ void PaintingPanel::newMask() {
 void PaintingPanel::setImage(RawImage *image) {
     if (image) {
         image_panel_->setLayerImage(image_type_image, image->duplicate());
+        image_panel_->adjustPasteImageSize();
         if (getSelectedMode() == paiting_disabled) {
             mode_->value(painting_img2img);
             modeSelected();
@@ -564,7 +627,7 @@ RawImage* PaintingPanel::getImg2ImgImage() {
         case painting_img2img:
         case painting_inpaint_masked:
         case painting_inpaint_not_masked:
-            return image_panel_->getLayerImage(image_type_image);
+            return image_panel_->getPasteImage();
         break;
     } 
 

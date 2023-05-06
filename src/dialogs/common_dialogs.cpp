@@ -1,5 +1,6 @@
 
 #include <FL/Fl_Native_File_Chooser.H>
+#include <FL/Fl_Color_Chooser.H>
 #include <Fl/fl_ask.H>
 
 #ifdef _WIN32
@@ -108,6 +109,10 @@ std::string choose_image_to_save(std::string* current_dir) {
         }
     }
     return result;
+}
+
+bool pickup_color(const char* title, uint8_t *r, uint8_t *g, uint8_t *b) {
+    return fl_color_chooser(title, *r, *g, *b) == 1;
 }
 
 } // namespace dexpert

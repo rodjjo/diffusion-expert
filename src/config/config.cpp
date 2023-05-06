@@ -129,12 +129,20 @@ Config &getConfig() {
     return cfg;
 }
 
-void Config::setLastSdModel(const std::string& model) {
+void Config::setLatestSdModel(const std::string& model) {
     lastSdModelName_ = model;
 }
 
 const char *Config::getLatestSdModel() {
     return lastSdModelName_.c_str();
+}
+
+void Config::setLatestSdModelInpaint(const std::string &model) {
+    lastSdModelNameInpaint_ = model;
+}
+
+const char *Config::getLatestSdModelInpaint() {
+    return lastSdModelNameInpaint_.c_str();
 }
 
 void Config::setSafeFilter(bool enabled) {
@@ -243,6 +251,7 @@ bool Config::save() {
         json data;
         json sd;
         sd["last_sd_model"] = lastSdModelName_;
+        sd["last_sd_model_inpainting"] = lastSdModelNameInpaint_;
         sd["scheduler"] = scheduler_;
         sd["nsfw_filter"] = safeFilterEnabled_;
         sd["controlnet_count"] = controlnetCount_;
@@ -285,6 +294,9 @@ bool Config::load() {
             auto sd = data["stable_diffusion"];
             if (sd.contains("last_sd_model")) {
                 lastSdModelName_ = sd["last_sd_model"].get<std::string>();
+            }
+            if (sd.contains("last_sd_model_inpainting")) {
+                lastSdModelNameInpaint_ = sd["last_sd_model_inpainting"].get<std::string>();
             }
             if (sd.contains("scheduler")) {
                 scheduler_ = sd["scheduler"].get<std::string>();

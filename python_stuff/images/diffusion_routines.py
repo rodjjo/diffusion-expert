@@ -5,7 +5,7 @@ from models.models import create_pipeline, current_model_is_in_painting, models_
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
-from utils.images import pil_as_dict, pil_from_dict, rgb_image_512x512
+from utils.images import pil_as_dict, pil_from_dict, fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 
 from dexpert import progress, progress_canceled, progress_title
@@ -37,6 +37,7 @@ def _run_pipeline(pipeline_type, params):
     height = params["height"]
     input_image = params.get("image")
     input_mask = params.get("mask")
+    inpaint_mode = params.get("inpaint_mode", "original")
     controlnets = params.get("controlnets", [])
 
     if width % 8 != 0:
@@ -129,10 +130,11 @@ def _run_pipeline(pipeline_type, params):
                 "error": "The current model is not for in painting"
             }
         image = pil_from_dict(input_image)
-        if params.get("invert_mask"):
-            mask = pil_from_dict(input_mask)
-        else:
-            mask = pil_from_dict(input_mask)
+        mask = pil_from_dict(input_mask)
+        
+        if inpaint_mode != 'original':
+            image = fill_image(image, mask)
+
         additional_args = {
             'image': image,
             'mask_image': mask,
@@ -173,6 +175,7 @@ def _run_pipeline(pipeline_type, params):
     if restore_faces:
         progress(99, 100, pil_as_dict(result)) 
         result = gfpgan_restore_faces(result)
+
     report("image generated")
     return pil_as_dict(result)
 

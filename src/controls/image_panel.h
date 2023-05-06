@@ -18,7 +18,6 @@ typedef enum {
 typedef enum {
     image_tool_none,
     image_tool_drag,
-    image_tool_zoom,
     image_tool_select,
     image_tool_brush,
     // keep image_tool_count at the end
@@ -38,6 +37,7 @@ typedef enum {
 typedef enum {
     edit_type_none,         // edit disabled
     edit_type_image,        // the user can change the main image
+    edit_type_paste,
     edit_type_controlnet,   // the user can change the controlnet image
     edit_type_mask,         // the user can change the mask
 
@@ -96,6 +96,8 @@ namespace dexpert
         void getBrushColor(uint8_t *r, uint8_t *g, uint8_t *b);
         uint8_t getBrushSize();
         coordinate_t getReferenceSize();
+        RawImage* getReferenceImage();
+        RawImage* getPasteImage();
         controlnet_type_t getControlnetImageType();
         void setControlnetImageType(controlnet_type_t value);
         edit_type_t getEditType();
@@ -115,7 +117,7 @@ namespace dexpert
         void cropToSelection();
         void resizeSelection(int w, int h);
         void close();
-
+        void adjustPasteImageSize();
     protected:
         int handle(int event) override;
         void draw() override;
@@ -137,9 +139,9 @@ namespace dexpert
         static void imageRefresh(void *cbdata);
         void imageRefresh();
         void draw_tool();
+        void adjustSizes();
 
         RawImage* get_cached_image(int layer);
-        RawImage* get_reference_image();
         void fix_scroll(int *xmove, int *ymove);
         void invalidate_caches();
 
@@ -166,6 +168,7 @@ namespace dexpert
         int scroll_py_ = 0;
         uint8_t brush_size_ = 16;
         float zoom_ = 1.0f;
+        image_ptr_t pastimage_buffer_;
         coordinate_t selection_start_ = {0,};
         coordinate_t selection_end_ = {0,};
         uint8_t background_color_[4] = {0, 0, 0, 255};

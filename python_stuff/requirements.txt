@@ -1,6 +1,7 @@
 # I had to fix those packages in order to install in embedded python
 future @ git+https://github.com/rodjjo/python-future.git@57f747cc4bcffa805b47bb1e5df7550a53fe8ba9
 filterpy @ git+https://github.com/rodjjo/filterpy.git@a34721e266c4c39f8abd5037ea83c2ed774d9606
+deepdanbooru @ git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow] 
 
 Pillow
 OmegaConf

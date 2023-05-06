@@ -167,6 +167,7 @@ void DiffusionTool::gotoSelectedPage() {
 }
 
 image_ptr_t DiffusionTool::run() {
+    this->hide();
     this->pages_->refreshModels();
     this->show();
     while (this->shown()) {
@@ -197,7 +198,9 @@ image_ptr_t get_stable_diffusion_image(RawImage *image) {
     if (window == NULL) {
         window = new DiffusionTool();
     }
+    window->hide(); 
     window->setInitialImage(image);
+
     image_ptr_t r = window->run();
     Fl::delete_widget(window);
     Fl::do_widget_deletion();

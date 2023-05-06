@@ -53,10 +53,6 @@ MainWindow::MainWindow():  Fl_Menu_Window(
         toolClicked(btn_drag_.get());
         image_editor_->setTool(image_tool_drag);
     }));
-    btn_zoom_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] { 
-        toolClicked(btn_zoom_.get());
-        image_editor_->setTool(image_tool_zoom);
-    }));
     btn_select_.reset(new Button(xpm::image(xpm::select_icon), [this] {
         toolClicked(btn_select_.get());
         image_editor_->setTool(image_tool_select);
@@ -80,17 +76,14 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     btn_none_->position(1, 1);
     btn_drag_->position(1, 1);
-    btn_zoom_->position(1, 1);
     btn_select_->position(1, 1);
 
     btn_none_->tooltip("Disable tools");
     btn_drag_->tooltip("Drag tool");
-    btn_zoom_->tooltip("Zoom tool");
     btn_select_->tooltip("Select tool");
 
     btn_none_->enableDownUp();
     btn_drag_->enableDownUp();
-    btn_zoom_->enableDownUp();
     btn_select_->enableDownUp();
     btn_none_->down(true);
 
@@ -100,7 +93,6 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     alignComponents();
 }
-
 
 void MainWindow::initMenubar() {
     menuPanel_ = new Fl_Group(0, 20, this->w(), 20);
@@ -144,12 +136,9 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(3.0); }, "", "Image/Upscale/3x");
     menu_->addItem([this] { upScale(3.5); }, "", "Image/Upscale/3.5x");
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
-
     menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
-    
-    //  menu_->addItem(noCall, "", "Help");
 }
 
 void MainWindow::alignComponents() {
@@ -164,7 +153,6 @@ void MainWindow::alignComponents() {
 
     btn_none_->size(30, 30);
     btn_drag_->size(30, 30);
-    btn_zoom_->size(30, 30);
     btn_select_->size(30, 30);
 
     leftPanel_->resize(3, image_editor_->y(), image_editor_->x() - 6, image_editor_->h());
@@ -172,8 +160,7 @@ void MainWindow::alignComponents() {
 
     btn_none_->position(5, leftPanel_->y() +2);
     btn_drag_->position(5, btn_none_->y() + btn_none_->h() + 2);
-    btn_zoom_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
-    btn_select_->position(5, btn_zoom_->y() + btn_zoom_->h() + 2);
+    btn_select_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
 
     label_size_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
     label_zoom_->resize(label_size_->x() + label_size_->w() + 2, label_size_->y(), 200, stabusbar_h - 4);
@@ -304,7 +291,6 @@ void MainWindow::toolClicked(Button* btn) {
     Button* buttons[] = {
         btn_none_.get(),
         btn_drag_.get(),
-        btn_zoom_.get(),
         btn_select_.get(),
     };
     for (int i = 0; i < sizeof(buttons)/sizeof(buttons[0]); ++i) {

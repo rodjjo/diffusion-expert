@@ -1,8 +1,15 @@
-#include "src/panels/prompt_panel.h"
+#include <algorithm>
+
 #include "src/stable_diffusion/state.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/config/config.h"
 #include "src/data/xpm.h"
+#include "src/python/helpers.h"
+#include "src/python/wrapper.h"
+
+#include "src/panels/painting_panel.h"
+#include "src/panels/prompt_panel.h"
+
 
 namespace dexpert
 {
@@ -19,6 +26,12 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : F
     generateBtn_.reset(new Button(xpm::image(xpm::button_play), [this] {
         this->on_generate_();
     }));
+    interrogateBtn1_.reset(new Button("?", [this] {
+        this->interrogate("Clip");
+    }));
+    interrogateBtn2_.reset(new Button("??", [this] {
+        this->interrogate("DeepBooru");
+    }));
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
     steps_ = new Fl_Int_Input(0, 0, 1, 1, "Steps");
     guidance_ = new Fl_Float_Input(0, 0, 1, 1, "CFG");
@@ -26,6 +39,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : F
     width_ = new Fl_Int_Input(0, 0, 1, 1, "Width");
     height_ = new Fl_Int_Input(0, 0, 1, 1, "Height");
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
+    modelsInpaint_ = new Fl_Choice(0, 0, 1, 1, "Inpainting Model");
     restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
     codeformer_ = new Fl_Check_Button(0, 0, 1, 1, "Codeformer");
 
@@ -41,11 +55,15 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : F
     width_->align(FL_ALIGN_TOP_LEFT);
     height_->align(FL_ALIGN_TOP_LEFT);
     models_->align(FL_ALIGN_TOP_LEFT);
+    modelsInpaint_->align(FL_ALIGN_TOP_LEFT);
     var_strength_->align(FL_ALIGN_TOP_LEFT);
 
     positivePrompt_->value(last_prompt.c_str());
     negativePrompt_->value(last_negative_prompt.c_str());
     generateBtn_->tooltip("Generate a new image.");
+    
+    interrogateBtn1_->tooltip("Interrogate Clip");
+    interrogateBtn2_->tooltip("Interrogate DeepBooru");
 
     seed_->value("-1");
     steps_->value("50");
@@ -70,6 +88,38 @@ const char *PromptPanel::getPrompt() {
 const char *PromptPanel::getNegativePrompt() {
     last_negative_prompt = negativePrompt_->value();
     return negativePrompt_->value();
+}
+
+void PromptPanel::interrogate(const char* model) {
+    if (!image_panel_) {
+        return;
+    }
+    if (!image_panel_->getImage()) {
+        show_error("No input image to interrogate!");
+        return;
+    }
+    std::string result;
+    const char* error = NULL;
+    dexpert::py::get_py()->execute_callback(
+        dexpert::py::interrogate_image(
+            model, image_panel_->getImage(), [&error, &result] (bool success, const char *msg, const std::string& prompt) {
+                if (!success) {
+                    error = msg;
+                } else {
+                    result = prompt;
+                }
+            }
+        )
+    );
+    if (error) {
+        show_error(error);
+    } else {
+        positivePrompt_->value(result.c_str());
+    }
+}
+
+void PromptPanel::setImagePanel(PaintingPanel *panel) {
+    image_panel_ = panel;
 }
 
 int PromptPanel::getSeed() {
@@ -151,16 +201,23 @@ float PromptPanel::getVariationStrength() {
 
 void PromptPanel::alignComponents() {
 
-    positivePrompt_->resize(x() + 5, y() + 25, w() - 67, 50);
+    positivePrompt_->resize(x() + 5, y() + 25, w() - 67 - 55, 50);
+
+    interrogateBtn1_->size(50, 24);
+    interrogateBtn2_->size(50, 24);
+    interrogateBtn1_->position(positivePrompt_->x() + positivePrompt_->w() + 5, positivePrompt_->y());
+    interrogateBtn2_->position(interrogateBtn1_->x(), interrogateBtn1_->y() + interrogateBtn1_->h() + 2);
+
     generateBtn_->position(
-        positivePrompt_->x() + positivePrompt_->w() + 5, 
+        interrogateBtn1_->x() + interrogateBtn1_->w() + 5, 
         positivePrompt_->y()
     );
     generateBtn_->size(50, 50);
+    
     negativePrompt_->resize(
         x() + 5, 
         positivePrompt_->y() + positivePrompt_->h() + 25, 
-        positivePrompt_->w(), 
+        positivePrompt_->w() + 55, 
         positivePrompt_->h()
     );
     seed_->resize(
@@ -202,7 +259,13 @@ void PromptPanel::alignComponents() {
     models_->resize(
         x() + 5,
         seed_->y() + seed_->h() + 25,
-        420,
+        300,
+        25
+    );
+    modelsInpaint_->resize(
+        models_->x() + 5 + models_->w(),
+        models_->y(),
+        300,
         25
     );
     restore_face_->resize(
@@ -231,33 +294,70 @@ void PromptPanel::refreshModels() {
     }
     
     std::string modelName = "";
+    std::string modelInpaint = "";
     if (models_->value() >= 0) {
         modelName = models_->text(models_->value());
     } else {
         modelName = getConfig().getLatestSdModel();
     }
+    if (modelsInpaint_->value() >= 0) {
+        modelInpaint = modelsInpaint_->text(modelsInpaint_->value());
+    } else {
+        modelInpaint = getConfig().getLatestSdModelInpaint();
+    }
 
     models_->clear();
+    modelsInpaint_->clear();
+    
     auto mdls = get_sd_state()->getSdModels();
+
     int index = 0;
+    int inpaintIndex = 0;
     int value = -1;
+    int valueInpaint = -1;
+    std::string name_lower;
+
     for (auto it = mdls.cbegin(); it != mdls.cend(); it++) {
-        models_->add(it->name.c_str());
-        if (value == -1 && it->name == modelName) {
-            value = index;
+        name_lower = it->name;
+        std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
+        if (name_lower.find("inpaint") != std::string::npos) {
+            modelsInpaint_->add(it->name.c_str());
+            if (valueInpaint == -1 && it->name == modelInpaint) {
+                valueInpaint = inpaintIndex;
+            }
+            ++inpaintIndex;
+        } else {
+            models_->add(it->name.c_str());
+            if (value == -1 && it->name == modelName) {
+                value = index;
+            }
+            ++index;
         }
-        ++index;
     }
     
     if (value < 0) 
         value = 0;
 
+    if (valueInpaint < 0)
+        valueInpaint = 0;
+
     models_->value(value); 
+    modelsInpaint_->value(valueInpaint);
 }
 
-const char *PromptPanel::getSdModel() {
-    if (models_->value() >= 0) {
-        return models_->text(models_->value());
+const char *PromptPanel::getSdModel(bool for_inpainting) {
+    if (for_inpainting) {
+        if (modelsInpaint_->value() >= 0) {
+            dexpert::getConfig().setLatestSdModelInpaint(modelsInpaint_->text(modelsInpaint_->value()));
+            dexpert::getConfig().save();
+            return modelsInpaint_->text(modelsInpaint_->value());
+        }
+    } else {
+        if (models_->value() >= 0) {
+            dexpert::getConfig().setLatestSdModel(models_->text(models_->value()));
+            dexpert::getConfig().save();
+            return models_->text(models_->value());
+        }
     }
     return NULL;
 }
