@@ -33,7 +33,7 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     wnd->begin();
 
     image_editor_ = new ImagePanel(0, 0, 1, 1, [this] {
-        updateScrollbar();
+        updateStatusbar();
     });
 
     initMenubar();
@@ -324,7 +324,7 @@ int MainWindow::run() {
     return result;
 }
 
-void MainWindow::updateScrollbar() {
+void MainWindow::updateStatusbar() {
     char buffer[512] = {0,};
     coordinate_t rs = image_editor_->getReferenceSize();
     sprintf(buffer, "Dimensions: [%d x %d]", rs.x, rs.y);

@@ -10,8 +10,14 @@
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
 
+
 namespace dexpert
 {
+    namespace 
+    {
+        float color_step = 1.0 / 255;
+    } // namespace 
+    
     namespace {
         const int gl_format[dexpert::py::img_format_count] = {
             GL_LUMINANCE,
@@ -79,6 +85,8 @@ namespace dexpert
             drawing_changed_ = false;
             applyBrush(draw_x_, draw_y_, drawing_clear_);
         }
+
+        clicked_ = false;
     }
 
     void ImagePanel::setLayerVisible(image_type_t layer, bool visible)
@@ -196,7 +204,10 @@ namespace dexpert
     }
 
     bool ImagePanel::isPainting() {
-        return (edit_type_ != edit_type_none) && (tool_ == image_tool_brush) && (mouse_down_left_ || mouse_down_right_)  && !isDragging();
+        if ((edit_type_ != edit_type_none) && (tool_ == image_tool_brush) && (mouse_down_left_ || mouse_down_right_)  && !isDragging()) {
+            return Fl::event_alt() == 0;
+        }
+        return false;
     }
 
     void ImagePanel::getMouseXY(int *x, int *y) {
@@ -245,6 +256,7 @@ namespace dexpert
         } else {
             img->drawCircleColor(mousex, mousey, brush_size_, color, bgcolor, clear);
         }
+
         should_redraw_ = true;
     }
 
@@ -286,9 +298,11 @@ namespace dexpert
         if (isDragging()) {
             return;
         }
+
         if (isPainting()) {
             applyBrush(down_x, down_y, !left_button && right_button);
         }
+
         if (isSelecting() && left_button) {
             selection_start_.x = down_x;
             selection_start_.y = down_y;
@@ -299,6 +313,10 @@ namespace dexpert
     };
 
     void ImagePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y){
+        current_x_ = up_x;
+        current_y_ = up_y;
+        mouse_changed_ = true;
+
         if (isDragging()) {
             return;
         }
@@ -325,6 +343,8 @@ namespace dexpert
                 restrictSelection(selection_end_, *getReferenceImage());
             }
             should_redraw_ = true;
+        } else {
+            clicked_ = true;
         }
     };
 
@@ -470,6 +490,12 @@ namespace dexpert
             Dim the image to fit the window. Don't draw a huge image in a smaller area...
         */
         RawImage *original = images_[layer].get();
+        if (layer == image_type_paste) {
+            return NULL;
+        } else if (layer == image_type_image && original == NULL) {
+            original = images_[image_type_paste].get();
+        }
+
         if (original == NULL || layer == image_type_paste) {
             return NULL;
         }
@@ -500,7 +526,7 @@ namespace dexpert
             int xmove, ymove;
             fix_scroll(&xmove, &ymove);
             cache->pasteFrom(xmove, ymove, zoom_, original);
-            if (layer == image_type_image && images_[image_type_paste].get() != NULL) {
+            if (layer == image_type_image && images_[image_type_paste].get() != NULL && images_[image_type_image].get() != NULL) {
                 RawImage *img = images_[image_type_paste].get();
                 coordinate_t s1 = paste_coords_;
                 s1.x *=  zoom_;
@@ -527,7 +553,7 @@ namespace dexpert
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glClearColor(background_color_[0], background_color_[1], background_color_[2], background_color_[3]);
+        glClearColor(background_color_[0] * color_step, background_color_[1] * color_step, background_color_[2] * color_step, background_color_[3] * color_step);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         RawImage *img; 
         for (int i = 0; i < image_type_count; ++i) {
@@ -790,7 +816,10 @@ namespace dexpert
         if (images_[image_type_controlnet]) {
             return images_[image_type_controlnet].get();
         }
-        return images_[image_type_mask].get();
+        if (images_[image_type_mask]) {
+            return images_[image_type_mask].get();
+        }
+        return images_[image_type_paste].get();
     }
 
     void ImagePanel::convertToImageCoords(int *x, int *y) {
@@ -1074,11 +1103,26 @@ namespace dexpert
         *b = brush_color_[2];
     }
 
+    bool ImagePanel::pickupColor(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
+        auto img = getPasteImage();
+        if (!img) {
+            return false;
+        }
+        int x = current_x_;
+        int y = current_y_;
+        convertToImageCoords(&x, &y);
+        return img->getColor(x, y, r, g, b, a);
+    }
+
     void ImagePanel::close() {
         for (int i = 0; i < image_type_count; i++) {
             images_[i].reset();
         }
         should_redraw_ = true;
+    }
+
+    bool ImagePanel::clicked() {
+        return clicked_;
     }
 
     void ImagePanel::adjustSizes() {

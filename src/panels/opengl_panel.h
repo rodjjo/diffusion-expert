@@ -20,7 +20,7 @@ class OpenGlPanel: public Fl_Gl_Window {
     virtual ~OpenGlPanel();
     virtual void cancel_operations();
     const viewport_t & view_port() const;
-    void resize(int x, int y, int w, int h) override;
+    //void resize(int x, int y, int w, int h) override;
     void redraw();
 
  protected:

@@ -78,9 +78,10 @@ int OpenGlPanel::handle(int event) {
     return 1;
 }
 
+/*
 void OpenGlPanel::resize(int x, int y, int w, int h) {
     Fl_Gl_Window::resize(x, y, w, h);
-}
+} */
 
 void OpenGlPanel::draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t h, int format) {
     if (buffer == NULL || w == 0 || h == 0) {

@@ -94,6 +94,7 @@ namespace dexpert
         void setBrushSize(uint8_t size);
         void setBrushColor(uint8_t r, uint8_t g, uint8_t b);
         void getBrushColor(uint8_t *r, uint8_t *g, uint8_t *b);
+        bool pickupColor(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);
         uint8_t getBrushSize();
         coordinate_t getReferenceSize();
         RawImage* getReferenceImage();
@@ -118,6 +119,8 @@ namespace dexpert
         void resizeSelection(int w, int h);
         void close();
         void adjustPasteImageSize();
+        bool clicked();
+
     protected:
         int handle(int event) override;
         void draw() override;
@@ -160,6 +163,7 @@ namespace dexpert
         bool mouse_changed_ = false;
         bool drawing_changed_ = false;
         bool drawing_clear_ = false;
+        bool clicked_ = false;
         int draw_x_ = 0;
         int draw_y_ = 0;
         int scroll_x_ = 0;

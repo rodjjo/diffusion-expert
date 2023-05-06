@@ -35,11 +35,13 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     pages_[page_prompts] = promptPanel_;
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
+    
     resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
     pages_[page_results] = resultsPanel_;
 
     promptPanel_->setImagePanel(inputImage_);
-
+    
+    this->begin();
     for (int i = 0; i < 4; i++) {
         controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, inputImage_, true);
         pages_[page_controlnet1 + i] = controlNets_[i];
@@ -109,6 +111,7 @@ bool Pages::goPage(page_t page) {
         result = true;
         active_page_ = page;
     } 
+
     for (int i = 0; i < page_max; ++i) {
         if (i == active_page_) {
             pages_[i]->show();
@@ -116,6 +119,7 @@ bool Pages::goPage(page_t page) {
             pages_[i]->hide();
         }
     }
+
     if (active_page_ == page_results) {
         resultsPanel_->updatePanels();
     }

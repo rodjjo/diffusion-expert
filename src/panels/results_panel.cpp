@@ -15,7 +15,7 @@ namespace dexpert
 {
 
     ResultsPanel::ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting) : Fl_Group(x, y, w, h), painting_(painting)
-    {
+    {   
         this->begin();
         
         auto btn_callback = [this] (FramePanel *p, int id) {
@@ -57,8 +57,8 @@ namespace dexpert
 
     void ResultsPanel::updatePanels()
     {
-        int max_row = 0;
-        int max_col = 0;
+        int max_row = -1;
+        int max_col = -1;
         for (int r = 0; r < miniatures_.size(); ++r)
         {
             auto &v = miniatures_[r];
@@ -85,7 +85,7 @@ namespace dexpert
                 if (c < max_col && r < max_row)
                 {
                     v[c]->show();
-                    if (should_redraw) {
+                    if (should_redraw && v[c]->visible_r()) {
                         v[c]->redraw();
                     }
                 }
@@ -164,6 +164,7 @@ namespace dexpert
             case BUTTON_ID_AS_INPUT: {
                     if (ask("Do you want to set this as input image ?")) {
                         painting_->setImage(get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation()));
+                        painting_->clearPasteImage();
                     }
                 }
                 break;

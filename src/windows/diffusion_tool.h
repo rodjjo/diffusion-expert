@@ -35,7 +35,6 @@ class DiffusionTool : public Fl_Window {
    int handle(int event) override;
    
  private:
-  void initBottomPanel();
   void initRightPanel();
   void initToolbar();
   void initPagesPanel();
@@ -48,11 +47,13 @@ class DiffusionTool : public Fl_Window {
  private:
     Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
-    ConsoleTabs *console_ = NULL;
     Pages *pages_ = NULL;
     Fl_Select_Browser *page_browser_;
+    bool confirmed_ = false;
     bool selecting_page_ = false;
     std::unique_ptr<Button> cancelBtn_;
+    std::unique_ptr<Button> confirmBtn_;
+    std::unique_ptr<Button> consoleBtn_;
 };
 
 image_ptr_t get_stable_diffusion_image(RawImage *image);

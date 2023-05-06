@@ -398,6 +398,27 @@ image_ptr_t RawImage::blur(int size) {
     return result;
 }
 
+bool RawImage::getColor(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
+    if (x < 0 || y < 0 || x > w() || y > h()) {
+        return false;
+    }
+    CImg<unsigned char> self(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    self.permute_axes("yzcx");
+
+    *r = *self.data(x, y, 0, 0);
+    *g = *self.data(x, y, 0, 1);
+    *b = *self.data(x, y, 0, 2);
+
+    if (format_ == img_rgba) {
+        *a = *self.data(x, y, 0, 3);
+    } else {
+        *a = 255;
+    }
+
+    self.permute_axes("cxyz");
+    return true;
+}
+
 image_ptr_t RawImage::erode(int size) {
     image_ptr_t result = this->duplicate();
     CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);

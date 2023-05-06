@@ -62,6 +62,8 @@ class PaintingPanel: public Fl_Group {
     RawImage* getImg2ImgImage();
     RawImage* getImg2ImgMask();
     RawImage* getImg2ImgControl();
+    RawImage* getPasteImage();
+    void clearPasteImage();
     float get_denoise_strength();
     bool shouldInpaintMasked();
     bool ready();
@@ -92,6 +94,7 @@ class PaintingPanel: public Fl_Group {
     bool ensureMaskPresent();
     void pre_process(const char* method);
     void enableControls();
+    void updateInfo();
 
  private:
     bool only_control_net_;
@@ -104,6 +107,7 @@ class PaintingPanel: public Fl_Group {
     Fl_Box* label_image_;
     Fl_Box* label_mask_;
     Fl_Box* label_control_;
+    Fl_Box* label_info_;
     Fl_Check_Button *draw_image_check_;
     Fl_Check_Button *blur_mask_;
     Fl_Choice *inpaintMode_;

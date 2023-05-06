@@ -39,7 +39,7 @@ class MainWindow : Fl_Menu_Window {
   void alignComponents();
   void editConfig();
   void toolClicked(Button* btn);
-  void updateScrollbar();
+  void updateStatusbar();
   void newImage(bool fromStableDiffusion);
   void openImage();
   void saveImage();
