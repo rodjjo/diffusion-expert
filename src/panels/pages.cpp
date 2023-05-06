@@ -38,6 +38,8 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
     pages_[page_results] = resultsPanel_;
 
+    promptPanel_->setImagePanel(inputImage_);
+
     for (int i = 0; i < 4; i++) {
         controlNets_[i] = new PaintingPanel(0, 0, 1, 1, promptPanel_, inputImage_, true);
         pages_[page_controlnet1 + i] = controlNets_[i];
@@ -186,17 +188,17 @@ void Pages::textToImage() {
     if (seed == -1) 
         seed = get_sd_state()->randomSeed();
 
-    const char* model = promptPanel_->getSdModel();
-    if (model == NULL) {
-        show_error("Add a model file (.safetensors or .ckpt) into 'models/stable diffusion' directory before you start!");
-        return;
-    }
-
     if (!inputImage_->ready()) {
         return;
     }
 
-    get_sd_state()->setSdModel(model);
+    bool is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL;
+    const char* model = promptPanel_->getSdModel(is_inpaint);
+
+    if (model == NULL) {
+        show_error("Add a model file (.safetensors or .ckpt) into 'models/stable diffusion' directory before you start!");
+        return;
+    }
 
     controlnet_list_t controlnets;
 

@@ -32,8 +32,10 @@ namespace dexpert
     int windowWidth();
     int windowHeight();
 
-    void setLastSdModel(const std::string &model);
+    void setLatestSdModel(const std::string &model);
     const char *getLatestSdModel();
+    void setLatestSdModelInpaint(const std::string &model);
+    const char *getLatestSdModelInpaint();
     void setSafeFilter(bool enabled);
     bool getSafeFilter();
     void setScheduler(const std::string &name);
@@ -95,6 +97,7 @@ namespace dexpert
     bool safeFilterEnabled_ = true;
     std::string scheduler_ = "PNDMScheduler";
     std::string lastSdModelName_; // the latest used sd model
+    std::string lastSdModelNameInpaint_; // the latest used sd model
   };
 
   Config &getConfig();

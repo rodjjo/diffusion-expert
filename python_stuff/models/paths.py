@@ -6,6 +6,7 @@ CONFIG_DIR = os.path.join(BASE_DIR, 'python_stuff','configurations')
 MODELS_DIR = os.path.join(BASE_DIR, 'models', 'stable-diffusion')
 CACHE_DIR = os.path.join(BASE_DIR, 'models', 'cache')
 VAES_DIR = os.path.join(BASE_DIR, 'models', 'vae')
+DEEPBOORU_DIR = os.path.join(BASE_DIR, 'models', 'deepbooru')
 
 def create_dirs():
     try:

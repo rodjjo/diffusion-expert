@@ -56,6 +56,26 @@ namespace dexpert
             };
         }
 
+        callback_t interrogate_image(const char* model, RawImage *image, interrogate_callback_t status_cb) {
+            enable_progress_window(false);
+            return [status_cb, model, image] ()
+            {
+                try {
+                    py11::dict d;
+                    image->toPyDict(d);
+                    py11::dict r =  dexpert::py::getModule().attr("inerrogate_clip")(model, d);
+                    if (r.contains("error") || !r.contains("prompt")) {
+                        status_cb(false, errorFromPyDict(r, "Can't interrogate the clip!"), "");
+                    } else {
+                        status_cb(true, NULL, r["prompt"].cast<std::string>()); 
+                    }
+                }
+                catch(std::runtime_error e) {
+                    status_cb(false, getError(e), ""); // TODO: check error!
+                }
+            };
+        }
+
         callback_t open_image(const char *path, image_callback_t status_cb)
         {
             return [status_cb, path]
@@ -165,7 +185,7 @@ namespace dexpert
             this->image->toPyDict(data);
             params["image"] = data;
             params["strength"] = this->strength;
-
+            params["inpaint_mode"] = this->inpaint_mode;
             if (this->mask)
             {
                 py11::dict data;

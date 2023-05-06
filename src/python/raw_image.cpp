@@ -219,7 +219,11 @@ void RawImage::pasteAt(int x, int y, RawImage *image) {
     CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
-    img.draw_image(x, y, src);
+    if (image->format() == img_rgba) {
+        img.draw_image(x, y, 0, 0, src, src.get_shared_channel(3), 1, 255);
+    } else {
+        img.draw_image(x, y, src);
+    }
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
 }
@@ -242,7 +246,12 @@ void RawImage::pasteAt(int x, int y, int w, int h, RawImage *image) {
     CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
-    img.draw_image(x, y, src.get_resize(w, h));
+    if (image->format() == img_rgba) {
+        auto resized = src.get_resize(w, h);
+        img.draw_image(x, y, 0, 0, resized, resized.get_shared_channel(3), 1, 255);
+    } else {
+        img.draw_image(x, y, src.get_resize(w, h));
+    }
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
 }
@@ -307,6 +316,52 @@ image_ptr_t RawImage::resizeCanvas(uint32_t x, uint32_t y) {
     self.draw_image(0, 0, src);
     self.permute_axes("cxyz");
     src.permute_axes("cxyz");
+    return result;
+}
+
+image_ptr_t  RawImage::resizeInTheCenter(uint32_t x, uint32_t y) {
+    image_ptr_t result(new RawImage(NULL, x, y, this->format(), this->format() == img_rgba));
+
+    bool ref_x = false;
+    float scale;
+
+    if (x > y) {
+        ref_x = true;
+        scale = y / (float) x;
+    } else {
+        scale = x / (float) y;
+    }
+
+    int new_x, new_y;
+
+    if (ref_x) {
+        new_x = x;
+        new_y = new_x / scale;
+        if (new_y > y) {
+            scale = y / (float) new_y;
+        } else {
+            scale = 1.0;
+        }
+    } else {
+        new_y = y;
+        new_x = new_y / scale;
+        if (new_x > x) {
+            scale = x / (float) new_x;
+        } else {
+            scale = 1.0;
+        }
+    }
+
+    new_x = new_x * scale;
+    new_y = new_y * scale;
+
+    int sx = (x - new_x) / 2;
+    int sy = (y - new_y) / 2;
+    
+    auto resized = this->resizeImage(new_x, new_y);
+
+    result->pasteAt(sx, sy, resized.get());
+
     return result;
 }
 

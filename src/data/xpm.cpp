@@ -157,7 +157,7 @@ std::map<xpm_t, const char * const*> xpm_db = {
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {
-    Fl_Pixmap image( xpm_db[xpm_id]);
+    Fl_Pixmap image(xpm_db[xpm_id]);
     return std::shared_ptr<Fl_RGB_Image>(new Fl_RGB_Image(&image, bg));
 }
 

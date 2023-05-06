@@ -111,6 +111,7 @@ class PaintingPanel: public Fl_Group {
     std::unique_ptr<Button> btnOpen_;
     std::unique_ptr<Button> btnSave_;
     std::unique_ptr<Button> btnInput_;
+    std::unique_ptr<Button> btnFgColor_;
     std::unique_ptr<Button> btnNewMask_;
     std::unique_ptr<Button> btnOpenMask_;
     std::unique_ptr<Button> btnSaveMask_;

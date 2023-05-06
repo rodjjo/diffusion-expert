@@ -16,6 +16,7 @@ namespace dexpert
 
 typedef enum {
     inpaint_original,
+    inpaint_fill,
     inpaint_latent_other,
     // keep inpaint_mode_count at the end
     inpaint_mode_count

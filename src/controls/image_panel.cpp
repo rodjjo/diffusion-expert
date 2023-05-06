@@ -21,7 +21,6 @@ namespace dexpert
         const char *tool_labels[image_tool_count] = {
             "None",
             "Drag",
-            "Zoom",
             "Select",
             "Brush"
         };
@@ -58,6 +57,10 @@ namespace dexpert
     }
 
     void ImagePanel::imageRefresh() {
+        if (!visible_r()) {
+            return;
+        }
+
         if (should_redraw_) {
             should_redraw_ = false;
             mouse_changed_ = false;
@@ -71,6 +74,7 @@ namespace dexpert
                 on_change_();
             }
         }
+
         if (drawing_changed_) {
             drawing_changed_ = false;
             applyBrush(draw_x_, draw_y_, drawing_clear_);
@@ -96,6 +100,7 @@ namespace dexpert
     void ImagePanel::setLayerImage(image_type_t layer, image_ptr_t image)
     {
         images_[layer] = image;
+        adjustSizes();
         scrollAgain();
     }
 
@@ -210,15 +215,19 @@ namespace dexpert
         color[3] = 255;
         bgcolor[3] = 0;
         
-        if (edit_type_ == edit_type_image) {
+        if (edit_type_ == edit_type_image || edit_type_ == edit_type_paste) {
             color[0] = brush_color_[0];
             color[1] = brush_color_[1];
             color[2] = brush_color_[2];
-            img = images_[image_type_image].get();
+            valid_caches_[image_type_paste] = false;
+            valid_caches_[image_type_image] = false;
+            img = images_[edit_type_paste ? image_type_paste : image_type_image].get();
         } else if (edit_type_ == edit_type_mask) { 
             img = images_[image_type_mask].get();
+            valid_caches_[image_type_mask] = false;
         } else if (edit_type_ == edit_type_controlnet) { 
             img = images_[image_type_controlnet].get();
+            valid_caches_[image_type_controlnet] = false;
             if (controlnet_image_type_ == controlnet_segmentation) {
                 color[0] = brush_color_[0];
                 color[1] = brush_color_[1];
@@ -253,7 +262,7 @@ namespace dexpert
                 should_redraw_ = true;
             }
         }
-        auto ref = get_reference_image();
+        auto ref = getReferenceImage();
         if (!ref) {
             return;
         }
@@ -311,9 +320,9 @@ namespace dexpert
             }
             convertToImageCoords(&selection_start_.x, &selection_start_.y);
             convertToImageCoords(&selection_end_.x, &selection_end_.y);
-            if (get_reference_image()) {
-                restrictSelection(selection_start_, *get_reference_image());
-                restrictSelection(selection_end_, *get_reference_image());
+            if (getReferenceImage()) {
+                restrictSelection(selection_start_, *getReferenceImage());
+                restrictSelection(selection_end_, *getReferenceImage());
             }
             should_redraw_ = true;
         }
@@ -328,17 +337,11 @@ namespace dexpert
     };
 
     void ImagePanel::open(image_type_t layer) {
-        if (images_[image_type_paste]) {
-            show_error("Can not open with floating image being processed");
-            return;  // wait the user to decide what he's going to do with the floating image
-        }
-
         auto img = open_image_from_dialog();
         if (img) {
             images_[layer] = img;
-            if (visible_r()) {
-                scrollAgain();
-            }
+            adjustSizes();
+            scrollAgain();
         }
     }
 
@@ -382,7 +385,7 @@ namespace dexpert
         break;
 
         case FL_MOUSEWHEEL: {
-            if (get_reference_image()) {
+            if (getReferenceImage()) {
                 float z = Fl::event_dy() > 0 ? -0.05 : 0.05;
                 setZoomLevel(getZoomLevel() + z);
             }
@@ -647,7 +650,7 @@ namespace dexpert
                 images_[i] = images_[i]->resizeLeft(value);
             }
         }
-        auto img = get_reference_image();
+        auto img = getReferenceImage();
         if (img) {
             selection_start_.x = 0;
             selection_start_.y = 0;
@@ -664,7 +667,7 @@ namespace dexpert
                 images_[i] = images_[i]->resizeRight(value);
             }
         }
-        auto img = get_reference_image();
+        auto img = getReferenceImage();
         if (img) {
             selection_start_.x = img->w() - value* 2;
             selection_start_.y = 0;
@@ -681,7 +684,7 @@ namespace dexpert
                 images_[i] = images_[i]->resizeBottom(value);
             }
         }
-        auto img = get_reference_image();
+        auto img = getReferenceImage();
         if (img) {
             selection_start_.x = 0;
             selection_start_.y = img->h() - value * 2;
@@ -698,7 +701,7 @@ namespace dexpert
                 images_[i] = images_[i]->resizeTop(value);
             }
         }
-        auto img = get_reference_image();
+        auto img = getReferenceImage();
         if (img) {
             selection_start_.x = 0;
             selection_start_.y = 0;
@@ -724,7 +727,7 @@ namespace dexpert
 
     fcoordinate_t ImagePanel::getDrawingCoord() {
         fcoordinate_t r;
-        auto ref = get_reference_image();
+        auto ref = getReferenceImage();
         if (!ref) {
             return r;
         }
@@ -753,7 +756,7 @@ namespace dexpert
     }
 
     void ImagePanel::draw_buffer(RawImage *img) {
-        auto ref = get_reference_image();
+        auto ref = getReferenceImage();
 
         if (!img || !ref) {
             return;
@@ -780,7 +783,7 @@ namespace dexpert
         // Do Nothing
     }
 
-    RawImage* ImagePanel::get_reference_image() {
+    RawImage* ImagePanel::getReferenceImage() {
         if (images_[image_type_image]) {
             return images_[image_type_image].get();
         }
@@ -791,7 +794,7 @@ namespace dexpert
     }
 
     void ImagePanel::convertToImageCoords(int *x, int *y) {
-        RawImage *ref = get_reference_image();
+        RawImage *ref = getReferenceImage();
         if (!ref) {
             return;
         }
@@ -808,7 +811,7 @@ namespace dexpert
     }
 
     void ImagePanel::convertToScreenCoords(int *x, int *y) {
-        RawImage *ref = get_reference_image();
+        RawImage *ref = getReferenceImage();
         if (!ref) {
             return;
         }
@@ -825,7 +828,7 @@ namespace dexpert
     }
 
     void ImagePanel::fix_scroll(int *xmove, int *ymove) {
-        RawImage *ref = get_reference_image();
+        RawImage *ref = getReferenceImage();
         if (!ref) {
             *xmove = 0;
             *ymove = 0;
@@ -852,11 +855,15 @@ namespace dexpert
     }
     
     void ImagePanel::scrollAgain() {
-        setScroll(scroll_x_, scroll_y_);
+        if (visible_r()) {
+            setScroll(scroll_x_, scroll_y_);
+        } else {
+            should_redraw_ = true;
+        }
     }
 
     void ImagePanel::setScroll(int x, int y) {
-        RawImage *img = get_reference_image();
+        RawImage *img = getReferenceImage();
         if (!img) {
             return;
         }
@@ -886,7 +893,7 @@ namespace dexpert
     }
 
     void ImagePanel::zoomToFit(float &zoom, int &x, int &y) {
-        RawImage *img = get_reference_image();
+        RawImage *img = getReferenceImage();
         if (!img) {
             zoom = 1.0;
             x = 0;
@@ -926,7 +933,7 @@ namespace dexpert
 
     coordinate_t ImagePanel::getReferenceSize() {
         coordinate_t r;
-        auto ref = get_reference_image();
+        auto ref = getReferenceImage();
         if (ref) {
             r.x = ref->w();
             r.y = ref->h();
@@ -935,7 +942,7 @@ namespace dexpert
     }
 
     bool ImagePanel::hasReference() {
-        if (get_reference_image()) {
+        if (getReferenceImage()) {
             return true;
         }
         return false;
@@ -953,7 +960,7 @@ namespace dexpert
          if (images_[image_type_paste]) {
             return;
         }
-        auto r = get_reference_image();
+        auto r = getReferenceImage();
         if (r) {
             selection_start_.x = 0;
             selection_start_.y = 0;
@@ -1073,4 +1080,51 @@ namespace dexpert
         }
         should_redraw_ = true;
     }
+
+    void ImagePanel::adjustSizes() {
+        auto img = images_[image_type_image].get();
+        if (!img) {
+            return;
+        }
+        RawImage *target = NULL;
+        // keep all the images at the same size of the main image :)
+        for (int i = 0; i < image_type_count; ++i) {
+            if (i == image_type_image || i == image_type_paste) {
+                continue;
+            }
+            target = images_[i].get();
+            if (!target || (target->w() == img->w() && target->h() == img->h())) {
+                continue;
+            }
+            images_[i] = target->resizeInTheCenter(img->w(), img->h());
+            valid_caches_[i] = false;
+        }
+    }
+
+    void ImagePanel::adjustPasteImageSize() {
+        auto img = images_[image_type_image].get();
+        if (!img) {
+            return;
+        }
+        RawImage *target = images_[image_type_paste].get();
+        if (target) {
+            images_[image_type_paste] = target->resizeInTheCenter(img->w(), img->h());
+            valid_caches_[image_type_paste] = false;
+            valid_caches_[image_type_image] = false;
+        }
+        scrollAgain();
+    }
+
+    RawImage *ImagePanel::getPasteImage() {
+        if (!images_[image_type_paste] || !images_[image_type_image]) {
+            if (images_[image_type_image]) {
+                return images_[image_type_image].get();
+            }
+            return NULL;
+        }
+        pastimage_buffer_ = images_[image_type_image]->duplicate();
+        pastimage_buffer_->pasteAt(paste_coords_.x, paste_coords_.y, images_[image_type_paste].get());
+        return pastimage_buffer_.get();
+    }
+
 } // namespace dexpert

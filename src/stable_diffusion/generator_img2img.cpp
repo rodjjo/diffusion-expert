@@ -6,6 +6,16 @@
 namespace dexpert
 {
 
+namespace 
+{
+    const char *inpaint_mode_names[inpaint_mode_count] = {
+        "original",
+        "fill",
+        "latent",
+    };
+} // unamed namespace 
+
+
  GeneratorImg2Image::GeneratorImg2Image(
         const std::string& prompt,
         const std::string& negative,
@@ -97,6 +107,7 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.width = width_;
     params.height = height_;
     params.image = image_.get();
+    params.inpaint_mode = inpaint_mode_names[inpaint_mode_];
 
     if (mask_) {
         if (mask_blur_size_) {

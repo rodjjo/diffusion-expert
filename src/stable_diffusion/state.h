@@ -47,7 +47,6 @@ class StableDiffusionState {
     // models
     bool reloadSdModelList();
     const std::list<model_info_t> &getSdModels() const;
-    void setSdModel(const std::string& name);
     std::string getSdModelPath(const std::string& name);
 
     // generation
@@ -81,7 +80,6 @@ private:
     void scroll_up_generators();
 private:
     std::list<model_info_t> sdModels_;
-    std::string currentSdModel_;
     std::string last_error_;
     std::vector<generator_t> generators_;
 };

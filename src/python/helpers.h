@@ -57,6 +57,7 @@ class img2img_config_t: public txt2img_config_t {
  public:
     RawImage *image = NULL;
     RawImage *mask = NULL;
+    const char *inpaint_mode = "";
     float strength = 0.8;
     const void fill_prompt_dict(py11::dict &params) const override;
 };
@@ -76,7 +77,7 @@ typedef std::function<void(bool success, const char *message)> status_callback_t
 typedef std::function<void(bool success, const char *message, std::shared_ptr<RawImage> image)> image_callback_t;
 typedef std::function<void(bool success, const char *message, const model_list_t &models)> model_callback_t;
 typedef std::function<void(bool success, const char *message, const model_url_list_t &models)> model_url_callback_t;
-
+typedef std::function<void(bool success, const char *message, const std::string& prompt)> interrogate_callback_t;
 
 callback_t check_have_deps(status_callback_t status_cb);
 callback_t install_deps(status_callback_t status_cb);
@@ -92,6 +93,7 @@ callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb
 callback_t list_models(const std::wstring& path, model_callback_t status_cb);
 callback_t model_urls(model_url_callback_t status_cb);
 callback_t download_model(const char *url, const char *filename, status_callback_t status_cb);
+callback_t interrogate_image(const char* model, RawImage *image, interrogate_callback_t status_cb);
 
 }  // namespace py
 }  // namespace

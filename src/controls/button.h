@@ -17,9 +17,12 @@ typedef std::function<void()> callback_t;
 
 class Button {
  public:
+    Button(callback_t callback);
     Button(const char *label, callback_t callback);
     Button(std::shared_ptr<Fl_Image> image, callback_t callback);
     void enableDownUp();
+    void setColor(uint8_t r, uint8_t g, uint8_t b);
+    void getColor(uint8_t *r, uint8_t *g, uint8_t *b);
     void change_label(const char *label);
     void position(int px, int py);
     void shortcut(int value);
@@ -41,10 +44,13 @@ class Button {
     void button_callback();
 
  private:
+   uint8_t color_[3] = {0,};
    bool down_up_ = false;
    callback_t callback_;
+
    Fl_Button *button_;
-    std::shared_ptr<Fl_Image> image_;
+   std::shared_ptr<uint8_t> data_;
+   std::shared_ptr<Fl_Image> image_;
 };
 
 }  // namespace dexpert

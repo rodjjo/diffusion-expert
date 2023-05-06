@@ -47,6 +47,7 @@ class RawImage {
     image_ptr_t removeAlpha();
     image_ptr_t resizeCanvas(uint32_t x, uint32_t y);
     image_ptr_t resizeImage(uint32_t x, uint32_t y);
+    image_ptr_t resizeInTheCenter(uint32_t x, uint32_t y);
     image_ptr_t getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     image_ptr_t ensureMultipleOf8();
     image_ptr_t resizeLeft(int value);
