@@ -1,12 +1,14 @@
-#include "src/windows/diffusion_tool.h"
 #include "src/windows/console_viewer.h"
 #include "src/windows/config_window.h"
 #include "src/python/helpers.h"
 #include "src/config/config.h"
+#include "src/stable_diffusion/state.h"
+
+#include "src/windows/diffusion_tool.h"
 
 
 #define MIN_WIDTH 640
-#define MIN_HEIGHT 480
+#define MIN_HEIGHT 580
 
 namespace dexpert {
 
@@ -18,40 +20,32 @@ DiffusionTool::DiffusionTool():  Fl_Window(
     getConfig().windowYPos(),
     getConfig().windowWidth(),
     getConfig().windowHeight(),
-    "Stable Diffusion Expert - Py and C++"
+    "Image editor - Stable Diffusion"
 ) {
     auto wnd = this;
-
     wnd->size_range(MIN_WIDTH, MIN_HEIGHT);
+
 
     wnd->begin();
 
     initPagesPanel();
     initRightPanel();
-    initBottomPanel();
     initToolbar();
 
     wnd->end();
 
-    alignComponents();
-
     wnd->resizable(wnd);
 
     alignComponents();
-
-    wnd->set_modal();
+    
     wnd->show();
-
+    wnd->set_modal();
+    
     Fl::add_timeout(0.01, &DiffusionTool::gotoPromptPage, this);
 }
 
-void DiffusionTool::initBottomPanel() {
-    console_ = new ConsoleTabs(0, 0, 1, 1);
-    console_->end();
-}
-
 void DiffusionTool::initRightPanel() {
-    rightPanel_ = new Fl_Group(this->w() - 200, 20, 200, this->h() - 120);
+    rightPanel_ = new Fl_Group(this->w() - 205, 20, 200, this->h() - 120);
     rightPanel_->begin();
     page_browser_ = new Fl_Select_Browser(0, 0, 1, 1);
     page_browser_->callback(pageChangeCallback, this);
@@ -74,11 +68,22 @@ void DiffusionTool::refreshBrowser() {
 void DiffusionTool::initToolbar() {
     toolsPanel_ = new Fl_Group(0, 20, this->w(), 20);
     cancelBtn_.reset(new Button(xpm::image(xpm::button_cancel_16x16), [this] {
+       confirmed_ = false;
        this->hide();
     }));
+    confirmBtn_.reset(new Button(xpm::image(xpm::button_ok_16x16), [this] {
+       confirmed_ = true;
+       this->hide();
+    }));
+    consoleBtn_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
+       showConsoles("Console windows", true);
+    }));
+
     toolsPanel_->end();
     toolsPanel_->box(FL_BORDER_BOX);
     cancelBtn_->tooltip("Discart all changes and close the window");
+    confirmBtn_->tooltip("Confirm");
+    consoleBtn_->tooltip("Show the console window");
 }
 
 void DiffusionTool::initPagesPanel() {
@@ -91,31 +96,31 @@ void DiffusionTool::alignComponents() {
     int h = this->h();
 
     int topH = 2;
-    int toolbarH = 30;
-    int bottomH = 130;
+    int toolbarH = 60;
+    int bottomH = 5;
     int centerH = h - topH - bottomH - toolbarH;
     int leftW = 0;
-    int rightW = 100;
+    int rightW = 105;
     int centerW = w - leftW - rightW;
 
     pages_->position(leftW, topH);
     pages_->size(centerW, centerH);
 
-    console_->position(leftW, h - toolbarH - bottomH);
-    console_->size(w, bottomH);
-
     rightPanel_->position(leftW + centerW, topH);
-    rightPanel_->size(rightW, centerH);
+    rightPanel_->size(rightW - 5, centerH);
 
     page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
     
     toolsPanel_->position(0, h - toolbarH);
     toolsPanel_->size(w, toolbarH);
-    cancelBtn_->size(200, toolbarH - 8);
-    cancelBtn_->position(
-        (toolsPanel_->x() + toolsPanel_->w()) / 2 - cancelBtn_->w() / 2,
-        toolsPanel_->y() + 4
-    );
+    cancelBtn_->size(200, 40);
+    confirmBtn_->size(200, 40);
+    consoleBtn_->size(30, 30);
+    
+    confirmBtn_->position(toolsPanel_->x() + toolsPanel_->w() - confirmBtn_->w() * 2 - 7, toolsPanel_->y() + 5);
+    cancelBtn_->position(toolsPanel_->x() + toolsPanel_->w() - confirmBtn_->w() - 5, toolsPanel_->y() + 5);
+
+    consoleBtn_->position(5, toolsPanel_->y() + toolsPanel_->h() / 2 - consoleBtn_->h() / 2);
     
 }
 
@@ -167,7 +172,6 @@ void DiffusionTool::gotoSelectedPage() {
 }
 
 image_ptr_t DiffusionTool::run() {
-    this->hide();
     this->pages_->refreshModels();
     this->show();
     while (this->shown()) {
@@ -182,8 +186,10 @@ image_ptr_t DiffusionTool::run() {
 
 void DiffusionTool::setInitialImage(RawImage *image) {
     if (!image) {
+        confirmBtn_->hide();
         return;
     }
+    confirmBtn_->show();
     pages_->setInputImage(image);
     page_browser_->value(pages_->getIndexAtPage(pages_->activePage()));
     gotoSelectedPage();
@@ -195,10 +201,12 @@ RawImage *DiffusionTool::getInputImage() {
 
 image_ptr_t get_stable_diffusion_image(RawImage *image) {
     DiffusionTool *window = NULL;
+    get_sd_state()->clearGenerators();
+
     if (window == NULL) {
         window = new DiffusionTool();
     }
-    window->hide(); 
+
     window->setInitialImage(image);
 
     image_ptr_t r = window->run();
@@ -208,12 +216,7 @@ image_ptr_t get_stable_diffusion_image(RawImage *image) {
 }
 
 image_ptr_t get_stable_diffusion_image() {
-    static DiffusionTool *window = NULL;
-    if (window == NULL) {
-        window = new DiffusionTool();
-    }
-    image_ptr_t r = window->run();
-    return r;
+    return get_stable_diffusion_image(NULL);
 }
 
 }  // namespace dexpert

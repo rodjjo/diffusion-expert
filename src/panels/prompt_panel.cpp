@@ -346,19 +346,29 @@ void PromptPanel::refreshModels() {
 }
 
 const char *PromptPanel::getSdModel(bool for_inpainting) {
+    bool hasInpaint = modelsInpaint_->value() >= 0;
+    bool hasNormal = models_->value() >= 0;
+
+    if (hasInpaint) {
+        dexpert::getConfig().setLatestSdModelInpaint(modelsInpaint_->text(modelsInpaint_->value()));
+    }
+    if (hasNormal) {
+        dexpert::getConfig().setLatestSdModel(models_->text(models_->value()));
+    }   
+    if (hasNormal || hasInpaint) {
+        dexpert::getConfig().save();
+    }
+
     if (for_inpainting) {
-        if (modelsInpaint_->value() >= 0) {
-            dexpert::getConfig().setLatestSdModelInpaint(modelsInpaint_->text(modelsInpaint_->value()));
-            dexpert::getConfig().save();
+        if (hasInpaint) {
             return modelsInpaint_->text(modelsInpaint_->value());
         }
     } else {
-        if (models_->value() >= 0) {
-            dexpert::getConfig().setLatestSdModel(models_->text(models_->value()));
-            dexpert::getConfig().save();
+        if (hasNormal) {
             return models_->text(models_->value());
         }
     }
+
     return NULL;
 }
 
