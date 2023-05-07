@@ -47,6 +47,7 @@ public:
     void setGridLocation(int index, int variation);
     void enableGrid();
     void enableCache();
+    void ensureButtonEnabled();
     void editMask();
     void editControlImage();
     void setBrushSize(int value);
@@ -73,6 +74,9 @@ public:
     image_ptr_t getImage();
     image_ptr_t getMask();
     image_ptr_t getControlImage();
+
+    void setTag(size_t value);
+    size_t getTag();
 protected:
     void get_buffer(const unsigned char **buffer, uint32_t *w, uint32_t *h, int *format, int buffer_type) override;
     RawImage *getDrawingImage(int buffer_type);
@@ -90,6 +94,8 @@ private:
     frame_button_t *get_button_near_mouse(int x, int y);
 
 private:
+    size_t tag_ = 0;
+    bool force_button_drawing_ = false;
     bool grid_enabled_ = false;
     bool cache_enabled_ = false;
     bool mask_drawing_ = false;

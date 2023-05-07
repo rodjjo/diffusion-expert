@@ -257,7 +257,7 @@ void Pages::textToImage() {
             promptPanel_->getVariationStrength(),
             inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
-            promptPanel_->shouldUseCodeformer(),
+            false,
             inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
             inputImage_->getInpaintMode()
         ));
@@ -274,7 +274,7 @@ void Pages::textToImage() {
             promptPanel_->getCFG(),
             promptPanel_->getVariationStrength(),
             promptPanel_->shouldRestoreFaces(),
-            promptPanel_->shouldUseCodeformer()
+            false
         ));
     }
 

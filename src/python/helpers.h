@@ -72,20 +72,22 @@ class model_urls_t {
 
 typedef std::list<model_urls_t> model_url_list_t;
 
-class textual_inversion_t {
+class embedding_t {
   public:
+    std::string kind;
     std::string name;
     std::string filename;
+    std::string path;
 };
 
-typedef std::list<textual_inversion_t> textual_inversion_list_t;
+typedef std::list<embedding_t> embedding_list_t;
 
 typedef std::function<void()> callback_t;
 typedef std::function<void(bool success, const char *message)> status_callback_t;
 typedef std::function<void(bool success, const char *message, std::shared_ptr<RawImage> image)> image_callback_t;
 typedef std::function<void(bool success, const char *message, const model_list_t &models)> model_callback_t;
 typedef std::function<void(bool success, const char *message, const model_url_list_t &models)> model_url_callback_t;
-typedef std::function<void(bool success, const char *message, const textual_inversion_list_t &values)> textual_inv_callback_t;
+typedef std::function<void(bool success, const char *message, const embedding_list_t &values)> embedding_callback_t;
 typedef std::function<void(bool success, const char *message, const std::string& prompt)> interrogate_callback_t;
 
 callback_t check_have_deps(status_callback_t status_cb);
@@ -100,7 +102,7 @@ callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb
 callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 
 
 callback_t list_models(const std::wstring& path, model_callback_t status_cb);
-callback_t get_textual_inversion_tokens(const std::wstring &path, textual_inv_callback_t status_cb);
+callback_t list_embeddings(embedding_callback_t status_cb);
 callback_t model_urls(model_url_callback_t status_cb);
 callback_t download_model(const char *url, const char *filename, status_callback_t status_cb);
 callback_t interrogate_image(const char* model, RawImage *image, interrogate_callback_t status_cb);

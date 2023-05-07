@@ -252,26 +252,28 @@ namespace dexpert
             };
         }
         
-        callback_t get_textual_inversion_tokens(const std::wstring &path, textual_inv_callback_t status_cb)
+        callback_t list_embeddings(embedding_callback_t status_cb)
         {
-            return [&path, status_cb]
+            return [status_cb]
             {
                 try {
-                    textual_inversion_list_t values;
+                    embedding_list_t values;
 
-                    auto r = dexpert::py::getModule().attr("get_textual_inversion_tokens")();
+                    auto r = dexpert::py::getModule().attr("get_embeddings")();
                     auto seq = r.cast<py11::sequence>();
                     for (size_t i = 0; i < seq.size(); ++i)
                     {
                         auto it = seq[i].cast<py11::dict>();
-                        textual_inversion_t value;
+                        embedding_t value;
                         value.name = it["name"].cast<std::string>();
                         value.filename = it["filename"].cast<std::string>();
+                        value.kind = it["kind"].cast<std::string>();
+                        value.path = it["path"].cast<std::string>();
                         values.push_back(value);
                     }
                     status_cb(true, NULL, values); // TODO: check error!
                 } catch(std::runtime_error e) {
-                    status_cb(false, getError(e), textual_inversion_list_t()); // TODO: check error!
+                    status_cb(false, getError(e), embedding_list_t()); // TODO: check error!
                 }
 
             };

@@ -12,7 +12,7 @@ from diffusers import (
 import safetensors
 
 import torch
-from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR
+from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting
 from utils.downloader import download_file
 from models.loader import load_stable_diffusion_model
@@ -55,6 +55,16 @@ def get_textual_inversion_paths():
             result.append((False, path))
         elif lp.endswith('.safetensors'):
             result.append((True, path))
+    return result
+
+def get_lora_paths():
+    files = os.listdir(LORA_DIR)
+    result = []
+    for f in files:
+        lp = f.lower()
+        path = os.path.join(LORA_DIR, f) 
+        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
+            result.append(path)
     return result
 
 
@@ -179,6 +189,7 @@ def current_model_is_in_painting():
 def download_sd_model(url, filename):
     download_file(url, MODELS_DIR, filename)
 
+
 def get_sd_model_urls():
     return [{
         'display_name': 'stable diffusion 1.5',
@@ -188,7 +199,8 @@ def get_sd_model_urls():
         'url': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors'
     }]
 
-def get_textual_inversion_tokens():
+
+def get_embeddings():
     files = get_textual_inversion_paths()
     result = []
     for f in files:
@@ -200,7 +212,20 @@ def get_textual_inversion_tokens():
             if 'name' in data:
                 result.append({
                     'name': data['name'],
-                    'filename': os.path.basename(f)
+                    'kind': 'textual_inv',
+                    'filename': os.path.basename(f[1]),
+                    'path': f[1]
                 })
             del data
+    files = get_lora_paths()
+    for f in files:
+        name = os.path.basename(f)
+        if '.' in name:
+            name = name.split('.', maxsplit=1)[0]
+        result.append({
+            'name': name,
+            'kind': 'lora',
+            'filename': os.path.basename(f),
+            'path': f
+        })
     return result

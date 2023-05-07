@@ -76,6 +76,8 @@ void PythonMachine::run_machine() {
 
     main_module = &main;
 
+    ready_ = true;
+
     while (!terminated_) {
       execute_callback_internal();
     }
@@ -137,6 +139,10 @@ void PythonMachine::wait_callback() {
     }
 }
 
+bool PythonMachine::ready() {
+    return ready_;
+}
+
 std::shared_ptr<PythonMachine> get_py() {
     if (machine) {
         return machine;
@@ -151,6 +157,10 @@ void py_main() {
 
 void py_end() {
     get_py()->stop_machine();
+}
+
+bool py_ready() {
+    return get_py()->ready();
 }
 
 }  // namespace py

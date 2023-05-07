@@ -8,7 +8,7 @@ CACHE_DIR = os.path.join(BASE_DIR, 'models', 'cache')
 VAES_DIR = os.path.join(BASE_DIR, 'models', 'vae')
 DEEPBOORU_DIR = os.path.join(BASE_DIR, 'models', 'deepbooru')
 EMBEDDING_DIR = os.path.join(BASE_DIR, 'models', 'embeddings')
-
+LORA_DIR = os.path.join(BASE_DIR, 'models', 'lora')
 
 def create_dirs():
     try:
@@ -17,6 +17,7 @@ def create_dirs():
         os.makedirs(CACHE_DIR, exist_ok=True)
         os.makedirs(DEEPBOORU_DIR, exist_ok=True)
         os.makedirs(EMBEDDING_DIR, exist_ok=True)
+        os.makedirs(LORA_DIR, exist_ok=True)
     except Exception as e:
         print(f'Error creating directories: {str(e)}')
 

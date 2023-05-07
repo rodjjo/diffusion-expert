@@ -9,7 +9,7 @@
 
 
 #define MIN_WIDTH 640
-#define MIN_HEIGHT 580
+#define MIN_HEIGHT 740
 
 namespace dexpert {
 
