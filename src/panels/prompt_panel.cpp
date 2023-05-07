@@ -19,7 +19,7 @@ namespace {
     std::string last_negative_prompt;
 }
 
-PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : Fl_Group(x, y, w, h), on_generate_(on_generate) {
+PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : EventListener(), Fl_Group(x, y, w, h), on_generate_(on_generate) {
     this->begin();
     positivePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Prompt");
     negativePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Negative Prompt");
@@ -41,10 +41,11 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : F
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
     modelsInpaint_ = new Fl_Choice(0, 0, 1, 1, "Inpainting Model");
     restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
-    codeformer_ = new Fl_Check_Button(0, 0, 1, 1, "Codeformer");
 
-    codeformer_->hide(); // TODO: add codeformer
+    textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
+    loraPanel_ = new EmbeddingPanel(embedding_lora, 0, 0, 1, 1);
+    
     this->end();
 
     positivePrompt_->align(FL_ALIGN_TOP_LEFT);
@@ -274,12 +275,8 @@ void PromptPanel::alignComponents() {
         120,
         25
     );
-    codeformer_->resize(
-        x() + 5 + restore_face_->w(),
-        restore_face_->y(),
-        120,
-        25
-    ); 
+    textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
+    loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);
 }
 
 void PromptPanel::resize(int x, int y, int w, int h) {
@@ -387,16 +384,50 @@ bool PromptPanel::shouldRestoreFaces() {
     return restore_face_->value() != 0;
 }
 
-bool PromptPanel::shouldUseCodeformer() {
-    return codeformer_->value() != 0;
-}
-
 void PromptPanel::setImageSize(int w, int h) {
     char buffer[30] = {0,};
     sprintf(buffer, "%d", w);
     width_->value(buffer);
     sprintf(buffer, "%d", h);
     height_->value(buffer);
+}
+
+void PromptPanel::event_trigged(const void *sender, int event, void *data) {
+    if (sender == textualPanel_) {
+        if (event == embedding_event_selected) {
+            auto item = textualPanel_->getSelectedEmbedding();
+            if (!item) {
+                return;
+            }
+            std::string text = positivePrompt_->value();
+            text += " " + item->name;
+            positivePrompt_->value(text.c_str());
+        } else if (event == embedding_define_image) {
+            if (image_panel_) {
+                auto img = image_panel_->getPasteImage();
+                if (img) {
+                    textualPanel_->setSelectedImage(img->resizeInTheCenter(100, 100));
+                }
+            }
+        }
+    } else if (sender == loraPanel_) {
+        if (event == embedding_event_selected) {
+            auto item = loraPanel_->getSelectedEmbedding();
+            if (!item) {
+                return;
+            }
+            std::string text = positivePrompt_->value();
+            text += " <" + item->name + ">";
+            positivePrompt_->value(text.c_str());
+        } else if (event == embedding_define_image) {
+            if (image_panel_) {
+                auto img = image_panel_->getPasteImage();
+                if (img) {
+                    loraPanel_->setSelectedImage(img->resizeInTheCenter(100, 100));
+                }
+            }
+        }
+    }
 }
 
 } // namespace dexpert

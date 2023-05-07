@@ -231,7 +231,7 @@ void FramePanel::setImage(image_ptr_t image) {
 void FramePanel::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
     frame_button_t * b = get_button_mouse(up_x, up_y);
     if (b) {
-        if (getDrawingImage(image_edit_disabled)) {
+        if (getDrawingImage(image_edit_disabled) || force_button_drawing_) {
             b->cb(this, b->id);
         }
     } else if (left_button || right_button) {
@@ -284,9 +284,13 @@ frame_button_t *FramePanel::get_button_near_mouse(int x, int y) {
     return NULL;
 }
 
+void FramePanel::ensureButtonEnabled() {
+    force_button_drawing_ = true;
+}
+
 void FramePanel::draw_next() {
     draw_mask();
-    if (!buttons_.size() || !getDrawingImage(image_edit_disabled))  {
+    if (!buttons_.size() || (!getDrawingImage(image_edit_disabled) && !force_button_drawing_))  {
         return;
     }
 
@@ -455,6 +459,14 @@ void FramePanel::redrawIfModified() {
         image_version_ = img->getVersion();
         redraw();
     }
+}
+
+void FramePanel::setTag(size_t value) {
+    tag_ = value;
+}
+
+size_t FramePanel::getTag() {
+    return tag_;
 }
 
 

@@ -10,6 +10,7 @@
 #include "src/dialogs/common_dialogs.h"
 #include "src/windows/console_viewer.h"
 #include "src/windows/main_window.h"
+#include "src/windows/splash_screen.h"
 
 #include "src/stable_diffusion/state.h"
 #include "src/stable_diffusion/generator_txt2img.h"
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
     std::thread gui_thread([&result] {
         Fl::scheme("gtk+");
 
+        dexpert::wait_python();
         /*
         for (int i = 0; i < 100; i++) {
             dexpert::test_generators();

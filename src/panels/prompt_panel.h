@@ -14,7 +14,9 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Check_Button.H>
 
+#include "src/data/event_manager.h"
 #include "src/controls/button.h"
+#include "src/panels/embedding_panel.h"
 
 namespace dexpert
 {
@@ -23,7 +25,7 @@ class PaintingPanel;
 
 typedef std::function<void()>  callback_t;
 
-class PromptPanel: public Fl_Group {
+class PromptPanel: public EventListener, public Fl_Group {
  public:
     PromptPanel(int x, int y, int w, int h, callback_t on_generate);
     virtual ~PromptPanel();
@@ -37,7 +39,6 @@ class PromptPanel: public Fl_Group {
     float getCFG();
     float getVariationStrength();
     bool shouldRestoreFaces();
-    bool shouldUseCodeformer();
     bool ready(bool require_prompt);
     void setImageSize(int w, int h);
     void refreshModels();
@@ -49,6 +50,7 @@ class PromptPanel: public Fl_Group {
     
  protected:
     void resize(int x, int y, int w, int h) override;
+    void event_trigged(const void *sender, int event, void *data) override;
 
  private:
    PaintingPanel* image_panel_ = NULL;
@@ -64,7 +66,8 @@ class PromptPanel: public Fl_Group {
    Fl_Choice *models_;
    Fl_Choice *modelsInpaint_;
    Fl_Check_Button *restore_face_;
-   Fl_Check_Button *codeformer_;
+   EmbeddingPanel *textualPanel_;
+   EmbeddingPanel *loraPanel_;
    std::unique_ptr<Button> generateBtn_;
    std::unique_ptr<Button> interrogateBtn1_;
    std::unique_ptr<Button> interrogateBtn2_;

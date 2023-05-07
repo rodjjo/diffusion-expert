@@ -1,7 +1,5 @@
 import gc
 import os
-import urllib
-import shutil
 from contextlib import contextmanager
 from diffusers import (
         StableDiffusionPipeline, 
@@ -11,8 +9,10 @@ from diffusers import (
         ControlNetModel
     )
 
+import safetensors
+
 import torch
-from models.paths import CACHE_DIR, MODELS_DIR
+from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting
 from utils.downloader import download_file
 from models.loader import load_stable_diffusion_model
@@ -44,6 +44,28 @@ usefp16 = {
     True: torch.float16,
     False: torch.float32
 }
+
+def get_textual_inversion_paths():
+    files = os.listdir(EMBEDDING_DIR)
+    result = []
+    for f in files:
+        lp = f.lower()
+        path = os.path.join(EMBEDDING_DIR, f) 
+        if lp.endswith('.bin'): # rename .pt to bin before loading it
+            result.append((False, path))
+        elif lp.endswith('.safetensors'):
+            result.append((True, path))
+    return result
+
+def get_lora_paths():
+    files = os.listdir(LORA_DIR)
+    result = []
+    for f in files:
+        lp = f.lower()
+        path = os.path.join(LORA_DIR, f) 
+        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
+            result.append(path)
+    return result
 
 
 def create_pipeline(mode: str, model_path: str, controlnets = None):
@@ -105,6 +127,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None):
             'pipeline': pipe,
             'contronet': controlnet_modes
         }
+        for tip in get_textual_inversion_paths():
+            pipe.load_textual_inversion(tip[1], use_safetensors=tip[0], local_files_only=True)
     gc.collect()
     return CURRENT_PIPELINE['pipeline']
 
@@ -165,6 +189,7 @@ def current_model_is_in_painting():
 def download_sd_model(url, filename):
     download_file(url, MODELS_DIR, filename)
 
+
 def get_sd_model_urls():
     return [{
         'display_name': 'stable diffusion 1.5',
@@ -173,3 +198,34 @@ def get_sd_model_urls():
         'filename': 'v1-5-pruned.safetensors',
         'url': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors'
     }]
+
+
+def get_embeddings():
+    files = get_textual_inversion_paths()
+    result = []
+    for f in files:
+        if f[0]:
+            data = safetensors.torch.load_file(f[1], device="cpu")
+        else:
+            data = torch.load(f[1], map_location="cpu")
+        if 'string_to_param' in data:
+            if 'name' in data:
+                result.append({
+                    'name': data['name'],
+                    'kind': 'textual_inv',
+                    'filename': os.path.basename(f[1]),
+                    'path': f[1]
+                })
+            del data
+    files = get_lora_paths()
+    for f in files:
+        name = os.path.basename(f)
+        if '.' in name:
+            name = name.split('.', maxsplit=1)[0]
+        result.append({
+            'name': name,
+            'kind': 'lora',
+            'filename': os.path.basename(f),
+            'path': f
+        })
+    return result

@@ -1,18 +1,56 @@
-import sys
 import gc
+import re
 import torch
+import os
 from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
 from utils.images import pil_as_dict, pil_from_dict, fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
+from models.paths import LORA_DIR
 
 from dexpert import progress, progress_canceled, progress_title
 
 
 def report(message):
     progress_title(f'[Text To Image] - {message}')
+
+
+def parse_prompt_loras(prompt: str):
+    lora_re = re.compile('<[^>]+>')
+    lora_list = re.findall(lora_re, prompt)
+
+    lora_items = []
+    for lora in lora_list:
+        lora = lora.replace('<', '').replace('>', '')
+        p = lora.split(':')
+        if len(p) == 1:
+            p = [p, '1.0']
+        if len(p) != 2:
+            continue
+        try:
+            weight = float(p[1])
+        except Exception:
+            report(f"Invalid lora weigth {p[1]}")
+            continue
+        filepath = os.path.join(LORA_DIR, f'{p[0]}.safetensors')
+        report(filepath)
+        if not os.path.exists(filepath):
+            filepath = os.path.join(LORA_DIR, f'{p[0]}.ckpt')
+        if not os.path.exists(filepath):
+            continue
+        lora_items.append([filepath, weight])
+
+    w_sum = 0
+    for lora in lora_items:
+        w_sum += lora[1]
+    if w_sum == 0:
+        w_sum = 1
+    base_weight = 1.0 / w_sum
+    for lora in lora_items:
+        lora[1] = lora[1] * base_weight
+    return re.sub(lora_re, '', prompt), lora_items
 
 
 @torch.no_grad()
@@ -158,6 +196,16 @@ def _run_pipeline(pipeline_type, params):
                 conds = conds[0]
             additional_args['controlnet_conditioning_image'] = images
             additional_args['controlnet_conditioning_scale'] = conds
+
+    pipeline.unet.set_default_attn_processor()
+
+    prompt, lora_list = parse_prompt_loras(prompt)
+
+    for lora in lora_list: 
+        use_safetensors = True if lora[0].endswith('safetensors') else None
+        report(f"Using lora: {lora[0]}")
+        pipeline.unet.load_attn_procs(lora[0], local_files_only=True, use_safetensors=use_safetensors)
+
     pipeline.to(device)
     latents_noise.to(device)
     report("generating the variation" if variation_enabled else "generating the image")

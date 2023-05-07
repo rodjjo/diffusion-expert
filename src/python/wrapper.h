@@ -22,6 +22,7 @@ class PythonMachine;
 std::shared_ptr<PythonMachine> get_py();
 void py_main();
 void py_end();
+bool py_ready();
 
 py11::module_ &getModule();
 
@@ -33,6 +34,9 @@ class PythonMachine {
    void run_machine();
    friend void py_end();
    void stop_machine();
+   friend bool py_ready();
+   bool ready();
+
  public:
     PythonMachine (const PythonMachine &) = delete;
     PythonMachine & operator = (const PythonMachine &) = delete;
@@ -47,6 +51,7 @@ class PythonMachine {
 
  private:
    bool terminated_ = false;
+   bool ready_ = false;
    std::mutex callback_mutex_;
    async_callback_t callback_;
 };
