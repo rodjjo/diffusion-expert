@@ -130,10 +130,13 @@ void EmbeddingPanel::updateData() {
     for (int i = 0; i < images_.size(); ++i) {
         int pos = index_ + i;
         images_[i]->setTag(pos);
+        
         if (pos < embedded_.size()) {
             labels_[i]->copy_label(embedded_[pos].name.c_str());
+            images_[i]->setImage(embedded_[pos].img);
         } else {
             labels_[i]->copy_label("None");
+            images_[i]->setImage(dexpert::image_ptr_t());
         }
     }
 }
@@ -173,6 +176,7 @@ void EmbeddingPanel::update(bool force) {
                 e.filename = it->filename;
                 e.name = it->name;
                 e.path = it->path;
+                e.img = it->img;
                 embedded_.push_back(e);
         }
     }
@@ -183,9 +187,28 @@ void EmbeddingPanel::update(bool force) {
 }
 
 void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
+    if (selected_ >= embedded_.size() || !image.get()) {
+        return;
+    }
     for (int i = 0; i < images_.size(); ++i) {
         if (images_[i]->getTag() == selected_) {
             images_[i]->setImage(image);
+            if (images_[i]->visible_r()) {
+                images_[i]->redraw();
+            }
+            std::string path = embedded_[i].path;
+            path += ".jpg";
+            bool success = false;
+            const char *msg = NULL;
+            dexpert::py::get_py()->execute_callback(
+                dexpert::py::save_image(path.c_str(), image.get(), [&success, &msg] (bool b, const char *m) {
+                    success = b;      
+                    msg = m;
+                })
+            );
+            if (msg) {
+                show_error(msg);
+            }
             return;
         }
     }

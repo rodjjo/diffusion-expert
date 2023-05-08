@@ -78,6 +78,7 @@ class embedding_t {
     std::string name;
     std::string filename;
     std::string path;
+    image_ptr_t img;
 };
 
 typedef std::list<embedding_t> embedding_list_t;

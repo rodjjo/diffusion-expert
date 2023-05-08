@@ -29,6 +29,7 @@ struct embedded_t {
   std::string name;
   std::string filename;
   std::string path;
+  std::shared_ptr<RawImage> img;
 };
 
 class EmbeddingPanel: public Fl_Group {

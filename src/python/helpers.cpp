@@ -269,6 +269,10 @@ namespace dexpert
                         value.filename = it["filename"].cast<std::string>();
                         value.kind = it["kind"].cast<std::string>();
                         value.path = it["path"].cast<std::string>();
+                        if (it.contains("image")) {
+                            auto img = it["image"].cast<py11::dict>();
+                            value.img = dexpert::py::rawImageFromPyDict(img);
+                        }
                         values.push_back(value);
                     }
                     status_cb(true, NULL, values); // TODO: check error!
