@@ -18,7 +18,7 @@ def report(message):
 
 
 def parse_prompt_loras(prompt: str):
-    lora_re = re.compile('<[^>]+>')
+    lora_re = re.compile('<[^:]+:[^>]+>')
     lora_list = re.findall(lora_re, prompt)
 
     lora_items = []
@@ -41,15 +41,6 @@ def parse_prompt_loras(prompt: str):
         if not os.path.exists(filepath):
             continue
         lora_items.append([filepath, weight])
-
-    w_sum = 0
-    for lora in lora_items:
-        w_sum += lora[1]
-    if w_sum == 0:
-        w_sum = 1
-    base_weight = 1.0 / w_sum
-    for lora in lora_items:
-        lora[1] = lora[1] * base_weight
     return re.sub(lora_re, '', prompt), lora_items
 
 
@@ -61,7 +52,8 @@ def _run_pipeline(pipeline_type, params):
         gfpgan_dwonload_model()
         restore_faces = True
 
-    prompt = params['prompt']
+    prompt, lora_list = parse_prompt_loras(params['prompt'])
+
     negative = params['negative']
 
     if len(negative or '') < 2:
@@ -98,7 +90,7 @@ def _run_pipeline(pipeline_type, params):
         pipeline_type = 'inpaint2img'
 
     report("creating the pipeline")
-    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets) 
+    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list) 
     report("pipeline created")
 
     if pipeline_type == 'inpaint2img':
@@ -196,15 +188,6 @@ def _run_pipeline(pipeline_type, params):
                 conds = conds[0]
             additional_args['controlnet_conditioning_image'] = images
             additional_args['controlnet_conditioning_scale'] = conds
-
-    pipeline.unet.set_default_attn_processor()
-
-    prompt, lora_list = parse_prompt_loras(prompt)
-
-    for lora in lora_list: 
-        use_safetensors = True if lora[0].endswith('safetensors') else None
-        report(f"Using lora: {lora[0]}")
-        pipeline.unet.load_attn_procs(lora[0], local_files_only=True, use_safetensors=use_safetensors)
 
     pipeline.to(device)
     latents_noise.to(device)

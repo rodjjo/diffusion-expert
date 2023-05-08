@@ -1,5 +1,8 @@
 import gc
 import os
+from PIL import Image
+from utils.images import pil_as_dict
+
 from contextlib import contextmanager
 from diffusers import (
         StableDiffusionPipeline, 
@@ -25,16 +28,18 @@ CURRENT_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
-def load_model(model_path: str):
+def load_model(model_path: str, lora_list: list):
     global CURRENT_MODEL_PARAMS
     global CURRENT_PIPELINE
-    if CURRENT_MODEL_PARAMS.get('path', '') != model_path:
+    lora_list.sort()
+    if CURRENT_MODEL_PARAMS.get('path', '') != model_path or lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []):
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
-        params, in_painting = load_stable_diffusion_model(model_path)
+        params, in_painting = load_stable_diffusion_model(model_path, lora_list=lora_list)
         CURRENT_MODEL_PARAMS = {
             'path': model_path,
+            'lora_list': lora_list,
             'params': params,
             'in_painting': in_painting
         }
@@ -68,9 +73,9 @@ def get_lora_paths():
     return result
 
 
-def create_pipeline(mode: str, model_path: str, controlnets = None):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]):
     global CURRENT_PIPELINE
-    load_model(model_path)
+    load_model(model_path, lora_list)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
@@ -217,6 +222,19 @@ def get_embeddings():
                     'path': f[1]
                 })
             del data
+        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
+            if len(data.keys()) != 1:
+                continue
+            emb = next(iter(data.values()))
+            if len(emb.shape) == 1:
+                emb = emb.unsqueeze(0)
+            result.append({
+                'name': next(iter(data.keys())),
+                'kind': 'textual_inv',
+                'filename': os.path.basename(f[1]),
+                'path': f[1]
+            })
+            
     files = get_lora_paths()
     for f in files:
         name = os.path.basename(f)
@@ -228,4 +246,9 @@ def get_embeddings():
             'filename': os.path.basename(f),
             'path': f
         })
+    for r in result:
+        picture_path = f'{r["path"]}.jpg'
+        if os.path.exists(picture_path):
+            with Image.open(picture_path) as im:
+                r['image'] = pil_as_dict(im)
     return result
