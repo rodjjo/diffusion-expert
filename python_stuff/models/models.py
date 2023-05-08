@@ -18,7 +18,7 @@ import torch
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting
 from utils.downloader import download_file
-from models.loader import load_stable_diffusion_model
+from models.loader import load_stable_diffusion_model, get_textual_inversion_paths, get_lora_paths
 from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
 from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
 
@@ -49,28 +49,6 @@ usefp16 = {
     True: torch.float16,
     False: torch.float32
 }
-
-def get_textual_inversion_paths():
-    files = os.listdir(EMBEDDING_DIR)
-    result = []
-    for f in files:
-        lp = f.lower()
-        path = os.path.join(EMBEDDING_DIR, f) 
-        if lp.endswith('.bin'): # rename .pt to bin before loading it
-            result.append((False, path))
-        elif lp.endswith('.safetensors'):
-            result.append((True, path))
-    return result
-
-def get_lora_paths():
-    files = os.listdir(LORA_DIR)
-    result = []
-    for f in files:
-        lp = f.lower()
-        path = os.path.join(LORA_DIR, f) 
-        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
-            result.append(path)
-    return result
 
 
 def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]):
@@ -132,8 +110,6 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             'pipeline': pipe,
             'contronet': controlnet_modes
         }
-        for tip in get_textual_inversion_paths():
-            pipe.load_textual_inversion(tip[1], use_safetensors=tip[0], local_files_only=True)
     gc.collect()
     return CURRENT_PIPELINE['pipeline']
 

@@ -53,7 +53,6 @@ def _run_pipeline(pipeline_type, params):
         restore_faces = True
 
     prompt, lora_list = parse_prompt_loras(params['prompt'])
-
     negative = params['negative']
 
     if len(negative or '') < 2:
