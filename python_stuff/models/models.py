@@ -222,6 +222,19 @@ def get_embeddings():
                     'path': f[1]
                 })
             del data
+        elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
+            if len(data.keys()) != 1:
+                continue
+            emb = next(iter(data.values()))
+            if len(emb.shape) == 1:
+                emb = emb.unsqueeze(0)
+            result.append({
+                'name': next(iter(data.keys())),
+                'kind': 'textual_inv',
+                'filename': os.path.basename(f[1]),
+                'path': f[1]
+            })
+            
     files = get_lora_paths()
     for f in files:
         name = os.path.basename(f)

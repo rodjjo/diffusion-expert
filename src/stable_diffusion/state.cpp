@@ -44,7 +44,6 @@ bool StableDiffusionState::reloadSdModelList() {
                 el.name = it->name;
                 el.path = it->path;
                 new_list.push_back(el);
-                printf("model: %s %s\n", it->name.c_str(), it->path.c_str());
             }
         } else {
             if (m) msg = m;

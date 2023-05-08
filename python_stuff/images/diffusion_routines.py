@@ -18,7 +18,7 @@ def report(message):
 
 
 def parse_prompt_loras(prompt: str):
-    lora_re = re.compile('<[^>]+>')
+    lora_re = re.compile('<[^:]+:[^>]+>')
     lora_list = re.findall(lora_re, prompt)
 
     lora_items = []
