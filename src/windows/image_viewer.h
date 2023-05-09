@@ -11,7 +11,6 @@
 #include "src/controls/image_panel.h"
 #include "src/controls/button.h"
 #include "src/windows/modal_window.h"
-#include "src/panels/frame_panel.h"
 #include "src/python/raw_image.h"
 
 

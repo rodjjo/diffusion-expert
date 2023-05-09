@@ -218,6 +218,8 @@ void Pages::textToImage() {
             controlnets.push_back(c);
         }
     }
+    
+    bool reload = promptPanel_->shouldReload(true);
 
     std::shared_ptr<GeneratorBase> g;
     if (inputImage_->getImg2ImgImage()) {
@@ -258,6 +260,7 @@ void Pages::textToImage() {
             inputImage_->get_denoise_strength(),
             promptPanel_->shouldRestoreFaces(),
             false,
+            reload,
             inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
             inputImage_->getInpaintMode()
         ));
@@ -274,7 +277,8 @@ void Pages::textToImage() {
             promptPanel_->getCFG(),
             promptPanel_->getVariationStrength(),
             promptPanel_->shouldRestoreFaces(),
-            false
+            false,
+            reload
         ));
     }
 

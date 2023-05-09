@@ -12,8 +12,8 @@
 
 #include "src/controls/button.h"
 #include "src/python/raw_image.h"
-#include "src/panels/frame_panel.h"
 #include "src/windows/modal_window.h"
+#include "src/panels/miniature.h"
 
 namespace dexpert
 {
@@ -32,7 +32,7 @@ class ProgressWindow {
  private:
    bool preview_images_ = true;
     ModalWindow *window_ = NULL;
-    FramePanel *preview_;
+    Miniature *preview_;
     Fl_Progress *progress_;
     Fl_Box* title_;
     std::unique_ptr<Button> btnCancel_;

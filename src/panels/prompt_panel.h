@@ -43,7 +43,7 @@ class PromptPanel: public EventListener, public Fl_Group {
     void setImageSize(int w, int h);
     void refreshModels();
     void setImagePanel(PaintingPanel *panel);
- 
+    bool shouldReload(bool clear);
  private:
     void alignComponents();
     void interrogate(const char* model);
@@ -53,6 +53,7 @@ class PromptPanel: public EventListener, public Fl_Group {
     void event_trigged(const void *sender, int event, void *data) override;
 
  private:
+   bool should_reload_model_;
    PaintingPanel* image_panel_ = NULL;
    callback_t on_generate_;
    Fl_Multiline_Input *positivePrompt_;

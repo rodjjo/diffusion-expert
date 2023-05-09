@@ -34,6 +34,7 @@ class GeneratorImg2Image: public GeneratorBase {
             float image_strength,
             bool restore_faces,
             bool enable_codeformer,
+            bool reload_model,
             float mask_blur_size,
             inpaint_mode_t inpaint_mode
         );
@@ -65,6 +66,7 @@ class GeneratorImg2Image: public GeneratorBase {
         float mask_blur_size_ = 4.0;
         inpaint_mode_t inpaint_mode_;
         bool restore_faces_ = false;
+        bool reload_model_ = false;
         bool enable_codeformer_ = false;
 };
 

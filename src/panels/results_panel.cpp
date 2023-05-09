@@ -3,46 +3,25 @@
 #include "src/stable_diffusion/state.h"
 #include "src/windows/image_viewer.h"
 
-#define BUTTON_ID_PREVIEW 1
-#define BUTTON_ID_NEXT_ROW 2
-#define BUTTON_ID_PREV_ROW 3
-#define BUTTON_ID_NEXT_COL 4
-#define BUTTON_ID_PREV_COL 5
-#define BUTTON_ID_AS_INPUT 6
-#define BUTTON_ID_REMOVE 7
 
 namespace dexpert
 {
 
-    ResultsPanel::ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting) : Fl_Group(x, y, w, h), painting_(painting)
+    ResultsPanel::ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting) : EventListener(), Fl_Group(x, y, w, h), painting_(painting)
     {   
         this->begin();
-        
-        auto btn_callback = [this] (FramePanel *p, int id) {
-            this->take_action(p, id);
-        };
-
+       
         for (int i = 0; i < get_sd_state()->getMaxResultImages(); i++)
         {
-            std::vector<FramePanel *> row;
+            std::vector<PreviewPanel *> row;
             for (int j = 0; j < get_sd_state()->getMaxResultVariations(); j++)
             {
                 this->begin();
-                row.push_back(new FramePanel(0, 0, 1, 1));
-                FramePanel *fp = *row.rbegin();
-                fp->setGridLocation(i, j);
-                fp->enableGrid();
-                fp->enableCache();
-                fp->setImageSource(image_src_results);
-                fp->addButton(BUTTON_ID_PREVIEW, 0, 0, dexpert::xpm::lupe_16x16, btn_callback);
-                fp->addButton(BUTTON_ID_AS_INPUT, 1, 1, dexpert::xpm::green_pin_16x16, btn_callback);
-                fp->addButton(BUTTON_ID_REMOVE, 1, -1, dexpert::xpm::erase_all_16x16, btn_callback);
+                row.push_back(new PreviewPanel(0, 0, 1, 1, j == 0));
+                PreviewPanel *fp = *row.rbegin();
+                fp->setRow(i);
+                fp->setCol(j);
             }
-            row[0]->addButton(BUTTON_ID_PREV_ROW, 0, 1, dexpert::xpm::arrow_up_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_NEXT_ROW, 0, -1.0, dexpert::xpm::arrow_down_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_PREV_COL, -1, 0, dexpert::xpm::arrow_left_16x16, btn_callback);
-            row[0]->addButton(BUTTON_ID_NEXT_COL, 1, 0, dexpert::xpm::arrow_right_16x16, btn_callback);
-            
             miniatures_.push_back(row);
         }
 
@@ -139,6 +118,7 @@ namespace dexpert
             for (int c = 0; c < max_col; ++c)
             {
                 v[c]->resize(xx, yy, minature_w, minature_h);
+                v[c]->updateImage();
                 xx += minature_w + 5;
             }
             xx = sx;
@@ -146,7 +126,7 @@ namespace dexpert
         }
     }
 
-    FramePanel *ResultsPanel::getFrame(int col, int row)
+    PreviewPanel *ResultsPanel::getFrame(int col, int row)
     {
         if (row >= miniatures_.size())
             return NULL;
@@ -159,47 +139,61 @@ namespace dexpert
         return *(it2);
     }
 
-    void ResultsPanel::take_action(FramePanel *w, int id) {
-        switch (id) {
-            case BUTTON_ID_AS_INPUT: {
+    void ResultsPanel::event_trigged(const void *sender, int event, void *data) {
+        PreviewPanel *pn = NULL;
+        for (size_t i = 0; i < miniatures_.size(); ++i) {
+            for (size_t j = 0; j < miniatures_[i].size(); ++j) {
+                if (miniatures_[i][j] == sender) {
+                    pn = miniatures_[i][j];
+                    break;
+                }
+            }
+        }
+
+        if (!pn) {
+            return;
+        }
+
+        switch (event) {
+            case preview_event_use: {
                     if (ask("Do you want to set this as input image ?")) {
-                        painting_->setImage(get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation()));
+                        painting_->setImage(get_sd_state()->getResultsImage(pn->getRow(), pn->getCol()));
                         painting_->clearPasteImage();
                     }
                 }
                 break;
-            case BUTTON_ID_REMOVE:
+            case preview_event_remove:
                 {
                     if (ask("Do you want remove this image ?")) {
-                        get_sd_state()->clearImage(w->gridIndex(), w->gridVariation());
+                        get_sd_state()->clearImage(pn->getRow(), pn->getCol());
                         updatePanels();
                     }
                 }
                 break;
-            case BUTTON_ID_PREVIEW:
+            case preview_event_view:
                 {
-                    auto img = get_sd_state()->getResultsImage(w->gridIndex(), w->gridVariation());
+                    auto img = get_sd_state()->getResultsImage(pn->getRow(), pn->getCol());
                     if (img) {
                         view_image(img->duplicate());
                     }
                 }
                 break;
-            case BUTTON_ID_NEXT_ROW:
-                get_sd_state()->generateNextImage(w->gridIndex());
+            case preview_event_next:
+                get_sd_state()->generateNextImage(pn->getRow());
                 break;
-            case BUTTON_ID_PREV_ROW:
-                get_sd_state()->generatePreviousImage(w->gridIndex());
+            case preview_event_previous:
+                get_sd_state()->generatePreviousImage(pn->getRow());
                 break;
-            case BUTTON_ID_NEXT_COL:
-                get_sd_state()->generateNextVariation(w->gridIndex());
+            case preview_event_next_var:
+                get_sd_state()->generateNextVariation(pn->getRow());
                 break;
-            case BUTTON_ID_PREV_COL:
-                get_sd_state()->generatePreviousVariation(w->gridIndex());
+            case preview_event_previous_var:
+                get_sd_state()->generatePreviousVariation(pn->getRow());
                 break;
             default:
                 break;
         }
         updatePanels();
-    }
+    } 
 
 } // namespace dexpert

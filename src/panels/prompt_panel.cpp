@@ -407,8 +407,12 @@ void PromptPanel::event_trigged(const void *sender, int event, void *data) {
                 auto img = image_panel_->getImage();
                 if (img) {
                     textualPanel_->setSelectedImage(img->resizeInTheCenter(100, 100));
+                } else {
+                    show_error("No input image to set");
                 }
             }
+        } else if (event == embedding_event_reload) {
+            should_reload_model_ = true;
         }
     } else if (sender == loraPanel_) {
         if (event == embedding_event_selected) {
@@ -424,10 +428,24 @@ void PromptPanel::event_trigged(const void *sender, int event, void *data) {
                 auto img = image_panel_->getImage();
                 if (img) {
                     loraPanel_->setSelectedImage(img->resizeInTheCenter(100, 100));
+                } else {
+                    show_error("No input image to set");
                 }
             }
+        } else if (event == embedding_event_reload) {
+            should_reload_model_ = true;
         }
     }
+}
+
+bool PromptPanel::shouldReload(bool clear) {
+    if (should_reload_model_) {
+        if (clear) {
+            should_reload_model_ = false;
+        }
+        return true;
+    }
+    return false;
 }
 
 } // namespace dexpert

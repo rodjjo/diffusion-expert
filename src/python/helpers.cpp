@@ -157,8 +157,9 @@ namespace dexpert
             params["seed"] = this->seed;
             params["variation"] = this->variation;
             params["var_stren"] = this->var_stren;
-            params["restore_faces"] = restore_faces;
-            params["enable_codeformer"] = enable_codeformer;
+            params["reload_model"] = this->reload_model;
+            params["restore_faces"] = this->restore_faces;
+            params["enable_codeformer"] = this->enable_codeformer;
 
             if (!this->controlnets.empty())
             {

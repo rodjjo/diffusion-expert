@@ -7,9 +7,10 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
 
-#include "src/panels/frame_panel.h"
+#include "src/panels/miniature.h"
 #include "src/controls/button.h"
 #include "src/python/raw_image.h"
+#include "src/data/event_manager.h"
 
 namespace dexpert
 {
@@ -17,7 +18,8 @@ namespace dexpert
 typedef enum {
   embedding_event_selected,
   embedding_event_updated,
-  embedding_define_image
+  embedding_define_image,
+  embedding_event_reload
 } embedding_event_t;
 
 typedef enum {
@@ -27,12 +29,13 @@ typedef enum {
 
 struct embedded_t {
   std::string name;
+  std::string name_short;
   std::string filename;
   std::string path;
   std::shared_ptr<RawImage> img;
 };
 
-class EmbeddingPanel: public Fl_Group {
+class EmbeddingPanel: public EventListener, public Fl_Group {
   public:
     EmbeddingPanel(embedding_type_t embedding_type, int x, int y, int w, int h);
     virtual ~EmbeddingPanel();
@@ -40,12 +43,13 @@ class EmbeddingPanel: public Fl_Group {
     embedded_t *getSelectedEmbedding();
     void resize(int x, int y, int w, int h) override;
     void setSelectedImage(image_ptr_t image);
-    
+
+  protected:
+    void event_trigged(const void *sender, int event, void *data) override;
+
   private:
     void alignComponents();
     void updateData();
-    void clickedSelectEmbedding(FramePanel *pn);
-    void clickedSelectImage(FramePanel *pn);
 
   private:
     embedding_type_t embedding_type_ = embedding_textual_inv;
@@ -56,9 +60,10 @@ class EmbeddingPanel: public Fl_Group {
   private:
     Fl_Box *labelKind_;
     std::vector<Fl_Box *> labels_;
-    std::vector<FramePanel *> images_;
+    std::vector<Miniature *> images_;
     std::unique_ptr<Button> btnLeft_;
     std::unique_ptr<Button> btnRight_;
+    std::unique_ptr<Button> btnRefresh_;
 };
 
 } // namespace dexpert

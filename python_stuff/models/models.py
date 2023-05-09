@@ -18,7 +18,7 @@ import torch
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting
 from utils.downloader import download_file
-from models.loader import load_stable_diffusion_model
+from models.loader import load_stable_diffusion_model, get_textual_inversion_paths, get_lora_paths
 from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
 from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
 
@@ -28,11 +28,13 @@ CURRENT_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
-def load_model(model_path: str, lora_list: list):
+def load_model(model_path: str, lora_list: list, reload_model: bool):
     global CURRENT_MODEL_PARAMS
     global CURRENT_PIPELINE
     lora_list.sort()
-    if CURRENT_MODEL_PARAMS.get('path', '') != model_path or lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []):
+    if CURRENT_MODEL_PARAMS.get('path', '') != model_path or \
+        lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []) or \
+            reload_model:
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
@@ -50,36 +52,15 @@ usefp16 = {
     False: torch.float32
 }
 
-def get_textual_inversion_paths():
-    files = os.listdir(EMBEDDING_DIR)
-    result = []
-    for f in files:
-        lp = f.lower()
-        path = os.path.join(EMBEDDING_DIR, f) 
-        if lp.endswith('.bin'): # rename .pt to bin before loading it
-            result.append((False, path))
-        elif lp.endswith('.safetensors'):
-            result.append((True, path))
-    return result
 
-def get_lora_paths():
-    files = os.listdir(LORA_DIR)
-    result = []
-    for f in files:
-        lp = f.lower()
-        path = os.path.join(LORA_DIR, f) 
-        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
-            result.append(path)
-    return result
-
-
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False):
     global CURRENT_PIPELINE
-    load_model(model_path, lora_list)
+    load_model(model_path, lora_list, reload_model)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
-            mode != CURRENT_PIPELINE.get("mode"):
+            mode != CURRENT_PIPELINE.get("mode") or \
+                reload_model:
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') else []
@@ -132,8 +113,6 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             'pipeline': pipe,
             'contronet': controlnet_modes
         }
-        for tip in get_textual_inversion_paths():
-            pipe.load_textual_inversion(tip[1], use_safetensors=tip[0], local_files_only=True)
     gc.collect()
     return CURRENT_PIPELINE['pipeline']
 
@@ -202,7 +181,15 @@ def get_sd_model_urls():
         'format': 'fp32',
         'filename': 'v1-5-pruned.safetensors',
         'url': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors'
-    }]
+    },
+    {
+        'display_name': 'stable diffusion 1.5 inpainting',
+        'description': 'The original stable diffusion model inpainting',
+        'format': 'fp32',
+        'filename': 'v1-5-pruned.safetensors',
+        'url': 'https://huggingface.co/runwayml/stable-diffusion-inpainting/resolve/main/sd-v1-5-inpainting.ckpt'
+    },
+    ]
 
 
 def get_embeddings():

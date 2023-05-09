@@ -12,7 +12,7 @@ from diffusers import (
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
-from models.paths import CONFIG_DIR, CACHE_DIR
+from models.paths import CONFIG_DIR, CACHE_DIR, EMBEDDING_DIR, LORA_DIR
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
 from dexpert import progress_title, progress_canceled
@@ -443,6 +443,73 @@ def load_lora(unet, text_encoder, lora_path, lora_weight):
             visited.append(item)
 
 
+def get_textual_inversion_paths():
+    files = os.listdir(EMBEDDING_DIR)
+    result = []
+    for f in files:
+        lp = f.lower()
+        path = os.path.join(EMBEDDING_DIR, f) 
+        if lp.endswith('.bin') or lp.endswith('.pt'):
+            result.append((False, path))
+        elif lp.endswith('.safetensors'):
+            result.append((True, path))
+    return result
+
+
+def get_lora_paths():
+    files = os.listdir(LORA_DIR)
+    result = []
+    for f in files:
+        lp = f.lower()
+        path = os.path.join(LORA_DIR, f) 
+        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
+            result.append(path)
+    return result
+
+
+def load_embeddings(text_encoder, tokenizer):
+    tokens = []
+    embeddings = []
+    dtype = text_encoder.get_input_embeddings().weight.dtype
+    for tip in get_textual_inversion_paths():
+        if tip[0]:
+            state_dict = safetensors.torch.load_file(tip[1], device="cpu") 
+        else:
+            state_dict = torch.load(tip[1], map_location="cpu")
+        
+        if len(state_dict) == 1:
+            # diffusers
+            token, embedding = next(iter(state_dict.items()))
+        elif "string_to_param" in state_dict:
+            # A1111
+            token = state_dict["name"]
+            embedding = state_dict["string_to_param"]["*"]
+        else:
+            continue
+
+        # cast to dtype of text_encoder
+        embedding.to(dtype)
+
+        is_multi_vector = len(embedding.shape) > 1 and embedding.shape[0] > 1
+
+        if is_multi_vector:
+            tokens += [token] + [f"{token}_{i}" for i in range(1, embedding.shape[0])]
+            embeddings += [e for e in embedding]  # noqa: C416
+        else:
+            tokens += [token]
+            embeddings += [embedding[0]] if len(embedding.shape) > 1 else [embedding]
+
+    # add tokens and get ids
+    tokenizer.add_tokens(tokens)
+    token_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    # resize token embeddings and set new embeddings
+    text_encoder.resize_token_embeddings(len(tokenizer))
+    for token_id, embedding in zip(token_ids, embeddings):
+        text_encoder.get_input_embeddings().weight.data[token_id] = embedding
+
+
+
 def load_stable_diffusion_model(model_path: str, lora_list: list):
     report(f"loading {model_path}")
 
@@ -552,6 +619,8 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
     for lm in lora_list:
         report(f"Adding lora {os.path.basename(lm[0])} with weight {lm[1]}")
         load_lora(unet, text_model, lm[0], lm[1])
+
+    load_embeddings(text_model, tokenizer)
 
     vae.to(device_name)
     text_model.to(device_name)

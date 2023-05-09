@@ -44,7 +44,6 @@ def gfpgan_dwonload_model():
         'https://github.com/xinntao/facexlib/releases/download/v0.2.2/parsing_parsenet.pth',
         'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
         'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth',
-        
     ]
     for url in urls:
         filename = url.split('/')[-1]

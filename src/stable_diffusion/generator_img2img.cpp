@@ -32,6 +32,7 @@ namespace
         float image_strength,
         bool restore_faces,
         bool enable_codeformer,
+        bool reload_model,
         float mask_blur_size,
         inpaint_mode_t inpaint_mode
     ) : prompt_(prompt), 
@@ -49,6 +50,7 @@ namespace
         image_strength_(image_strength),
         restore_faces_(restore_faces), 
         enable_codeformer_(enable_codeformer),
+        reload_model_(reload_model),
         mask_blur_size_(mask_blur_size),
         inpaint_mode_(inpaint_mode)
         {
@@ -81,6 +83,7 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
         this->image_strength_,
         this->restore_faces_,
         this->enable_codeformer_,
+        this->reload_model_,
         this->mask_blur_size_,
         this->inpaint_mode_
     ));
@@ -108,6 +111,7 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.height = height_;
     params.image = image_.get();
     params.inpaint_mode = inpaint_mode_names[inpaint_mode_];
+    params.reload_model = reload_model_;
 
     if (mask_) {
         if (mask_blur_size_) {
