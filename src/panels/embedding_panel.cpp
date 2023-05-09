@@ -6,7 +6,6 @@
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
 
-
 #include "src/panels/embedding_panel.h"
 
 
@@ -216,11 +215,20 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
     }
     for (int i = 0; i < images_.size(); ++i) {
         if (images_[i]->getTag() == selected_) {
+            if (images_[i]->getPicture() && !ask("Replace the image ?")) {
+                return;
+            }
             images_[i]->setPicture(image);
             if (images_[i]->visible_r()) {
                 images_[i]->redraw();
             }
-            std::string path = embedded_[i].path;
+            std::string path = embedded_[selected_].path;
+            embedded_[selected_].img = image;
+            if (embedded_cache.size() > selected_) {
+                auto it = embedded_cache.begin();
+                std::advance(it, selected_);
+                it->img = image;
+            }
             path += ".jpg";
             bool success = false;
             const char *msg = NULL;
@@ -235,7 +243,6 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
             } else {
                 embedded_cache.clear();
             }
-            update(true);
             return;
         }
     }
