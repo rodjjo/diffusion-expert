@@ -14,7 +14,6 @@
 
 #include "src/controls/button.h"
 #include "src/controls/image_panel.h"
-#include "src/panels/frame_panel.h"
 #include "src/panels/prompt_panel.h"
 #include "src/python/raw_image.h"
 #include "src/stable_diffusion/generator.h"

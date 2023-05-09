@@ -1,3 +1,4 @@
+#include "src/data/xpm.h"
 #include "src/windows/image_viewer.h"
 #include "src/stable_diffusion/state.h"
 #include "src/dialogs/utils.h"

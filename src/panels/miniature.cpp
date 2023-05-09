@@ -3,11 +3,12 @@
 #include <FL/Fl.H>
 #include <FL/gl.h>
 
-#include "src/panels/opengl_panel.h"
+#include "src/data/event_manager.h"
+#include "src/panels/miniature.h"
 
 namespace dexpert {
 
-OpenGlPanel::OpenGlPanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_Window(x, y, w, h) {
+Miniature::Miniature(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_Window(x, y, w, h) {
     mouse_down_left_ = false;
     mouse_down_right_ = false;
     mouse_down_x_ = false;
@@ -19,16 +20,40 @@ OpenGlPanel::OpenGlPanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_
     valid(0);
 }
 
-OpenGlPanel::~OpenGlPanel() {
+Miniature::~Miniature() {
 }
 
-void OpenGlPanel::redraw() {
-    if (!visible_r())
+void Miniature::setPicture(image_ptr_t image) {
+    if (!image.get()) {
+        clearPicture();
         return;
-    Fl_Gl_Window::redraw();
+    }
+    image_ = image;
+    if (visible_r()) {
+        redraw();
+    }
 }
 
-int OpenGlPanel::handle(int event) {
+void Miniature::clearPicture() {
+    image_.reset();
+    if (visible_r()) {
+        redraw();
+    }
+}
+
+RawImage *Miniature::getPicture() {
+    return image_.get();
+}
+
+void Miniature::mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y) {
+    if (left_button) {
+        trigger_event(this, miniature_click_left);
+    } else if (right_button) {
+        trigger_event(this, miniature_click_right);
+    }
+}
+
+int Miniature::handle(int event) {
     switch (event) {
         case FL_KEYUP:
         case FL_KEYDOWN: {
@@ -78,12 +103,8 @@ int OpenGlPanel::handle(int event) {
     return 1;
 }
 
-/*
-void OpenGlPanel::resize(int x, int y, int w, int h) {
-    Fl_Gl_Window::resize(x, y, w, h);
-} */
 
-void OpenGlPanel::draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t h, int format) {
+void Miniature::draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t h, int format) {
     if (buffer == NULL || w == 0 || h == 0) {
         return;
     }
@@ -117,7 +138,7 @@ void OpenGlPanel::draw_buffer(const unsigned char *buffer, uint32_t w, uint32_t 
     glPixelZoom(1.0f, 1.0f);
 }
 
-void OpenGlPanel::draw()  {
+void Miniature::draw()  {
     if (!valid()) {
         valid(1);
         glLoadIdentity();
@@ -136,24 +157,49 @@ void OpenGlPanel::draw()  {
     uint32_t h = 0;
     int format = GL_RGB;
 
-    get_buffer(&buffer, &w, &h, &format, 0);
+    if (!image_.get()) {
+        return;
+    }
+
+    buffer = image_->buffer();
+    
+    w = image_->w();
+    h = image_->h();
+    format = GL_LUMINANCE;
+    int channels = 1;
+    if (image_->format() == dexpert::py::img_rgb) {
+        format = GL_RGB;
+        channels = 3;
+    } else if (image_->format() == dexpert::py::img_rgba) {
+        format = GL_RGBA;
+        channels = 4;
+    }
     draw_buffer(buffer, w, h, format);
     draw_next();
 }
 
-void OpenGlPanel::draw_overlay() {
+void Miniature::draw_overlay() {
     // do nothing...
 }
 
-void OpenGlPanel::cancel_operations() {
+void Miniature::cancel_operations() {
     mouse_down_left_ = false;
     mouse_down_right_ = false;
     mouse_cancel(); // cancels previous operation
     this->redraw();
 }
 
-const viewport_t & OpenGlPanel::view_port() const {
+const viewport_t & Miniature::view_port() const {
     return vp_;
 }
+
+void Miniature::setTag(size_t value) {
+    tag_ = value;
+}
+
+size_t Miniature::getTag() {
+    return tag_;
+}
+
 
 }  // namespace dexpert

@@ -8,26 +8,29 @@
 
 #include <vector>
 #include <FL/Fl_Group.H>
-#include "src/panels/frame_panel.h"
+#include "src/panels/preview_panel.h"
+#include "src/data/event_manager.h"
 #include "src/panels/painting_panel.h"
+
 
 namespace dexpert
 {
 
-class ResultsPanel: public Fl_Group {
+class ResultsPanel: public EventListener, public Fl_Group {
  public:
     ResultsPanel(int x, int y, int w, int h, PaintingPanel *painting);
     virtual ~ResultsPanel();
     void updatePanels();
     void resize(int x, int y, int w, int h) override;
-
+ protected:
+  void event_trigged(const void *sender, int event, void *data) override;
  private:
    void alignComponents();
-   FramePanel *getFrame(int col, int row);
-   void take_action(FramePanel *w, int id);
+   PreviewPanel *getFrame(int col, int row);
+   
  private:
   PaintingPanel *painting_;
-  std::vector<std::vector<FramePanel *> > miniatures_;
+  std::vector<std::vector<PreviewPanel *> > miniatures_;
 };
 
 }  // namespace dexpert

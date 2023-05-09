@@ -18,11 +18,12 @@ namespace dexpert
         float cfg,
         float var_stren,
         bool restore_faces,
-        bool enable_codeformer
+        bool enable_codeformer,
+        bool reload_model
     ) : prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
         seed_(seed), width_(width), height_(height), steps_(steps), 
         cfg_(cfg), var_strength_(var_stren), 
-        restore_faces_(restore_faces), enable_codeformer_(enable_codeformer)
+        restore_faces_(restore_faces), enable_codeformer_(enable_codeformer), reload_model_(reload_model)
         {
 
 }
@@ -41,7 +42,8 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
         this->cfg_,
         this->var_strength_,
         this->restore_faces_,
-        this->enable_codeformer_
+        this->enable_codeformer_,
+        this->reload_model_
     ));
     return d;
 }
@@ -66,6 +68,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.height = height_;
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;
+    params.reload_model = reload_model_;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
         dexpert::py::control_net_t control;

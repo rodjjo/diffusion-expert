@@ -64,6 +64,7 @@ def _run_pipeline(pipeline_type, params):
     steps = params["steps"]
     width = params["width"]
     height = params["height"]
+    reload_model = params.get("reload_model", False) 
     input_image = params.get("image")
     input_mask = params.get("mask")
     inpaint_mode = params.get("inpaint_mode", "original")
@@ -89,7 +90,7 @@ def _run_pipeline(pipeline_type, params):
         pipeline_type = 'inpaint2img'
 
     report("creating the pipeline")
-    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list) 
+    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list, reload_model=reload_model) 
     report("pipeline created")
 
     if pipeline_type == 'inpaint2img':

@@ -28,11 +28,13 @@ CURRENT_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
-def load_model(model_path: str, lora_list: list):
+def load_model(model_path: str, lora_list: list, reload_model: bool):
     global CURRENT_MODEL_PARAMS
     global CURRENT_PIPELINE
     lora_list.sort()
-    if CURRENT_MODEL_PARAMS.get('path', '') != model_path or lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []):
+    if CURRENT_MODEL_PARAMS.get('path', '') != model_path or \
+        lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []) or \
+            reload_model:
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
@@ -51,13 +53,14 @@ usefp16 = {
 }
 
 
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False):
     global CURRENT_PIPELINE
-    load_model(model_path, lora_list)
+    load_model(model_path, lora_list, reload_model)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
-            mode != CURRENT_PIPELINE.get("mode"):
+            mode != CURRENT_PIPELINE.get("mode") or \
+                reload_model:
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') else []
@@ -178,7 +181,15 @@ def get_sd_model_urls():
         'format': 'fp32',
         'filename': 'v1-5-pruned.safetensors',
         'url': 'https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors'
-    }]
+    },
+    {
+        'display_name': 'stable diffusion 1.5 inpainting',
+        'description': 'The original stable diffusion model inpainting',
+        'format': 'fp32',
+        'filename': 'v1-5-pruned.safetensors',
+        'url': 'https://huggingface.co/runwayml/stable-diffusion-inpainting/resolve/main/sd-v1-5-inpainting.ckpt'
+    },
+    ]
 
 
 def get_embeddings():

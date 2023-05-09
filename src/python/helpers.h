@@ -48,6 +48,7 @@ class txt2img_config_t {
     float var_stren = 0.01;
     bool restore_faces = false;
     bool enable_codeformer = false;
+    bool reload_model = false;
     std::list<control_net_t> controlnets;
     virtual ~txt2img_config_t() {};
     virtual const void fill_prompt_dict(py11::dict &params) const;

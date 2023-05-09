@@ -3,7 +3,9 @@
 
 #include <functional>
 
-#include "src/panels/opengl_panel.h"
+#include <FL/Fl_Gl_Window.H>
+
+#include "src/opengl_utils/view_port.h"
 #include "src/python/raw_image.h"
 
 typedef enum {

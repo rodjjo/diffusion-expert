@@ -6,6 +6,8 @@
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
 
+#include "src/data/xpm.h"
+
 #include "src/panels/painting_panel.h"
 
 namespace dexpert

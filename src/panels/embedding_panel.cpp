@@ -13,10 +13,15 @@
 namespace dexpert
 {
 
-EmbeddingPanel::EmbeddingPanel(embedding_type_t embedding_type, int x, int y, int w, int h): Fl_Group(x, y, w, h), embedding_type_(embedding_type) {
+namespace {
+    dexpert::py::embedding_list_t embedded_cache;
+}
+
+EmbeddingPanel::EmbeddingPanel(embedding_type_t embedding_type, int x, int y, int w, int h): EventListener(),  Fl_Group(x, y, w, h), embedding_type_(embedding_type) {
     box(FL_DOWN_BOX);
     color(fl_rgb_color(180, 180, 180));
     labelKind_ = new Fl_Box(1, 1, 1, 1, embedding_type_ == embedding_lora ? "Loras:": "Textual inversions:");
+
     btnLeft_.reset(new Button(xpm::image(xpm::arrow_left_16x16), [this]{
         if (index_ > 0) {
             --index_;
@@ -29,8 +34,15 @@ EmbeddingPanel::EmbeddingPanel(embedding_type_t embedding_type, int x, int y, in
         updateData();
     }));
 
+    btnRefresh_.reset(new Button(xpm::image(xpm::refresh_16x16), [this]{
+        update(true);
+        trigger_event(this, embedding_event_reload);
+    }));
+
+
     btnLeft_->tooltip("Previous");
     btnRight_->tooltip("Next");
+    btnRefresh_->tooltip("Refresh");
 
     update(false);
     alignComponents();
@@ -61,7 +73,9 @@ void EmbeddingPanel::alignComponents() {
     labelKind_->resize(x() + 2, y() + 2, w(), 20);
     btnLeft_->size(30, 30);
     btnRight_->size(30, 30);
+    btnRefresh_->size(30, 30);
     btnLeft_->position(x() + 3, y() + h() / 2 - 15);
+    btnRefresh_->position(x() + 3, btnLeft_->y() - 2 - btnRefresh_->h());
     if (max_miniatures > embedded_.size()) {
         max_miniatures = embedded_.size();
         if (max_miniatures < 1) {
@@ -72,15 +86,8 @@ void EmbeddingPanel::alignComponents() {
     if (remains > 0) {
         this->begin();
         for (int i = 0; i < remains; i++) {
-            images_.push_back(new FramePanel(0, 0, 1, 1));
+            images_.push_back(new Miniature(0, 0, 1, 1));
             labels_.push_back(new Fl_Box(0, 0, 1, 1));
-            (*images_.rbegin())->ensureButtonEnabled();
-            (*images_.rbegin())->addButton(0, 0, 1, xpm::arrow_up_16x16, [this] (FramePanel * pn, int id) {
-                clickedSelectEmbedding(pn);
-            });
-            (*images_.rbegin())->addButton(1, 0, -0.75, xpm::yellow_pin_16x16, [this] (FramePanel * pn, int id) {
-                clickedSelectImage(pn);
-            });
         }
         this->end();
     } else if (remains < 0) {
@@ -105,18 +112,36 @@ void EmbeddingPanel::alignComponents() {
         left += minature_size + 5;
     }
     btnRight_->position(x() + left, y() + h() / 2 - 15);
+
     updateData();
+
+    if (embedded_.size() > images_.size()) {
+        btnLeft_->show();
+        btnRight_->show();
+    } else {
+        btnLeft_->hide();
+        btnRight_->hide();
+    }
 }
 
-void EmbeddingPanel::clickedSelectEmbedding(FramePanel *pn) {
-    selected_ = pn->getTag();
-    trigger_event(this, embedding_event_selected);
-}
-
-void EmbeddingPanel::clickedSelectImage(FramePanel *pn) {
-    selected_ = pn->getTag();
-    trigger_event(this, embedding_define_image);
-}
+void EmbeddingPanel::event_trigged(const void *sender, int event, void *data) {
+    Miniature *m = NULL;
+    for (size_t i = 0; i < images_.size(); ++i) {
+        if (sender == images_[i]) {
+            m = images_[i];
+            break;
+        }
+    }
+    if (!m) {
+        return;
+    }
+    selected_ = m->getTag();
+    if (event == miniature_click_left) {
+        trigger_event(this, embedding_event_selected);
+    } else if (event == miniature_click_right) {
+        trigger_event(this, embedding_define_image);
+    }
+};
 
 void EmbeddingPanel::updateData() {
     if (index_ + images_.size() > embedded_.size()) {
@@ -130,24 +155,22 @@ void EmbeddingPanel::updateData() {
     for (int i = 0; i < images_.size(); ++i) {
         int pos = index_ + i;
         images_[i]->setTag(pos);
-        
         if (pos < embedded_.size()) {
-            labels_[i]->copy_label(embedded_[pos].name.c_str());
-            images_[i]->setImage(embedded_[pos].img);
+            labels_[i]->copy_label(embedded_[pos].name_short.c_str());
+            images_[i]->setPicture(embedded_[pos].img);
+            images_[i]->copy_tooltip(embedded_[pos].name.c_str());
         } else {
             labels_[i]->copy_label("None");
-            images_[i]->setImage(dexpert::image_ptr_t());
+            images_[i]->clearPicture();
         }
     }
 }
 
 void EmbeddingPanel::update(bool force) {
-    static dexpert::py::embedding_list_t result;
-
     bool error = false;
     const char *errorMessage = NULL;
 
-    if (result.empty() || force) {
+    if (embedded_cache.empty() || force) {
         dexpert::py::embedding_list_t temp;
         dexpert::py::get_py()->execute_callback(
             dexpert::py::list_embeddings([&error, &errorMessage, &temp] (bool success, const char *msg, dexpert::py::embedding_list_t embs) {
@@ -159,7 +182,7 @@ void EmbeddingPanel::update(bool force) {
                 }
             })
         );
-        result = temp;
+        embedded_cache = temp;
     }
 
     if (errorMessage) {
@@ -169,7 +192,7 @@ void EmbeddingPanel::update(bool force) {
     
     embedded_.clear();
 
-    for (auto it = result.begin(); it != result.end(); it++) {
+    for (auto it = embedded_cache.begin(); it != embedded_cache.end(); it++) {
         if ((it->kind == "lora" && embedding_type_ == embedding_lora) || 
             (it->kind == "textual_inv" && embedding_type_ == embedding_textual_inv)) {
                 embedded_t e;
@@ -177,6 +200,7 @@ void EmbeddingPanel::update(bool force) {
                 e.name = it->name;
                 e.path = it->path;
                 e.img = it->img;
+                e.name_short = it->name.substr(0, 10);
                 embedded_.push_back(e);
         }
     }
@@ -192,7 +216,7 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
     }
     for (int i = 0; i < images_.size(); ++i) {
         if (images_[i]->getTag() == selected_) {
-            images_[i]->setImage(image);
+            images_[i]->setPicture(image);
             if (images_[i]->visible_r()) {
                 images_[i]->redraw();
             }
@@ -208,7 +232,10 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
             );
             if (msg) {
                 show_error(msg);
+            } else {
+                embedded_cache.clear();
             }
+            update(true);
             return;
         }
     }

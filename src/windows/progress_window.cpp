@@ -2,6 +2,7 @@
 #include <mutex>
 #include <string>
 #include <atomic>
+#include "src/data/xpm.h"
 #include "src/python/raw_image.h"
 #include "src/windows/progress_window.h"
 
@@ -26,7 +27,7 @@ ProgressWindow::ProgressWindow(bool preview_images) {
     preview_images_ = preview_images;
     window_ = new ModalWindow(0, 0, 640, preview_images_ ? 480 : 90, "Please wait");
     window_->begin();
-    preview_ = new FramePanel(image_ptr_t(), 0, 0, window_->w(), window_->h() - 85);
+    preview_ = new Miniature(0, 0, window_->w(), window_->h() - 85);
     title_ = new Fl_Box(5, preview_->h() + 3, window_->w() - 10, 20, "Wait");
     progress_ = new Fl_Progress(5, title_->y() + title_->h() + 3, window_->w() - 10, 15);
     btnCancel_.reset(new Button(xpm::image(xpm::button_cancel_16x16), [this] {
@@ -77,7 +78,7 @@ void ProgressWindow::update() {
     progress_->maximum(max_progress);
     progress_->value(current_progress);
     if (image) {
-        preview_->setImage(image);
+        preview_->setPicture(image);
         image.reset();
         preview_->redraw();
     }
