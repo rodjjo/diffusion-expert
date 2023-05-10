@@ -174,6 +174,7 @@ int Pages::visibleIndex() {
 void Pages::setInputImage(RawImage *img) {
     goPage(page_input_image);
     inputImage_->setImage(img);
+    inputImage_->setSelectedMode(painting_inpaint_masked);
 }
 
 RawImage *Pages::getInputImage() {

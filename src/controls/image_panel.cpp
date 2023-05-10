@@ -247,7 +247,7 @@ namespace dexpert
         }
 
         if (!img) {
-            should_redraw_ = true;
+            scheduleRedraw();
             return;
         }
 
@@ -257,7 +257,7 @@ namespace dexpert
             img->drawCircleColor(mousex, mousey, brush_size_, color, bgcolor, clear);
         }
 
-        should_redraw_ = true;
+        scheduleRedraw();
     }
 
     void ImagePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y, int from_x, int from_y){
@@ -271,7 +271,7 @@ namespace dexpert
             draw_y_ = move_y;
         } else {
             if (tool_ == image_tool_brush && edit_type_ != edit_type_none) {
-                should_redraw_ = true;
+                scheduleRedraw();
             }
         }
         auto ref = getReferenceImage();
@@ -290,7 +290,7 @@ namespace dexpert
             selection_start_.y = down_y;
             selection_end_.x = move_x;
             selection_end_.y = move_y;
-            should_redraw_ = true;
+            scheduleRedraw();
         }
     };
 
@@ -308,7 +308,7 @@ namespace dexpert
             selection_start_.y = down_y;
             selection_end_.x = down_x;
             selection_end_.y = down_y;
-            should_redraw_ = true;
+            scheduleRedraw();
         }
     };
 
@@ -342,7 +342,7 @@ namespace dexpert
                 restrictSelection(selection_start_, *getReferenceImage());
                 restrictSelection(selection_end_, *getReferenceImage());
             }
-            should_redraw_ = true;
+            scheduleRedraw();
         } else {
             clicked_ = true;
         }
@@ -355,6 +355,10 @@ namespace dexpert
     void ImagePanel::draw_next() {
 
     };
+
+    void ImagePanel::scheduleRedraw() {
+        should_redraw_ = true;
+    }
 
     void ImagePanel::open(image_type_t layer) {
         auto img = open_image_from_dialog();
@@ -760,7 +764,7 @@ namespace dexpert
             brush_size_ = 32;
         else 
             brush_size_ = size;
-        should_redraw_ = true;
+        scheduleRedraw();
     }
 
     uint8_t ImagePanel::getBrushSize() {
@@ -902,8 +906,6 @@ namespace dexpert
     void ImagePanel::scrollAgain() {
         if (visible_r()) {
             setScroll(scroll_x_, scroll_y_);
-        } else {
-            should_redraw_ = true;
         }
     }
 
@@ -934,7 +936,9 @@ namespace dexpert
         scroll_x_ = x;
         scroll_y_ = y;
         invalidate_caches();
-        should_redraw_ = visible_r();
+        if (visible_r()) {
+            scheduleRedraw();
+        }
     }
 
     void ImagePanel::zoomToFit(float &zoom, int &x, int &y) {
@@ -1134,7 +1138,7 @@ namespace dexpert
         for (int i = 0; i < image_type_count; i++) {
             images_[i].reset();
         }
-        should_redraw_ = true;
+        scheduleRedraw();
     }
 
     bool ImagePanel::clicked() {

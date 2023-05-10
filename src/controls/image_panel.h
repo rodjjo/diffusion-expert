@@ -122,6 +122,7 @@ namespace dexpert
         void close();
         void adjustPasteImageSize();
         bool clicked();
+        void scheduleRedraw();
 
     protected:
         int handle(int event) override;

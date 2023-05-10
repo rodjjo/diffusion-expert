@@ -16,7 +16,7 @@ import safetensors
 
 import torch
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
-from utils.settings import get_setting
+from utils.settings import get_setting, settings_version
 from utils.downloader import download_file
 from models.loader import load_stable_diffusion_model, get_textual_inversion_paths, get_lora_paths
 from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
@@ -33,13 +33,15 @@ def load_model(model_path: str, lora_list: list, reload_model: bool):
     global CURRENT_PIPELINE
     lora_list.sort()
     if CURRENT_MODEL_PARAMS.get('path', '') != model_path or \
-        lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []) or \
-            reload_model:
+            lora_list != CURRENT_MODEL_PARAMS.get('lora_list', []) or \
+            reload_model or \
+            settings_version() != CURRENT_MODEL_PARAMS.get('settings_version'):
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
         params, in_painting = load_stable_diffusion_model(model_path, lora_list=lora_list)
         CURRENT_MODEL_PARAMS = {
+            'settings_version': settings_version(),
             'path': model_path,
             'lora_list': lora_list,
             'params': params,
@@ -60,7 +62,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
             mode != CURRENT_PIPELINE.get("mode") or \
-                reload_model:
+            reload_model or \
+            settings_version() != CURRENT_PIPELINE.get('settings_version'):
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') else []
@@ -108,6 +111,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         pipe.enable_attention_slicing(1)
         pipe.enable_xformers_memory_efficient_attention()
         CURRENT_PIPELINE = {
+            'settings_version': settings_version(),
             'mode': mode,
             'model_path': model_path,
             'pipeline': pipe,

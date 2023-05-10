@@ -8,6 +8,7 @@ def pil_as_dict(pil_image):
         'mode': str(pil_image.mode),
     }
 
+
 def rgb_image_512x512():
     return {
         'data': b'\xFF' * (512 * 512 * 3),

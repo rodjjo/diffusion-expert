@@ -65,6 +65,7 @@ embedded_t *EmbeddingPanel::getSelectedEmbedding() {
 }
 
 void EmbeddingPanel::alignComponents() {
+    auto the_current = this->current();
     int minature_size = 100;
     int button_w = 30;
     int display_w = w() - button_w * 2 - 10;
@@ -121,6 +122,8 @@ void EmbeddingPanel::alignComponents() {
         btnLeft_->hide();
         btnRight_->hide();
     }
+
+    this->current(the_current);
 }
 
 void EmbeddingPanel::event_trigged(const void *sender, int event, void *data) {
@@ -139,6 +142,14 @@ void EmbeddingPanel::event_trigged(const void *sender, int event, void *data) {
         trigger_event(this, embedding_event_selected);
     } else if (event == miniature_click_right) {
         trigger_event(this, embedding_define_image);
+    } else if (event == miniature_wheel_up) {
+        ++index_;
+        updateData();
+    } else if (event == miniature_wheel_down) {
+        if (index_ > 0) {
+            --index_;
+            updateData();
+        }
     }
 };
 

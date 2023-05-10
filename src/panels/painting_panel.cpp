@@ -366,8 +366,13 @@ void PaintingPanel::enableControls() {
     }
 
     if (inpainting || image2image || controlnet) {
-        image_panel_->show();
-        label_info_->show();
+        if (visible_r()) {
+            image_panel_->show();
+            label_info_->show();
+        } else {
+            image_panel_->set_visible();
+            label_info_->set_visible();
+        }
     } else {
         image_panel_->hide();
         label_info_->hide();
@@ -390,7 +395,7 @@ void PaintingPanel::saveMask() {
 void PaintingPanel::openImage() {
     image_panel_->open(image_type_image);
     if (image_panel_->getLayerImage(image_type_image)) {
-        image_panel_->setBackgroundColor(12, 12, 12, 255);
+        image_panel_->setBackgroundColor(255, 255, 255, 255);
     }
     image_panel_->adjustPasteImageSize();
     if (prompt_) {
@@ -432,7 +437,7 @@ void PaintingPanel::openMask() {
         }
     }
     modeSelected();
-    image_panel_->redraw();
+    image_panel_->scheduleRedraw();
 }
 
 void PaintingPanel::brushSelected(Fl_Widget *widget, void *cbdata) {
@@ -519,7 +524,7 @@ void PaintingPanel::newMask() {
                 image_panel_->setLayerImage(image_type_mask, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
                 image_panel_->setEditType(edit_type_mask);
             }
-            image_panel_->redraw();
+            image_panel_->scheduleRedraw();
         }
     } else if (getSelectedMode() == painting_pose ||
         getSelectedMode() == painting_canny ||
@@ -530,7 +535,7 @@ void PaintingPanel::newMask() {
         if (should_continue) {
             image_panel_->setLayerImage(image_type_controlnet, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
             image_panel_->setEditType(edit_type_controlnet);
-            image_panel_->redraw();
+            image_panel_->scheduleRedraw();
         }
     } else {
         show_error("This mode does not allow mask");
@@ -539,7 +544,7 @@ void PaintingPanel::newMask() {
 
 void PaintingPanel::setImage(RawImage *image) {
     if (image) {
-        image_panel_->setBackgroundColor(12, 12, 12, 255);
+        image_panel_->setBackgroundColor(255, 255, 255, 255);
         image_panel_->setLayerImage(image_type_image, image->duplicate());
         image_panel_->adjustPasteImageSize();
         if (getSelectedMode() == paiting_disabled) {
@@ -547,10 +552,22 @@ void PaintingPanel::setImage(RawImage *image) {
             modeSelected();
             prompt_->setImageSize(image->w(), image->h());
         }
-        if (image_panel_->visible_r()) {
-            image_panel_->redraw();
-        }
+        image_panel_->scheduleRedraw();
     }
+}
+
+void PaintingPanel::setSelectedMode(painting_mode_t mode) {
+    int index = mode;
+    if (index < painting_scribble && only_control_net_) {
+        return;
+    }
+
+    if (only_control_net_) {
+        index -= painting_scribble;
+    }
+
+    mode_->value(index);
+    modeSelected();
 }
 
 void PaintingPanel::clearPasteImage() {

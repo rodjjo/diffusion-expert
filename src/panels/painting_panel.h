@@ -66,10 +66,11 @@ class PaintingPanel: public Fl_Group {
     float get_denoise_strength();
     bool shouldInpaintMasked();
     bool ready();
+    void setSelectedMode(painting_mode_t mode);
     painting_mode_t getSelectedMode();
     bool maskBlurEnabled();
     inpaint_mode_t getInpaintMode();
-
+    
  private:
    static void modeSelected(Fl_Widget *widget, void *cbdata);
    void modeSelected();

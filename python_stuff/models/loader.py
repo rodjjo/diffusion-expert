@@ -15,6 +15,8 @@ from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR, EMBEDDING_DIR, LORA_DIR
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
+from utils.downloader import download_file
+
 from dexpert import progress_title, progress_canceled
 
 
@@ -25,9 +27,11 @@ usefp16 = {
 
 # this file was based on: https://github.com/ratwithacompiler/diffusers_stablediff_conversion/blob/main/convert_original_stable_diffusion_to_diffusers.py
 
-
 def convert_ldm_clip_checkpoint(checkpoint):
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+    local_files_only = False
+    if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
+        local_files_only = True
+    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
 
     keys = list(checkpoint.keys())
 
@@ -509,6 +513,18 @@ def load_embeddings(text_encoder, tokenizer):
         text_encoder.get_input_embeddings().weight.data[token_id] = embedding
 
 
+def load_lora_list(lora_list, unet, text_model):
+    wsum = 0
+    for lm in lora_list:
+        wsum += lm[1]
+    if wsum > 1:
+        scale = 1.0 / wsum
+    else:
+        scale = 1
+    for lm in lora_list:
+        lm[1] = scale * lm[1]
+        report(f"Adding lora {os.path.basename(lm[0])} with weight {lm[1]}")
+        load_lora(unet, text_model, lm[0], lm[1])
 
 def load_stable_diffusion_model(model_path: str, lora_list: list):
     report(f"loading {model_path}")
@@ -585,9 +601,13 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
 
     report("downloading VAE. please wait")
 
+    local_files_only = False
+    if os.path.exists(os.path.join(CACHE_DIR, 'models--CompVis--stable-diffusion-v1-4', 'snapshots')):
+        local_files_only = True
+
     vae = AutoencoderKL.from_pretrained(
         'CompVis/stable-diffusion-v1-4', 
-        subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
+        subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR, local_files_only=local_files_only)
 
     report("VAE loaded")
 
@@ -599,13 +619,23 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
         text_model = convert_ldm_clip_checkpoint(checkpoint)
         del checkpoint
         report("converting clip done")
+
+        local_files_only = False
+        if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
+            local_files_only = True
+
         tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
         if  get_setting("nsfw_filter", True) is True:
             report("safety checker")
-            safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            
+            local_files_only = False
+            if os.path.exists(os.path.join(CACHE_DIR, 'models--CompVis--stable-diffusion-safety-checker', 'snapshots')):
+                local_files_only = True
+
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR, local_files_only=local_files_only)
             report("feature extractor")
-            feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR)
+            feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker", cache_dir=CACHE_DIR, local_files_only=local_files_only)
             requires_safety_checker = True
             safety_checker.to(device_name)
         else:
@@ -616,9 +646,7 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
     else:
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
 
-    for lm in lora_list:
-        report(f"Adding lora {os.path.basename(lm[0])} with weight {lm[1]}")
-        load_lora(unet, text_model, lm[0], lm[1])
+    load_lora_list(lora_list, unet, text_model)
 
     load_embeddings(text_model, tokenizer)
 

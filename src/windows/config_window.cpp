@@ -172,8 +172,6 @@ void ConfigWindow::save_configuration() {
     }));
     if (msg) {
         dexpert::show_error(msg);
-    } else {
-        dexpert::show_error("Some configurations may require to restart the application");
     }
 }
 

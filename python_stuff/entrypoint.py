@@ -26,6 +26,7 @@ def is_model(path: str):
             return True
     return False
 
+
 def list_models(directory=""):
     files = [n for n in os.listdir(directory) if is_model(n)]
     path = lambda n: os.path.join(directory, n)

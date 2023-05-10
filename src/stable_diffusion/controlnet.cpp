@@ -32,4 +32,10 @@ RawImage *ControlNet::getImage() {
     return image_.get();
 }
 
+void ControlNet::resizeImage(int w, int h) {
+    if (image_) {
+        image_ = image_->resizeInTheCenter(w, h);
+    }
+}
+
 } // namespace dexpert

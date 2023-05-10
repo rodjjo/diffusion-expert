@@ -16,7 +16,9 @@ namespace dexpert
 
 typedef enum {
     miniature_click_left,
-    miniature_click_right
+    miniature_click_right,
+    miniature_wheel_up,
+    miniature_wheel_down
 } miniature_event_t;
 
 class Miniature: public Fl_Gl_Window {

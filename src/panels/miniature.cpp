@@ -61,6 +61,16 @@ int Miniature::handle(int event) {
         }
         break;
 
+        /*
+        case FL_MOUSEWHEEL: {
+            if (Fl::event_dy() > 0) {
+                trigger_event(this, miniature_wheel_up);
+            } else {
+                trigger_event(this, miniature_wheel_down);
+            }
+        }
+        break; */
+
         case FL_MOVE:
         case FL_DRAG: {
             if (!mouse_down_left_ && !mouse_down_right_) {
