@@ -25,6 +25,7 @@ void py_end();
 bool py_ready();
 
 py11::module_ &getModule();
+py11::module_ *depsModule();
 
 class PythonMachine {
  private:
@@ -42,6 +43,7 @@ class PythonMachine {
     PythonMachine & operator = (const PythonMachine &) = delete;
     virtual ~PythonMachine();
     void execute_callback(async_callback_t callback);
+    void setDepsOk();
     // void execute(async_callback_t cb);
 
  private:
@@ -51,6 +53,7 @@ class PythonMachine {
 
  private:
    bool terminated_ = false;
+   bool deeps_ok_ = false;
    bool ready_ = false;
    std::mutex callback_mutex_;
    async_callback_t callback_;

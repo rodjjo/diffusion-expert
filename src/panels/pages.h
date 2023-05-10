@@ -43,7 +43,7 @@ class Pages: public Fl_Group {
     const char *pageTitle(page_t page);
     void textToImage();
     void loadConfig();
-    void setInputImage(RawImage *img);
+    void setInputImage(RawImage *img, painting_mode_t mode);
     RawImage *getInputImage();
     void refreshModels();
     

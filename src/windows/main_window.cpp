@@ -118,7 +118,8 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit");
     menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All");
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
-    menu_->addItem([this] { editSelection(); }, "", "Selection/Use AI Editor");
+    menu_->addItem([this] { editSelection(painting_img2img); }, "", "Selection/Image to image");
+    menu_->addItem([this] { editSelection(painting_inpaint_masked); }, "", "Selection/Inpaint");
     menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
     menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Selection/Discart changes");
     menu_->addItem([this] { image_editor_->cropToSelection(); }, "", "Selection/Crop to Selection");
@@ -269,10 +270,10 @@ void MainWindow::resizeCanvas() {
     }
 }
 
-void MainWindow::editSelection() {
+void MainWindow::editSelection(painting_mode_t mode) {
     auto selection = image_editor_->getSelectedImage(image_type_image);
     if (selection) {
-        auto img = get_stable_diffusion_image(selection.get());
+        auto img = get_stable_diffusion_image(selection.get(), mode);
         if (img) {
             image_editor_->setPasteImageAtSelection(image_type_image, img.get());
         }

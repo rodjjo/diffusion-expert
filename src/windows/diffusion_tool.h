@@ -27,7 +27,7 @@ class DiffusionTool : public Fl_Window {
     DiffusionTool();
     ~DiffusionTool();
     image_ptr_t run();
-    void setInitialImage(RawImage *image);
+    void setInitialImage(RawImage *image, painting_mode_t mode);
     RawImage *getInputImage();
 
  protected:
@@ -56,7 +56,7 @@ class DiffusionTool : public Fl_Window {
     std::unique_ptr<Button> consoleBtn_;
 };
 
-image_ptr_t get_stable_diffusion_image(RawImage *image);
+image_ptr_t get_stable_diffusion_image(RawImage *image, painting_mode_t mode);
 image_ptr_t get_stable_diffusion_image();
 
 } // namespace dexpert

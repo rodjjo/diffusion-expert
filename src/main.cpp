@@ -75,8 +75,6 @@ int main(int argc, char **argv)
     */
     std::thread gui_thread([&result] {
         Fl::scheme("gtk+");
-
-        dexpert::wait_python();
         /*
         for (int i = 0; i < 100; i++) {
             dexpert::test_generators();
@@ -105,6 +103,9 @@ int main(int argc, char **argv)
             result = 2;
             return;
         }
+
+        dexpert::py::get_py()->setDepsOk();
+        dexpert::wait_python();
 
         bool success = false;
         dexpert::py::get_py()->execute_callback(dexpert::py::configure_stable_diffusion([&success, &msg] (bool status, const char *error) {

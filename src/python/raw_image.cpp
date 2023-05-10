@@ -327,16 +327,16 @@ image_ptr_t  RawImage::resizeInTheCenter(uint32_t x, uint32_t y) {
 
     if (x > y) {
         ref_x = true;
-        scale = y / (float) x;
+        scale = y / (float) x;   // 300 / 400
     } else {
-        scale = x / (float) y;
+        scale = x / (float) y;  // 400 / 300
     }
 
     int new_x, new_y;
 
     if (ref_x) {
         new_x = x;
-        new_y = new_x / scale;
+        new_y = new_x * scale;   // 0.75
         if (new_y > y) {
             scale = y / (float) new_y;
         } else {
@@ -344,7 +344,7 @@ image_ptr_t  RawImage::resizeInTheCenter(uint32_t x, uint32_t y) {
         }
     } else {
         new_y = y;
-        new_x = new_y / scale;
+        new_x = new_y * scale;
         if (new_x > x) {
             scale = x / (float) new_x;
         } else {

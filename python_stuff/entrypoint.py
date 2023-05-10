@@ -6,7 +6,6 @@ from images.filesystem import save_image, open_image
 from models.my_gfpgan import gfpgan_restore_faces, gfpgan_upscale
 from models.models import get_sd_model_urls, download_sd_model, get_embeddings
 from models.my_interrogate import inerrogate_clip
-from dependencies.installer import have_dependencies, install_dependencies
 
 
 MODEL_EXTENSIONS = set(['.ckpt', '.safetensors'])

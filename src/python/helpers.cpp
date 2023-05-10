@@ -33,11 +33,16 @@ namespace dexpert
             return [status_cb]
             {
                 try {
-                    dexpert::py::getModule().attr("install_dependencies")();
-                    status_cb(true, NULL); // TODO: check error!
+                    auto m =  dexpert::py::depsModule();
+                    if (m) {
+                        m->attr("install_dependencies")();
+                        status_cb(true, NULL); 
+                    } else {
+                        status_cb(false, "Dependencies module unloaded!"); 
+                    }
                 }
                 catch(std::runtime_error e) {
-                    status_cb(false, getError(e)); // TODO: check error!
+                    status_cb(false, getError(e)); 
                 }
             };
         }
@@ -47,8 +52,13 @@ namespace dexpert
             return [status_cb]
             {
                 try {
-                    auto r = dexpert::py::getModule().attr("have_dependencies")();
-                    status_cb(r.cast<py11::bool_>(), NULL); // TODO: check error!
+                    auto m =  dexpert::py::depsModule();
+                    if (m) {
+                        auto r = m->attr("have_dependencies")();
+                        status_cb(r.cast<py11::bool_>(), NULL); // TODO: check error!
+                    } else {
+                        status_cb(false, "Dependencies module unloaded!"); // TODO: check error!
+                    }
                 }
                 catch(std::runtime_error e) {
                     status_cb(false, getError(e)); // TODO: check error!

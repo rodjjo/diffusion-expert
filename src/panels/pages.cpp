@@ -171,10 +171,10 @@ int Pages::visibleIndex() {
     return page_prompts;
 }
 
-void Pages::setInputImage(RawImage *img) {
+void Pages::setInputImage(RawImage *img, painting_mode_t mode) {
     goPage(page_input_image);
     inputImage_->setImage(img);
-    inputImage_->setSelectedMode(painting_inpaint_masked);
+    inputImage_->setSelectedMode(mode);
 }
 
 RawImage *Pages::getInputImage() {
