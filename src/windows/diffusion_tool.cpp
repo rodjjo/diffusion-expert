@@ -30,7 +30,9 @@ DiffusionTool::DiffusionTool():  Fl_Window(
     wnd->begin();
 
     initPagesPanel();
+    
     initRightPanel();
+    
     initToolbar();
 
     wnd->end();
@@ -41,8 +43,6 @@ DiffusionTool::DiffusionTool():  Fl_Window(
     
     wnd->show();
     wnd->set_modal();
-    
-    Fl::add_timeout(0.01, &DiffusionTool::gotoPromptPage, this);
 }
 
 void DiffusionTool::initRightPanel() {
@@ -52,8 +52,9 @@ void DiffusionTool::initRightPanel() {
     page_browser_->callback(pageChangeCallback, this);
     rightPanel_->end();
     rightPanel_->box(FL_BORDER_BOX);
-
+    pages_->goPage(page_prompts);
     refreshBrowser();
+    pages_->end();
 }
 
 void DiffusionTool::refreshBrowser() {
@@ -157,11 +158,6 @@ void DiffusionTool::pageChangeCallback(Fl_Widget* widget, void *cbdata) {
     ((DiffusionTool *) cbdata)->gotoSelectedPage();
 }
 
-void DiffusionTool::gotoPromptPage(void *cbdata) {
-    ((DiffusionTool*) cbdata)->page_browser_->select(1);
-    ((DiffusionTool*) cbdata)->pages_->goPage(page_prompts);
-}
-
 void DiffusionTool::gotoSelectedPage() {
     if (selecting_page_)
         return;
@@ -189,12 +185,12 @@ image_ptr_t DiffusionTool::run() {
     return image_ptr_t();
 }
 
-void DiffusionTool::setInitialImage(RawImage *image) {
+void DiffusionTool::setInitialImage(RawImage *image, painting_mode_t mode) {
     if (!image) {
         return;
     }
-    pages_->setInputImage(image);
-    page_browser_->value(pages_->getIndexAtPage(pages_->activePage()));
+    pages_->setInputImage(image, mode);
+    page_browser_->value(pages_->getIndexAtPage(pages_->activePage()) + 1);
     gotoSelectedPage();
 }
 
@@ -202,7 +198,7 @@ RawImage *DiffusionTool::getInputImage() {
     return pages_->getInputImage();
 }
 
-image_ptr_t get_stable_diffusion_image(RawImage *image) {
+image_ptr_t get_stable_diffusion_image(RawImage *image, painting_mode_t mode) {
     DiffusionTool *window = NULL;
     get_sd_state()->clearGenerators();
 
@@ -210,7 +206,7 @@ image_ptr_t get_stable_diffusion_image(RawImage *image) {
         window = new DiffusionTool();
     }
 
-    window->setInitialImage(image);
+    window->setInitialImage(image, mode);
 
     image_ptr_t r = window->run();
     Fl::delete_widget(window);
@@ -219,7 +215,7 @@ image_ptr_t get_stable_diffusion_image(RawImage *image) {
 }
 
 image_ptr_t get_stable_diffusion_image() {
-    return get_stable_diffusion_image(NULL);
+    return get_stable_diffusion_image(NULL, paiting_disabled);
 }
 
 }  // namespace dexpert

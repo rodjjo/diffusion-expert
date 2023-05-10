@@ -23,6 +23,7 @@ namespace
 {
     std::shared_ptr<PythonMachine> machine;
     py11::module_ *main_module = NULL;
+    py11::module_ *deeps_module = NULL;
 
 PYBIND11_EMBEDDED_MODULE(dexpert, m) {
     m.def("progress", [](size_t p, size_t m, py11::dict image) {
@@ -59,6 +60,10 @@ py11::module_ &getModule() {
     return *main_module;
 }
 
+py11::module_ *depsModule() {
+    return deeps_module;
+}
+
 void PythonMachine::run_machine() {
     puts("Initializing Python");
 
@@ -69,6 +74,17 @@ void PythonMachine::run_machine() {
     sys.attr("_base_executable") = getConfig().pyExePath();
     py11::sequence sp = sys.attr("path").cast<py11::sequence>();
     sp.attr("append")(dexpert::getConfig().pythonStuffDir().c_str());
+
+    // execute callbacks that check/install dependencies
+    {
+        py11::module_ deeps = py11::module_::import("dependencies");
+        deeps_module = &deeps;
+         while (!terminated_ && !deeps_ok_) {
+             execute_callback_internal();
+         }
+    }
+
+    deeps_module = NULL;
 
     py11::module_ dexp = py11::module_::import("dexpert");
     py11::module_ main = py11::module_::import("entrypoint");
@@ -81,6 +97,10 @@ void PythonMachine::run_machine() {
     while (!terminated_) {
       execute_callback_internal();
     }
+}
+
+void PythonMachine::setDepsOk() {
+    deeps_ok_ = true;
 }
 
 PythonMachine::~PythonMachine() {

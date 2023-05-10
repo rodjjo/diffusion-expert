@@ -16,6 +16,7 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Tabs.H>
 
+#include "src/panels/painting_panel.h"
 #include "src/windows/main_menu.h"
 #include "src/python/wrapper.h"
 #include "src/controls/image_panel.h"
@@ -43,7 +44,7 @@ class MainWindow : Fl_Menu_Window {
   void newImage(bool fromStableDiffusion);
   void openImage();
   void saveImage();
-  void editSelection();
+  void editSelection(painting_mode_t mode);
   void resizeLeft();
   void resizeRight();
   void resizeTop();
