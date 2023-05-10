@@ -6,7 +6,6 @@
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
 
-
 #include "src/panels/embedding_panel.h"
 
 
@@ -66,6 +65,7 @@ embedded_t *EmbeddingPanel::getSelectedEmbedding() {
 }
 
 void EmbeddingPanel::alignComponents() {
+    auto the_current = this->current();
     int minature_size = 100;
     int button_w = 30;
     int display_w = w() - button_w * 2 - 10;
@@ -122,6 +122,8 @@ void EmbeddingPanel::alignComponents() {
         btnLeft_->hide();
         btnRight_->hide();
     }
+
+    this->current(the_current);
 }
 
 void EmbeddingPanel::event_trigged(const void *sender, int event, void *data) {
@@ -140,6 +142,14 @@ void EmbeddingPanel::event_trigged(const void *sender, int event, void *data) {
         trigger_event(this, embedding_event_selected);
     } else if (event == miniature_click_right) {
         trigger_event(this, embedding_define_image);
+    } else if (event == miniature_wheel_up) {
+        ++index_;
+        updateData();
+    } else if (event == miniature_wheel_down) {
+        if (index_ > 0) {
+            --index_;
+            updateData();
+        }
     }
 };
 
@@ -216,11 +226,20 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
     }
     for (int i = 0; i < images_.size(); ++i) {
         if (images_[i]->getTag() == selected_) {
+            if (images_[i]->getPicture() && !ask("Replace the image ?")) {
+                return;
+            }
             images_[i]->setPicture(image);
             if (images_[i]->visible_r()) {
                 images_[i]->redraw();
             }
-            std::string path = embedded_[i].path;
+            std::string path = embedded_[selected_].path;
+            embedded_[selected_].img = image;
+            if (embedded_cache.size() > selected_) {
+                auto it = embedded_cache.begin();
+                std::advance(it, selected_);
+                it->img = image;
+            }
             path += ".jpg";
             bool success = false;
             const char *msg = NULL;
@@ -235,7 +254,6 @@ void EmbeddingPanel::setSelectedImage(image_ptr_t image) {
             } else {
                 embedded_cache.clear();
             }
-            update(true);
             return;
         }
     }

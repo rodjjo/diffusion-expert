@@ -1,3 +1,5 @@
+SETTINGS_VERSION = 1
+
 SETTINGS = {
     'scheduler': 'PNDMScheduler',
     'nsfw_filter': True,
@@ -22,7 +24,12 @@ def get_setting(name: str, default = '') -> str:
 
 
 def set_user_settings(config: dict):
+    global SETTINGS_VERSION
+    SETTINGS_VERSION += 1
     print("setting stable diffusion configurations")
     for k in config.keys():
         USER_SETTINGS[k] = config[k]
-        # print(f"[settings] {k}: {config[k]}")
+
+
+def settings_version():
+    return SETTINGS_VERSION

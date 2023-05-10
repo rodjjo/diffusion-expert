@@ -83,7 +83,7 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
         this->image_strength_,
         this->restore_faces_,
         this->enable_codeformer_,
-        this->reload_model_,
+        false, // only the first one should reload the model
         this->mask_blur_size_,
         this->inpaint_mode_
     ));

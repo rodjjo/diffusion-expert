@@ -18,7 +18,7 @@ class ControlNet {
     float getStrenght();
     const char *getMode();
     RawImage *getImage();
-
+    void resizeImage(int w, int h);
  private:
     std::string mode_;
     image_ptr_t image_;

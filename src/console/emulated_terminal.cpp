@@ -16,9 +16,9 @@
 #include "src/python/wrapper.h"
 
 #define OUT_BUFF_SIZE 512
-#define LINE_SIZE 4096
-#define LINE_COUNT 64
-#define HALF_LINES 32
+#define LINE_SIZE 1024
+#define LINE_COUNT 512
+#define HALF_LINES 256
 #define BUFFER_SIZE (LINE_SIZE * LINE_COUNT)
 
 #ifdef _WIN32
@@ -895,7 +895,7 @@ namespace dexpert
             screen_y++;
         if (line[cursor_y + 1] < cursor_x)
             line[cursor_y + 1] = cursor_x;
-        if (cursor_x > BUFFER_SIZE - 1024 || cursor_y > LINE_SIZE - 3)
+        if (cursor_x > BUFFER_SIZE - LINE_SIZE || cursor_y > LINE_COUNT - 3)
         {
             int middle = line[HALF_LINES];
             for (int i = HALF_LINES; i < cursor_y + 2; i++)
@@ -911,9 +911,9 @@ namespace dexpert
             if (recv0 < 0)
                 recv0 = 0;
             memmove(attr, attr + middle, line[cursor_y + 1]);
-            memset(attr + line[cursor_y + 1], 0, LINE_COUNT * 64 - line[cursor_y + 1]);
+            memset(attr + line[cursor_y + 1], 0, BUFFER_SIZE - line[cursor_y + 1]); 
             memmove(buff, buff + middle, line[cursor_y + 1]);
-            memset(buff + line[cursor_y + 1], 0, LINE_COUNT * 64 - line[cursor_y + 1]);
+            memset(buff + line[cursor_y + 1], 0, BUFFER_SIZE - line[cursor_y + 1]);
         }
     }
 

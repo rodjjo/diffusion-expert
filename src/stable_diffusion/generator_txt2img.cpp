@@ -43,7 +43,7 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
         this->var_strength_,
         this->restore_faces_,
         this->enable_codeformer_,
-        this->reload_model_
+        false // only the first one should reload the model
     ));
     return d;
 }
