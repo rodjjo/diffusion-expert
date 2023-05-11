@@ -61,7 +61,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : E
 
     positivePrompt_->value(last_prompt.c_str());
     negativePrompt_->value(last_negative_prompt.c_str());
-    generateBtn_->tooltip("Generate a new image.");
+    generateBtn_->tooltip("Generate a new image. [shortcut key: F9]");
     
     interrogateBtn1_->tooltip("Interrogate Clip");
     interrogateBtn2_->tooltip("Interrogate DeepBooru");

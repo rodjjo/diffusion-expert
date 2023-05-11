@@ -74,6 +74,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 'pose': 'lllyasviel/sd-controlnet-openpose',
                 'scribble': 'lllyasviel/sd-controlnet-scribble',
                 'deepth': 'lllyasviel/sd-controlnet-depth',
+                'segmentation': 'lllyasviel/sd-controlnet-seg',
         }
         for c in controlnets:
             have_controlnet = True
@@ -81,8 +82,10 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 print("No controlnet for ", c['mode'])
                 continue
             print("Controlnet: ", c['mode'])
+            mode_str = c['mode'] if c['mode'] != 'segmentation' else 'seg'
+            local_files_only = os.path.exists(os.path.join(CACHE_DIR, f"models--lllyasviel--sd-controlnet-{mode_str}", 'snapshots'))
             control_model.append(ControlNetModel.from_pretrained(
-                model_repos[c['mode']], torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR
+                model_repos[c['mode']], torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR, local_files_only=local_files_only
             ))
 
         if len(control_model) == 1:

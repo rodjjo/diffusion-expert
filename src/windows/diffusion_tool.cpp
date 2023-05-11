@@ -139,7 +139,11 @@ int DiffusionTool::handle(int event) {
     switch (event) {
         case FL_KEYUP: {
             if (Fl::event_key() == FL_Escape) {
-                return  1;
+                return 1;
+            }
+            if (Fl::event_key() == FL_F + 9) {
+                pages_->textToImage();
+                return 1;
             }
         }
         break;

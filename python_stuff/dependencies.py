@@ -57,7 +57,7 @@ def _install_dependencies():
     base_dir = os.path.dirname(sys.executable)
     requirements_path = os.path.join(base_dir, '..', 'python_stuff', 'requirements.txt')
     requirements_torch = os.path.join(base_dir, '..', 'python_stuff', 'requirements-torch.txt')
-    get_pip = os.path.join(base_dir, '..', 'python_stuff', 'dependencies', 'get-pip.py')
+    get_pip = os.path.join(base_dir, '..', 'python_stuff', 'get-pip.py')
     
     path = os.environ['PATH']
     path = path.split(os.pathsep)
