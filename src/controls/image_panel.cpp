@@ -1124,10 +1124,18 @@ namespace dexpert
     }
 
     bool ImagePanel::pickupColor(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
-        auto img = getPasteImage();
+        RawImage *img = NULL;
+
+        if (edit_type_ == edit_type_controlnet && controlnet_image_type_ == controlnet_segmentation) {
+            img = images_[image_type_controlnet].get();
+        } else {
+            img = getPasteImage();
+        }
+
         if (!img) {
             return false;
         }
+
         int x = current_x_;
         int y = current_y_;
         convertToImageCoords(&x, &y);

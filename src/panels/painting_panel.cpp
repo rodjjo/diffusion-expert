@@ -22,7 +22,8 @@ namespace {
         "Scribble",
         "Canny",
         "Pose",
-        "Deepth"
+        "Deepth",
+        "Segmentation"
     };
 
     const char *controlnet_modes[painting_mode_max] = {
@@ -33,7 +34,8 @@ namespace {
         "scribble",
         "canny",
         "pose",
-        "deepth"
+        "deepth",
+        "segmentation"
     };
 
     const char *brush_captions[brush_size_count] = {
@@ -43,17 +45,36 @@ namespace {
         "4 Pixels",
         "8 Pixels",
         "16 Pixels",
-        "32 Pixels"
+        "32 Pixels",
+        "64 Pixels"
     };
+
     const uint8_t brushes_sizes[brush_size_count] = {
-        0, 1, 2, 4, 8, 16, 32
+        0, 1, 2, 4, 8, 16, 32, 64
     };
 
     const char *inpaint_modes[inpaint_mode_count] = {
-            "Original image",
-            "Fill image",
-            "Other image"
+        "Original image",
+        "Fill image",
+        "Other image"
     };
+
+    controlnet_type_t controltype_from_mode(painting_mode_t value) {
+        switch (value)
+        {
+            case painting_canny: 
+                return controlnet_canny;
+            case painting_scribble:
+                return controlnet_scribble;
+            case painting_deepth:
+                return controlnet_deepth;
+            case painting_pose:
+                return controlnet_pose;
+            case painting_segmentation:
+                return controlnet_segmentation;
+        }
+        return controlnet_type_count;
+    }
 }
 
 
@@ -310,11 +331,12 @@ void PaintingPanel::enableControls() {
     if (getSelectedMode() == painting_canny ||
         getSelectedMode() == painting_scribble ||
         getSelectedMode() == painting_pose ||
-        getSelectedMode() == painting_deepth) {
+        getSelectedMode() == painting_deepth ||
+        getSelectedMode() == painting_segmentation) {
         controlnet = true;     
     }
 
-    if (image2image && !inpainting) {
+    if (image2image && !inpainting || getSelectedMode() == painting_segmentation) {
         btnFgColor_->show();
     } else {
         btnFgColor_->hide();
@@ -413,14 +435,15 @@ void PaintingPanel::openMask() {
         getSelectedMode() != painting_pose &&
         getSelectedMode() != painting_canny &&
         getSelectedMode() != painting_scribble &&
-        getSelectedMode() != painting_deepth
+        getSelectedMode() != painting_deepth && 
+        getSelectedMode() != painting_segmentation
     ) {
         show_error("This mode does not allow masks!");
         return;
     }
     auto img = open_image_from_dialog();
     if (img) {
-        if (img->format() != dexpert::py::img_rgba && getSelectedMode() != painting_deepth) {
+        if (img->format() != dexpert::py::img_rgba && getSelectedMode() != painting_deepth && getSelectedMode() != painting_segmentation) {
             show_error("The image does not have alpha channel.");
             return;
         }
@@ -430,6 +453,7 @@ void PaintingPanel::openMask() {
             image_panel_->setLayerImage(image_type_mask, img);
         } else {
             image_panel_->setLayerImage(image_type_controlnet, img);
+            image_panel_->setControlnetImageType(controltype_from_mode(getSelectedMode()));
         }
         auto pic = image_panel_->getLayerImage(image_type_image);
         if (!pic) {
@@ -486,12 +510,18 @@ void PaintingPanel::modeSelected() {
             }
         }
         break;
-
+        
+        case painting_segmentation: {
+            uint8_t r, g, b;
+            btnFgColor_->getColor(&r, &g, &b);
+            image_panel_->setBrushColor(r, g, b);
+        }
         case painting_pose:
         case painting_canny:
         case painting_scribble:
         case painting_deepth: {
             image_panel_->setEditType(edit_type_controlnet);
+            image_panel_->setControlnetImageType(controltype_from_mode(getSelectedMode()));
             image_panel_->setLayerVisible(image_type_controlnet, true);
             if (!image_panel_->getLayerImage(image_type_controlnet) && getSelectedMode() != painting_deepth) {
                 newMask();
@@ -528,13 +558,15 @@ void PaintingPanel::newMask() {
         }
     } else if (getSelectedMode() == painting_pose ||
         getSelectedMode() == painting_canny ||
-        getSelectedMode() == painting_scribble
+        getSelectedMode() == painting_scribble ||
+        getSelectedMode() == painting_segmentation
     ) {
         bool should_continue = image_panel_->getLayerImage(image_type_controlnet) ? false : true;
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
         if (should_continue) {
             image_panel_->setLayerImage(image_type_controlnet, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
             image_panel_->setEditType(edit_type_controlnet);
+            image_panel_->setControlnetImageType(controltype_from_mode(getSelectedMode()));
             image_panel_->scheduleRedraw();
         }
     } else {
@@ -634,9 +666,12 @@ void PaintingPanel::pre_process(const char* method) {
             mode_->value(painting_scribble);
         } else if (method == std::string("deepth")) {
             mode_->value(painting_deepth);
+        } else if (method == std::string("segmentation")) {
+            mode_->value(painting_segmentation);
         }
 
-        if (method != std::string("deepth")) {
+
+        if (method != std::string("deepth") && method != "segmentation") {
             img = img->removeBackground(getSelectedMode() != painting_pose);
         }
 
@@ -699,7 +734,8 @@ bool PaintingPanel::ready() {
     if (getSelectedMode() == painting_scribble ||
         getSelectedMode() == painting_canny || 
         getSelectedMode() == painting_pose ||
-        getSelectedMode() == painting_deepth
+        getSelectedMode() == painting_deepth || 
+        getSelectedMode() == painting_segmentation
     ) {
         return ensureControlPresent();
     }
@@ -719,7 +755,7 @@ std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
         if (ensureControlPresent()) {
             auto img = image_panel_->getLayerImage(image_type_controlnet);
             image_ptr_t target;
-            if (getSelectedMode() == painting_deepth)
+            if (getSelectedMode() == painting_deepth || getSelectedMode() == painting_segmentation)
                 target = img->duplicate();
             else
                 target = img->removeAlpha();
