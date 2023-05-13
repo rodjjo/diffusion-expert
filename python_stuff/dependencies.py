@@ -35,8 +35,7 @@ def have_dependencies():
         'pytorch_lightning',
         'safetensors',
         'torchdiffeq',
-        'cv2',
-        'deepdanbooru'
+        'cv2'
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):
