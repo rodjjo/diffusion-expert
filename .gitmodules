@@ -10,3 +10,9 @@
 [submodule "pybind11"]
 	path = dependencies/pybind11
 	url = https://github.com/pybind/pybind11.git
+[submodule "future"]
+	path = dependencies/python-future
+	url = https://github.com/rodjjo/python-future.git
+[submodule "filterpy"]
+	path = dependencies/filterpy
+	url = https://github.com/rodjjo/filterpy.git

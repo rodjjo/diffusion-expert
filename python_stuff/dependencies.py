@@ -5,6 +5,17 @@ import urllib.request
 
 PRINT_PREFIX = 'dependencies.installer:'
 
+
+def install_local_dependencies():
+    basedir = os.path.join(os.path.dirname(sys.executable), '..', 'python_deps')
+    subprocess.check_call([
+        sys.executable, '-m', 'pip', 'install', os.path.join(basedir, 'python-future')
+    ])
+    subprocess.check_call([
+        sys.executable, '-m', 'pip', 'install', os.path.join(basedir, 'filterpy')
+    ])
+
+
 def have_pip():
     try:
         import pip
@@ -36,7 +47,8 @@ def have_dependencies():
         'safetensors',
         'torchdiffeq',
         'cv2',
-        'deepdanbooru'
+        'filterpy',
+        'future'
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):
@@ -80,6 +92,7 @@ def _install_dependencies():
     if not have_dependencies():
         print(f'{PRINT_PREFIX} It does not have the dependencies. Installing them')
         sys.stdout.flush()
+        install_local_dependencies()
         subprocess.check_call([
             sys.executable, '-m', 'pip', 'install', '-r', requirements_torch
         ])
