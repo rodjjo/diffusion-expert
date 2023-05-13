@@ -658,18 +658,21 @@ void PaintingPanel::pre_process(const char* method) {
     if (msg) {
         show_error(msg);
     } else {
-        if (method == std::string("canny")) {
-            mode_->value(painting_canny);
-        } else if (method == std::string("pose")) {
-            mode_->value(painting_pose);
-        } else if (method == std::string("scriblle")) {
-            mode_->value(painting_scribble);
-        } else if (method == std::string("deepth")) {
-            mode_->value(painting_deepth);
-        } else if (method == std::string("segmentation")) {
-            mode_->value(painting_segmentation);
+        int start = 0;
+        if (only_control_net_) {
+            start = painting_scribble;
         }
-
+        if (method == std::string("canny")) {
+            mode_->value(painting_canny - start);
+        } else if (method == std::string("pose")) {
+            mode_->value(painting_pose - start);
+        } else if (method == std::string("scriblle")) {
+            mode_->value(painting_scribble - start);
+        } else if (method == std::string("deepth")) {
+            mode_->value(painting_deepth - start);
+        } else if (method == std::string("segmentation")) {
+            mode_->value(painting_segmentation - start);
+        } 
 
         if (method != std::string("deepth") && method != "segmentation") {
             img = img->removeBackground(getSelectedMode() != painting_pose);

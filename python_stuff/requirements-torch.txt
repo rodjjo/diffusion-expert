@@ -1,4 +1,4 @@
 -i https://download.pytorch.org/whl/cu117
-torch 
-torchvision 
-torchaudio
+torch==2.0.0+cu117
+torchvision==0.15.1+cu117
+torchaudio==2.0.0+cu117
