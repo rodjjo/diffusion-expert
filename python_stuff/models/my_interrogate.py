@@ -2,18 +2,17 @@ import os
 from utils.images import pil_from_dict
 from utils.downloader import download_file
 from models.paths import DEEPBOORU_DIR
-from external.deepbooru import get_deepbooru_tags
+from external.deepdanbooru import get_deepbooru_tags
 
 from dexpert import progress_title
 
 
 def download_deepbooru():
-    model_path = DEEPBOORU_DIR
-    if not os.path.exists(os.path.join(model_path, 'project.json')):
+    if not os.path.exists(os.path.join(DEEPBOORU_DIR, 'model-resnet_custom_v3.pt')):
         download_file(
-            'https://github.com/KichangKim/DeepDanbooru/releases/download/v3-20211112-sgd-e28/deepdanbooru-v3-20211112-sgd-e28.zip',
+            'https://github.com/AUTOMATIC1111/TorchDeepDanbooru/releases/download/v1/model-resnet_custom_v3.pt',
             DEEPBOORU_DIR,
-            'deepdanbooru-v3-20211112-sgd-e28.zip'
+            'model-resnet_custom_v3.pt'
         )
 
 
