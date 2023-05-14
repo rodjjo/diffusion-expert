@@ -18,17 +18,16 @@ def report(message):
 
 
 def parse_prompt_loras(prompt: str):
-    lora_re = re.compile('<[^:]+:[^>]+>')
+    lora_re = re.compile('<lora:[^:]+:[^>]+>')
     lora_list = re.findall(lora_re, prompt)
 
     lora_items = []
     for lora in lora_list:
         lora = lora.replace('<', '').replace('>', '')
         p = lora.split(':')
-        if len(p) == 1:
-            p = [p, '1.0']
-        if len(p) != 2:
+        if len(p) != 3:
             continue
+        p = [p[1], p[2]]
         try:
             weight = float(p[1])
         except Exception:

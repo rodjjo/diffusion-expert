@@ -421,7 +421,7 @@ void PromptPanel::event_trigged(const void *sender, int event, void *data) {
                 return;
             }
             std::string text = positivePrompt_->value();
-            text += " <" + item->name + ":1.0>";
+            text += " <lora:" + item->name + ":1.0>";
             positivePrompt_->value(text.c_str());
         } else if (event == embedding_define_image) {
             if (image_panel_) {
