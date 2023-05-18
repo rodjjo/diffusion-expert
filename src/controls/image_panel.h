@@ -115,8 +115,8 @@ namespace dexpert
         void newImage(int w, int h);
         void noSelection();
         void selectAll();
-        void upScale(float scale);
-        void restoreSelectionFace();
+        void upScale(float scale, float weight);
+        void restoreSelectionFace(float weight);
         void cropToSelection();
         void resizeSelection(int w, int h);
         void close();

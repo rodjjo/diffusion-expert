@@ -10,8 +10,9 @@ namespace
 {
     const char *inpaint_mode_names[inpaint_mode_count] = {
         "original",
-        "fill",
-        "latent",
+        "fill"
+        // "latent",
+        // "nothing"
     };
 } // unamed namespace 
 

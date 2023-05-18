@@ -1029,13 +1029,13 @@ namespace dexpert
         setScroll(0, 0);
     }
 
-    void ImagePanel::upScale(float scale) {
+    void ImagePanel::upScale(float scale, float weight) {
         auto img = images_[image_type_image].get();
         if (!img) {
             return;
         }
 
-        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, 
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, weight,
             [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
                 if (!success) {
                     show_error(message);
@@ -1055,13 +1055,13 @@ namespace dexpert
         scrollAgain();
     }
 
-    void ImagePanel::restoreSelectionFace() {
+    void ImagePanel::restoreSelectionFace(float weight) {
         auto img = getSelectedImage(image_type_image);
         if (!img) {
             show_error("No Selection!");
             return;
         }
-        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, 
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, weight,
             [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
                 if (!success) {
                     show_error(message);

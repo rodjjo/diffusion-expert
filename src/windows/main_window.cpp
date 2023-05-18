@@ -110,14 +110,15 @@ void MainWindow::initMenu() {
     menuPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem([this] { newImage(false); }, "", "File/New");
-    menu_->addItem([this] { newImage(true); }, "", "File/New art");
-    menu_->addItem([this] { openImage(); }, "", "File/Open");
-    menu_->addItem([this] { saveImage(); }, "", "File/Save");
+    menu_->addItem([this] { newImage(false); }, "", "File/New", "", 0, xpm::file_new_16x16);
+    menu_->addItem([this] { newImage(true); }, "", "File/New art", "", 0, xpm::file_new_16x16);
+    menu_->addItem([this] { openImage(); }, "", "File/Open", "", 0, xpm::directory_16x16);
+    menu_->addItem([this] { saveImage(); }, "", "File/Save", "", 0, xpm::save_16x16);
     menu_->addItem([this] { image_editor_->close(); }, "", "File/Close");
-    menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit");
+    menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit", "", 0, xpm::exit_16x16);
     menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All");
-    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
+    menu_->addItem([this] { image_editor_->noSelection(); }, "", "Edit/Select None");
+    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings", "", 0, xpm::edit_16x16);
     menu_->addItem([this] { editSelection(painting_img2img); }, "", "Selection/Image to image");
     menu_->addItem([this] { editSelection(painting_inpaint_masked); }, "", "Selection/Inpaint");
     menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
@@ -197,11 +198,11 @@ void MainWindow::saveImage() {
 }
 
 void MainWindow::upScale(float scale) {
-    image_editor_->upScale(scale);
+    image_editor_->upScale(scale, getConfig().gfpgan_get_weight());
 }
 
 void MainWindow::restoreSelectionFace() {
-    image_editor_->restoreSelectionFace();
+    image_editor_->restoreSelectionFace(getConfig().gfpgan_get_weight());
 }
 
 void MainWindow::resizeSelection() {

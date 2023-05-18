@@ -55,8 +55,9 @@ namespace {
 
     const char *inpaint_modes[inpaint_mode_count] = {
         "Original image",
-        "Fill image",
-        "Other image"
+        "Fill image"
+        // "Latent Noise",
+        //"Latent Nothing"
     };
 
     controlnet_type_t controltype_from_mode(painting_mode_t value) {
@@ -213,7 +214,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
         brushes_->add(brush_captions[i]);
     }
 
-    for (int i = 0; i < inpaint_mode_count-1; ++i) { // TODO: add suport to inpaint_latent_other and remove -1
+    for (int i = 0; i < inpaint_mode_count; ++i) {
         inpaintMode_->add(inpaint_modes[i]);
     }
     

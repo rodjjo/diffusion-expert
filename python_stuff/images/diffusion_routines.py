@@ -6,7 +6,7 @@ from models.models import create_pipeline, current_model_is_in_painting, models_
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
-from utils.images import pil_as_dict, pil_from_dict, fill_image
+from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
 
@@ -34,10 +34,10 @@ def parse_prompt_loras(prompt: str):
             report(f"Invalid lora weigth {p[1]}")
             continue
         filepath = os.path.join(LORA_DIR, f'{p[0]}.safetensors')
-        report(filepath)
         if not os.path.exists(filepath):
             filepath = os.path.join(LORA_DIR, f'{p[0]}.ckpt')
         if not os.path.exists(filepath):
+            report(f"File not found: {filepath}")
             continue
         lora_items.append([filepath, weight])
     return re.sub(lora_re, '', prompt), lora_items
@@ -162,7 +162,7 @@ def _run_pipeline(pipeline_type, params):
         mask = pil_from_dict(input_mask)
         
         if inpaint_mode != 'original':
-            image = fill_image(image, mask)
+            image = inpaint_fill_image(image, mask)
 
         additional_args = {
             'image': image,

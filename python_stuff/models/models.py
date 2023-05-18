@@ -233,7 +233,7 @@ def get_embeddings():
     for f in files:
         name = os.path.basename(f)
         if '.' in name:
-            name = name.split('.', maxsplit=1)[0]
+            name = name.rsplit('.', maxsplit=1)[0]
         result.append({
             'name': name,
             'kind': 'lora',

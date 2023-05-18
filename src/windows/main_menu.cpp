@@ -47,7 +47,15 @@ void MainMenu::addItem(callback_t callback, const char *path, const char* label,
     menuItem->icon = xpm::image(icon);
     flItem->image(menuItem->icon.get());
 
-    menuItem->text = std::string(" ") + flItem->text;
+    size_t lp = p.find_last_of('/');
+    std::string lbl;
+    if (lp != std::string::npos) {
+        lbl = p.substr(lp + 1);
+    } else {
+        lbl = p;
+    }
+
+    menuItem->text = std::string(" ") + lbl;  // flItem->text;
     
 
     Fl_Multi_Label &ml = menuItem->label;

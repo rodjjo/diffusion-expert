@@ -27,7 +27,7 @@ def pil_from_dict(data, convert_rgb=True):
     return img
 
 
-def fill_image(image, mask):
+def inpaint_fill_image(image, mask):
     image_mod = Image.new('RGBA', (image.width, image.height))
 
     image_masked = Image.new('RGBa', (image.width, image.height))

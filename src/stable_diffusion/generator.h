@@ -17,7 +17,8 @@ namespace dexpert
 typedef enum {
     inpaint_original,
     inpaint_fill,
-    inpaint_latent_other,
+    // inpaint_noise,
+    // inpaint_none,
     // keep inpaint_mode_count at the end
     inpaint_mode_count
 } inpaint_mode_t;
