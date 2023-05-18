@@ -1126,7 +1126,7 @@ namespace dexpert
     bool ImagePanel::pickupColor(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
         RawImage *img = NULL;
 
-        if (edit_type_ == edit_type_controlnet && controlnet_image_type_ == controlnet_segmentation) {
+        if (edit_type_ == edit_type_controlnet && (controlnet_image_type_ == controlnet_segmentation || controlnet_image_type_ == controlnet_lineart)) {
             img = images_[image_type_controlnet].get();
         } else {
             img = getPasteImage();

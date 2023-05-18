@@ -31,6 +31,7 @@ typedef enum {
    painting_pose,
    painting_deepth,
    painting_segmentation,
+   painting_lineart,
 
    // keep painting_mode_max ath the end
    painting_mode_max
@@ -45,6 +46,7 @@ typedef enum {
    brush_size_16,
    brush_size_32,
    brush_size_64,
+   brush_size_128,
    // 
    brush_size_count
 } brush_size_t;

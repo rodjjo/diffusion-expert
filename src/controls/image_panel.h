@@ -33,6 +33,7 @@ typedef enum {
     controlnet_deepth,
     controlnet_pose,
     controlnet_segmentation,
+    controlnet_lineart,
     // keep controlnet_type_count at the end
     controlnet_type_count
 } controlnet_type_t;
