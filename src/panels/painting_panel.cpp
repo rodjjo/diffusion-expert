@@ -24,7 +24,8 @@ namespace {
         "Pose",
         "Deepth",
         "Segmentation",
-        "Lineart"
+        "Lineart",
+        "Mangaline"
     };
 
     const char *controlnet_modes[painting_mode_max] = {
@@ -37,7 +38,8 @@ namespace {
         "pose",
         "deepth",
         "segmentation",
-        "lineart"
+        "lineart",
+        "mangaline"
     };
 
     const char *brush_captions[brush_size_count] = {
@@ -77,6 +79,8 @@ namespace {
             case painting_segmentation:
                 return controlnet_segmentation;
             case painting_lineart:
+                return controlnet_lineart;
+            case painting_mangaline:
                 return controlnet_lineart;
         }
         return controlnet_type_count;
@@ -129,20 +133,8 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
         saveMask();
     }));
 
-    btnScribble_.reset(new Button(xpm::image(xpm::edit_16x16), [this] {
-        extractScribble();
-    }));
-
-    btnCanny_.reset(new Button(xpm::image(xpm::button_edit), [this] {
-        extractCanny();
-    }));
-
-    btnPose_.reset(new Button(xpm::image(xpm::marionette_16x16), [this] {
-        extractPose();
-    }));
-
-    btnDeepth_.reset(new Button(xpm::image(xpm::eye_16x16), [this] {
-        extractDeepth();
+    btnPreprocess_.reset(new Button(xpm::image(xpm::edit_16x16), [this] {
+        preprocessImage();
     }));
 
     btnFgColor_.reset(new Button([this] {
@@ -185,21 +177,9 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     btnSaveMask_->position(1, 1);
     btnSaveMask_->size(48, 30);
 
-    btnScribble_->tooltip("Convert the image to a scribble");
-    btnScribble_->position(1, 1);
-    btnScribble_->size(35, 30);
-
-    btnCanny_->tooltip("Convert the image to canny edges");
-    btnCanny_->position(1, 1);
-    btnCanny_->size(35, 30);
-
-    btnPose_->tooltip("Convert the image to pose");
-    btnPose_->position(1, 1);
-    btnPose_->size(35, 30);
-    
-    btnDeepth_->tooltip("Convert the image to deepth");
-    btnDeepth_->position(1, 1);
-    btnDeepth_->size(35, 30);
+    btnPreprocess_->tooltip("Pre-process the image");
+    btnPreprocess_->position(1, 1);
+    btnPreprocess_->size(35, 30);
 
     btnFgColor_->tooltip("Set the brush color");
     btnFgColor_->position(1, 1);
@@ -310,12 +290,9 @@ void PaintingPanel::alignComponents() {
     btnFgColor_->position(brushes_->x() + brushes_->w() + 2, brushes_->y());
     
     label_control_->resize(left_bar_->x(), brushes_->y() + brushes_->h() + 3, left_bar_->w() - 2, 30);
-    btnScribble_->position(left_bar_->x(), brushes_->y() + brushes_->h() + 26);
-    btnCanny_->position(btnScribble_->x() + btnScribble_->w() + 2, btnScribble_->y());
-    btnPose_->position(btnCanny_->x() + btnCanny_->w() + 2, btnCanny_->y());
-    btnDeepth_->position(btnPose_->x() + btnPose_->w() + 2, btnPose_->y());
+    btnPreprocess_->position(left_bar_->x(), brushes_->y() + brushes_->h() + 26);
 
-    draw_image_check_->resize(left_bar_->x(), btnDeepth_->y() + btnDeepth_->h() + 3, left_bar_->w() - 2, 20);
+    draw_image_check_->resize(left_bar_->x(), btnPreprocess_->y() + btnPreprocess_->h() + 3, left_bar_->w() - 2, 20);
     blur_mask_->resize(left_bar_->x(), draw_image_check_->y() + draw_image_check_->h() + 3, left_bar_->w() - 2, 20);
     inpaintMode_->resize(left_bar_->x(), blur_mask_->y() + blur_mask_->h() + 23, left_bar_->w() - 2, 20);
 }
@@ -339,7 +316,8 @@ void PaintingPanel::enableControls() {
         getSelectedMode() == painting_pose ||
         getSelectedMode() == painting_deepth ||
         getSelectedMode() == painting_segmentation || 
-        getSelectedMode() == painting_lineart ) {
+        getSelectedMode() == painting_lineart ||
+        getSelectedMode() == painting_mangaline ) {
         controlnet = true;     
     }
 
@@ -377,10 +355,7 @@ void PaintingPanel::enableControls() {
     btnOpenMask_->enabled(btnNewMask_->enabled());
     btnSaveMask_->enabled(btnNewMask_->enabled());
 
-    btnScribble_->enabled(controlnet);
-    btnCanny_->enabled(controlnet);
-    btnPose_->enabled(controlnet);
-    btnDeepth_->enabled(controlnet);
+    btnPreprocess_->enabled(controlnet);
     
     if (inpainting || controlnet) {
         brushes_->activate();
@@ -444,7 +419,8 @@ void PaintingPanel::openMask() {
         getSelectedMode() != painting_scribble &&
         getSelectedMode() != painting_deepth && 
         getSelectedMode() != painting_segmentation &&
-        getSelectedMode() != painting_lineart
+        getSelectedMode() != painting_lineart && 
+        getSelectedMode() != painting_mangaline
     ) {
         show_error("This mode does not allow masks!");
         return;
@@ -525,6 +501,7 @@ void PaintingPanel::modeSelected() {
             image_panel_->setBrushColor(r, g, b);
         }
         case painting_lineart:
+        case painting_mangaline:
         case painting_pose:
         case painting_canny:
         case painting_scribble:
@@ -569,7 +546,8 @@ void PaintingPanel::newMask() {
         getSelectedMode() == painting_canny ||
         getSelectedMode() == painting_scribble ||
         getSelectedMode() == painting_segmentation || 
-        getSelectedMode() == painting_lineart
+        getSelectedMode() == painting_lineart ||
+        getSelectedMode() == painting_mangaline
     ) {
         bool should_continue = image_panel_->getLayerImage(image_type_controlnet) ? false : true;
         should_continue = (should_continue || ask("Do you want to create a blank canvas ?"));
@@ -684,10 +662,14 @@ void PaintingPanel::pre_process(const char* method) {
             mode_->value(painting_segmentation - start);
         } else if (method == std::string("lineart")) {
             mode_->value(painting_lineart - start);
+        } else if (method == std::string("mangaline")) {
+            mode_->value(painting_mangaline - start);
         } 
 
         if (method != std::string("deepth") && method != "segmentation") {
-            img = img->removeBackground(getSelectedMode() != painting_pose && getSelectedMode() != painting_lineart);
+            img = img->removeBackground(
+                getSelectedMode() != painting_pose && 
+                getSelectedMode() != painting_mangaline);
         }
 
         image_panel_->setLayerImage(image_type_controlnet, img);
@@ -695,20 +677,34 @@ void PaintingPanel::pre_process(const char* method) {
     }
 }
 
-void PaintingPanel::extractCanny() {
-    pre_process("canny");
-}
-
-void PaintingPanel::extractScribble() {
-    pre_process("scribble");
-}
-
-void PaintingPanel::extractPose() {
-    pre_process("pose");
-}
-
-void PaintingPanel::extractDeepth() {
-    pre_process("deepth");
+void PaintingPanel::preprocessImage() {
+    switch (getSelectedMode())
+    {
+        case painting_scribble: {
+            pre_process("scribble");
+        }
+        break;
+        case painting_canny: {
+            pre_process("canny");
+        }
+        break;
+        case painting_pose: {
+            pre_process("pose");
+        }
+        break;
+        case painting_deepth: {
+            pre_process("deepth");
+        }
+        break;
+        case painting_lineart: {
+            pre_process("lineart");
+        }
+        break;
+        case painting_mangaline: {
+            pre_process("mangaline");
+        }
+        break;
+    }
 }
 
 RawImage* PaintingPanel::getImg2ImgImage() {
@@ -751,7 +747,8 @@ bool PaintingPanel::ready() {
         getSelectedMode() == painting_pose ||
         getSelectedMode() == painting_deepth || 
         getSelectedMode() == painting_segmentation ||
-        getSelectedMode() == painting_lineart
+        getSelectedMode() == painting_lineart ||
+        getSelectedMode() == painting_mangaline
     ) {
         return ensureControlPresent();
     }
@@ -771,7 +768,7 @@ std::shared_ptr<ControlNet> PaintingPanel::getControlnet() {
         if (ensureControlPresent()) {
             auto img = image_panel_->getLayerImage(image_type_controlnet);
             image_ptr_t target;
-            if (getSelectedMode() == painting_deepth || getSelectedMode() == painting_segmentation || getSelectedMode() == painting_lineart)
+            if (getSelectedMode() == painting_deepth || getSelectedMode() == painting_segmentation)
                 target = img->duplicate();
             else
                 target = img->removeAlpha();

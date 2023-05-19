@@ -75,7 +75,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 'scribble': 'lllyasviel/sd-controlnet-scribble',
                 'deepth': 'lllyasviel/sd-controlnet-depth',
                 'segmentation': 'lllyasviel/sd-controlnet-seg',
-                'lineart': 'lllyasviel/control_v11p_sd15_lineart',
+                'lineart': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+                'mangaline': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
         }
         for c in controlnets:
             have_controlnet = True
@@ -86,7 +87,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             if c['mode'] == 'segmentation':
                 mode_str = f"models--lllyasviel--sd-controlnet-seg"
             elif c['mode'] == 'lineart':
-                mode_str = f"models--lllyasviel--control_v11p_sd15_lineart"
+                mode_str = f"models--lllyasviel--control_v11p_sd15s2_lineart_anime"
             else:
                 mode_str = f"models--lllyasviel--sd-controlnet-{c['mode']}"
             local_files_only = os.path.exists(os.path.join(CACHE_DIR, mode_str, 'snapshots'))
