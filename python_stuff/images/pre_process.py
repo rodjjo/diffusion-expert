@@ -123,9 +123,13 @@ def image_to_lineart(input_image) -> dict:
     def do_it():
         # la = LineartDetector(LineartDetector.model_default)
         la = LineartDetector(LineartDetector.model_coarse)
-        image = la(np.array(input_image))
+        image, remove_pad = resize_image_with_pad(np.array(input_image), 512)
+        image = la(image)
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
+        image[image > 96] = 255
+        # image[image < 32] = 0
+        image = remove_pad(image)
         image = Image.fromarray(image)
         return pil_as_dict(image)
     result = do_it()
@@ -138,9 +142,9 @@ def image_to_mangaline(input_image) -> dict:
         la = MangaLineExtration()
         image, remove_pad = resize_image_with_pad(np.array(input_image), 512)
         image = la(image)
-        image = remove_pad(image)
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
+        image = remove_pad(image)
         image = Image.fromarray(image)
         return pil_as_dict(image)
     result = do_it()
