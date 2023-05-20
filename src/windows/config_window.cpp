@@ -32,6 +32,7 @@ ConfigWindow::ConfigWindow() {
     page_sd_ = new Fl_Group(0, 0, 1, 1, "Stable Diffusion");
     page_sd_->begin();
     nsfw_check_ = new Fl_Check_Button(0, 0, 1, 1, "Filter NSFW");
+    privacy_check_ = new Fl_Check_Button(0, 0, 1, 1, "Privacy Mode");
     float16_check_ = new Fl_Check_Button(0, 0, 1, 1, "Use float16");
     gpu_check_ = new Fl_Check_Button(0, 0, 1, 1, "Use GPU (CUDA)");
     schedulers_ = new Fl_Choice(0, 0, 1, 1, "Scheduler");
@@ -105,6 +106,7 @@ void ConfigWindow::align_components() {
     controlnetCount_->resize(nsfw_check_->x() + nsfw_check_->w() + 5, top, 200, height);
     float16_check_->resize(left, top + 5 + controlnetCount_->h(), 200, height);
     gpu_check_->resize(float16_check_->x() + float16_check_->w() + 5, float16_check_->y(), 200, height);
+    privacy_check_->resize(gpu_check_->x() + gpu_check_->w() + 5, gpu_check_->y(), 200, height);
     btnOk_->position(window_->w() - 215, window_->h() - 40);
     btnOk_->size(100, 30);
     btnCancel_->position(btnOk_->x() + btnOk_->w() + 2, btnOk_->y());
@@ -119,6 +121,7 @@ void ConfigWindow::align_components() {
 void ConfigWindow::load_configuration() {
     auto &c = getConfig();
     nsfw_check_->value(c.getSafeFilter());
+    privacy_check_->value(c.getPrivacyMode());
     float16_check_->value(c.getUseFloat16());
     gpu_check_->value(c.getUseGPU());
 
@@ -142,6 +145,7 @@ void ConfigWindow::save_configuration() {
     window_->hide();
     auto &c = getConfig();
     c.setSafeFilter(nsfw_check_->value() == 1);
+    c.setPrivacyMode(privacy_check_->value() == 1);
     c.setUseFloat16(float16_check_->value() == 1);
     c.setUseGPU(gpu_check_->value() == 1);
 

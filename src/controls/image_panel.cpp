@@ -4,6 +4,8 @@
 #include <FL/Fl.H>
 #include <FL/gl.h>
 
+#include "src/opengl_utils/routines.h"
+#include "src/config/config.h"
 #include "src/dialogs/utils.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/controls/image_panel.h"
@@ -264,6 +266,12 @@ namespace dexpert
         current_x_ = move_x;
         current_y_ = move_y;
         mouse_changed_ = true;
+
+        auto ref = getReferenceImage();
+        if (!ref) {
+            return;
+        }
+
         if (isPainting()) {
             drawing_changed_ = true;
             drawing_clear_ = !left_button && right_button;
@@ -273,10 +281,6 @@ namespace dexpert
             if (tool_ == image_tool_brush && edit_type_ != edit_type_none) {
                 scheduleRedraw();
             }
-        }
-        auto ref = getReferenceImage();
-        if (!ref) {
-            return;
         }
 
         if (isDragging()) {
@@ -290,6 +294,10 @@ namespace dexpert
             selection_start_.y = down_y;
             selection_end_.x = move_x;
             selection_end_.y = move_y;
+            scheduleRedraw();
+        }
+        
+        if (getConfig().getPrivacyMode()) {
             scheduleRedraw();
         }
     };
@@ -569,9 +577,11 @@ namespace dexpert
                 draw_buffer(img);
             }
         }
-
         draw_tool();
+
+        blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
     }
+    
     bool ImagePanel::hasSelection() {
         return selection_start_.x != selection_end_.x && selection_start_.y != selection_end_.y;
     }

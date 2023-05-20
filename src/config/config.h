@@ -46,6 +46,8 @@ namespace dexpert
     bool getUseGPU();
     void setUseFloat16(bool value);
     void setUseGPU(bool value);
+    bool getPrivacyMode();
+    void setPrivacyMode(bool value);
     float gfpgan_get_weight();
     void gfpgan_set_weight(float value);
     const char* gfpgan_get_arch();
@@ -84,6 +86,7 @@ namespace dexpert
 
   private:
     // configs
+    bool privacy_mode_ = false;
     bool use_gpu_ = true;
     bool use_float16_ = true;
     float gfpgan_weight_ = 0.5;

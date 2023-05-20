@@ -4,6 +4,7 @@
 #include <atomic>
 #include "src/data/xpm.h"
 #include "src/python/raw_image.h"
+#include "src/config/config.h"
 #include "src/windows/progress_window.h"
 
 
@@ -101,7 +102,7 @@ void set_progress(size_t progress, size_t max, image_ptr_t preview) {
     }
     max_progress = 100.0;
     current_progress = (100.0 / max) * progress;
-    if (preview) {
+    if (preview && !dexpert::getConfig().getPrivacyMode()) {
         image = preview;
     }
 }

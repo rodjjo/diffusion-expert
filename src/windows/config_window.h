@@ -48,6 +48,7 @@ class ConfigWindow {
     Fl_Group *page_upscalers_;
     Fl_Tabs *tabs_;
     Fl_Check_Button *nsfw_check_;
+    Fl_Check_Button *privacy_check_;
     Fl_Check_Button *float16_check_;
     Fl_Check_Button *gpu_check_;
     Fl_Choice *schedulers_;

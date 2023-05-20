@@ -246,6 +246,14 @@ void Config::inpaint_set_mask_blur(float value) {
     inpaint_mask_blur_ = value;
 }
 
+bool Config::getPrivacyMode() {
+    return privacy_mode_;
+}
+
+void Config::setPrivacyMode(bool value) {
+    privacy_mode_ = value;
+}
+
 bool Config::save() {
     try {
         json data;
@@ -270,6 +278,9 @@ bool Config::save() {
         gfpgan["has_aligned"] = gfpgan_has_aligned_;
         gfpgan["paste_back"] = gfpgan_paste_back_;
         data["gfpgan"] = gfpgan;
+        json general;
+        general["privacy_mode"] = privacy_mode_;
+        data["general"] = general;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
         f << std::setw(2) << data << std::endl;
@@ -352,6 +363,12 @@ bool Config::load() {
             }
             if (gfpgan.contains("paste_back")) {
                 gfpgan_paste_back_ = gfpgan["paste_back"].get<bool>();
+            }
+        }
+        if (data.contains("general")) {
+            auto general = data["general"];
+            if (general.contains("privacy_mode")) {
+                privacy_mode_ = general["privacy_mode"].get<bool>();
             }
         }
         return true;
