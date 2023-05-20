@@ -124,6 +124,7 @@ namespace dexpert
         void adjustPasteImageSize();
         bool clicked();
         void scheduleRedraw();
+        void zoomFit();
 
     protected:
         int handle(int event) override;

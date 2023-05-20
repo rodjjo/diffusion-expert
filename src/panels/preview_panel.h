@@ -7,6 +7,7 @@
 #include <memory>
 #include <FL/Fl_Group.H>
 
+#include "src/controls/image_panel.h"
 #include "src/panels/miniature.h"
 #include "src/controls/button.h"
 
@@ -39,7 +40,7 @@ namespace dexpert
         size_t row_ = 0;
         size_t col_ = 0;
         bool main_preview_ = false;
-        Miniature *miniature_;
+        ImagePanel *miniature_;
         std::unique_ptr<Button> btnUse_;
         std::unique_ptr<Button> btnPrevious_;
         std::unique_ptr<Button> btnNext_;

@@ -9,7 +9,7 @@ namespace dexpert
 
 PreviewPanel::PreviewPanel(int x, int y, int w, int h, bool main_preview) : Fl_Group(x, y, w, h) {
     begin();
-    miniature_ = new Miniature(0, 0, 1, 1);
+    miniature_ = new ImagePanel(0, 0, 1, 1, []{});
     btnUse_.reset(new Button(xpm::image(xpm::green_pin_16x16), [this] {
         trigger_event(this, preview_event_use);
     }));
@@ -105,7 +105,7 @@ size_t PreviewPanel::getRow() {
 void PreviewPanel::updateImage() {
     auto img = get_sd_state()->getResultsImage(getRow(), getCol());
     if (!img) {
-        miniature_->clearPicture();
+        miniature_->close();
     } else {
         int sz = w();
         if (h() > sz) {
@@ -114,10 +114,11 @@ void PreviewPanel::updateImage() {
         if (sz < 100) {
             sz = 100;
         }
-        miniature_->setPicture(img->resizeInTheCenter(sz, sz));
+        miniature_->setLayerImage(image_type_image, img->resizeInTheCenter(sz, sz));
+        miniature_->zoomFit();
     }
 
-    if (!main_preview_ || !miniature_->getPicture()) {
+    if (!main_preview_ || !miniature_->getReferenceImage()) {
         btnPrevious_->hide();
         btnPreviousVar_->hide();
         btnNextVar_->hide();
@@ -128,7 +129,7 @@ void PreviewPanel::updateImage() {
         btnNextVar_->show();
         btnNext_->show();
     }
-    if (miniature_->getPicture()) {
+    if (miniature_->getReferenceImage()) {
         btnUse_->show();
         btnView_->show();
         btnRemove_->show();

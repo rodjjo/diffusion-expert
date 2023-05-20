@@ -102,7 +102,7 @@ void set_progress(size_t progress, size_t max, image_ptr_t preview) {
     }
     max_progress = 100.0;
     current_progress = (100.0 / max) * progress;
-    if (preview && !dexpert::getConfig().getPrivacyMode()) {
+    if (preview) {
         image = preview;
     }
 }

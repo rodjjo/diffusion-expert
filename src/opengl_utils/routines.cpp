@@ -14,7 +14,7 @@ void blur_gl_contents(int w, int h, int mouse_x, int mouse_y) {
         return;
     }
 
-    const int half_area =  25;
+    const int half_area = Fl::event_shift() != 0 ? 80 : 40;
     float fx = 2.0 / w;
     float fy = 2.0 / h;
     float hx = half_area * fx;

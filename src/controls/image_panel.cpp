@@ -581,7 +581,7 @@ namespace dexpert
 
         blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
     }
-    
+
     bool ImagePanel::hasSelection() {
         return selection_start_.x != selection_end_.x && selection_start_.y != selection_end_.y;
     }
@@ -837,6 +837,27 @@ namespace dexpert
     void ImagePanel::draw_overlay()
     {
         // Do Nothing
+    }
+
+    void ImagePanel::zoomFit() {
+        auto ref = getReferenceImage();
+        if (!ref) {
+            return;
+        }
+        float sx = 2.0 / w();
+        float sy = 2.0 / h();
+        float rx = ref->w() * sx;
+        float ry = ref->h() * sy;
+        int z = 5;
+        float v;
+        for (int zl = 5; zl < 400; zl += 5) {
+            v = z / 100.0;
+            if (v * rx >= 2.0 || v * ry >= 2.0)  {
+                break;
+            }
+            z = zl;
+        }
+        setZoomLevel(z / 100.0);
     }
 
     RawImage* ImagePanel::getReferenceImage() {

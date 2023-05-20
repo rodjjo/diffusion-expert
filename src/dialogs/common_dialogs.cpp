@@ -1,5 +1,6 @@
 
 #include <FL/Fl_Native_File_Chooser.H>
+#include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Color_Chooser.H>
 #include <Fl/fl_ask.H>
 
@@ -7,12 +8,14 @@
 #include <Windows.h>
 #endif 
 
+#include "src/config/config.h"
 #include "src/dialogs/common_dialogs.h"
 
 namespace dexpert
 {
 namespace {
     const char *kIMAGE_FILES_FILTER = "Image files\t*.{png,bmp,jpeg,webp,gif,jpg}\n";
+    const char *kIMAGE_FILES_FILTER_FL = "Image files (*.{png,bmp,jpeg,webp,gif,jpg})";
 }
 
 bool ask(const char *message) {
@@ -94,13 +97,19 @@ void configure_chooser(Fl_Native_File_Chooser *dialog, const char *filter, const
 }
 
 std::string choose_image_to_open(std::string* current_dir) {
+    if (dexpert::getConfig().getPrivacyMode()) {
+        return choose_image_to_open_fl(current_dir);
+    }
     Fl_Native_File_Chooser dialog(Fl_Native_File_Chooser::BROWSE_FILE);
     configure_chooser(&dialog, kIMAGE_FILES_FILTER, "Select an image to open", false);
     return execute_file_choose(&dialog, current_dir, NULL);
 }
 
 std::string choose_image_to_save(std::string* current_dir) {
-    Fl_Native_File_Chooser dialog(Fl_Native_File_Chooser::BROWSE_FILE);
+    if (dexpert::getConfig().getPrivacyMode()) {
+        return choose_image_to_save_fl(current_dir);
+    }
+    Fl_Native_File_Chooser dialog(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
     configure_chooser(&dialog, kIMAGE_FILES_FILTER, "Save the image", true);
     std::string result = execute_file_choose(&dialog, current_dir, ".png");
     if (!result.empty() && path_exists(result.c_str())) {
@@ -110,6 +119,27 @@ std::string choose_image_to_save(std::string* current_dir) {
     }
     return result;
 }
+
+std::string executeChooser(Fl_File_Chooser *fc) {
+    fc->preview(0);
+    fc->show();
+    while (fc->shown()) {
+        Fl::wait(0.01);
+    }
+    if (fc->value()) return fc->value();
+    return std::string();
+}
+
+std::string choose_image_to_open_fl(std::string* current_dir) {
+    Fl_File_Chooser dialog("", kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE, "Open image");
+    return executeChooser(&dialog);
+}
+
+std::string choose_image_to_save_fl(std::string* current_dir) {
+    Fl_File_Chooser dialog("", kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
+    return executeChooser(&dialog);
+}
+
 
 bool pickup_color(const char* title, uint8_t *r, uint8_t *g, uint8_t *b) {
     return fl_color_chooser(title, *r, *g, *b) == 1;
