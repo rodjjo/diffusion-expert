@@ -10,7 +10,9 @@ namespace
 {
     const char *inpaint_mode_names[inpaint_mode_count] = {
         "original",
-        "fill"
+        "fill",
+        "original", // wholepicture + original
+        "fill" // wholepicture + fill
         // "latent",
         // "nothing"
     };
@@ -119,8 +121,14 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
             blur_mask = mask_->blur(mask_blur_size_);
         }
     }
+
+    image_ptr_t full_mask = blur_mask;
+    if (inpaint_mode_ == inpaint_wholepicture) {
+        full_mask = dexpert::py::newImage(full_mask->w(), full_mask->h(), false);
+        full_mask = full_mask->removeAlpha();
+    }
     
-    params.mask = blur_mask.get();
+    params.mask = full_mask.get();
     params.strength = image_strength_;
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;

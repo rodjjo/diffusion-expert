@@ -1090,6 +1090,12 @@ namespace dexpert
     }
 
     void ImagePanel::resizeSelection(int w, int h) {
+        int cx = (selection_start_.x + selection_end_.x) / 2;
+        int cy = (selection_start_.y + selection_end_.y) / 2;
+        cx -= w / 2;
+        cy -= h / 2;
+        selection_start_.x = cx;
+        selection_start_.y = cy;
         selection_end_.x = selection_start_.x + w;
         selection_end_.y = selection_start_.y + h;
         scrollAgain();

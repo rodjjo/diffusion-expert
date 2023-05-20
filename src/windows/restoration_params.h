@@ -8,7 +8,7 @@
 namespace dexpert
 {
 
-typedef struct restoration_type {
+struct restoration_type {
     std::string restoration_type;  // for now: gfpgan
     float weight;
 };

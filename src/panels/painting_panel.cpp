@@ -60,7 +60,9 @@ namespace {
 
     const char *inpaint_modes[inpaint_mode_count] = {
         "Original image",
-        "Fill image"
+        "Fill image",
+        "Whole image (original)",
+        "Whole image (fill)"
         // "Latent Noise",
         //"Latent Nothing"
     };
