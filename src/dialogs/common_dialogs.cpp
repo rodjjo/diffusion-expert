@@ -137,7 +137,15 @@ std::string choose_image_to_open_fl(std::string* current_dir) {
 
 std::string choose_image_to_save_fl(std::string* current_dir) {
     Fl_File_Chooser dialog("", kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
-    return executeChooser(&dialog);
+    std::string result = executeChooser(&dialog);
+    
+    if (!result.empty() && path_exists(result.c_str())) {
+        if (!ask("Do you want to replace the destination file ?")) {
+            result.clear();
+        }
+    }
+
+    return result;
 }
 
 

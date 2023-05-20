@@ -432,15 +432,14 @@ def load_lora(unet, text_encoder, lora_path, lora_weight):
             pair_keys.append(key)
             pair_keys.append(key.replace('lora_up', 'lora_down'))
         
-        # update weight
+
         if len(state_dict[pair_keys[0]].shape) == 4:
             weight_up = state_dict[pair_keys[0]].squeeze(3).squeeze(2).to(torch.float32)
             weight_down = state_dict[pair_keys[1]].squeeze(3).squeeze(2).to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
-        else:
-            weight_up = state_dict[pair_keys[0]].to(torch.float32)
-            weight_down = state_dict[pair_keys[1]].to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down)
+            if len(weight_up.shape) == len(weight_down.shape):
+                curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
+            else:
+                curr_layer.weight.data += alpha * torch.einsum('a b, b c h w -> a c h w', weight_up, weight_down)        
             
         # update visited list
         for item in pair_keys:
