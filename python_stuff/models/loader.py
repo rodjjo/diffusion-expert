@@ -521,9 +521,9 @@ def load_lora_list(lora_list, unet, text_model):
     else:
         scale = 1
     for lm in lora_list:
-        lm[1] = scale * lm[1]
-        report(f"Adding lora {os.path.basename(lm[0])} with weight {lm[1]}")
-        load_lora(unet, text_model, lm[0], lm[1])
+        w = scale * lm[1]
+        report(f"Adding lora {os.path.basename(lm[0])} with weight {w}")
+        load_lora(unet, text_model, lm[0], w)
 
 
 def load_stable_diffusion_model(model_path: str, lora_list: list):

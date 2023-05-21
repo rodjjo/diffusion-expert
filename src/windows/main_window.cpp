@@ -138,7 +138,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(3.0); }, "", "Image/Upscale/3x");
     menu_->addItem([this] { upScale(3.5); }, "", "Image/Upscale/3.5x");
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
-    menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
+    //menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
 }

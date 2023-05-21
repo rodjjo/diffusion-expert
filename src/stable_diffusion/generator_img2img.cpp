@@ -115,6 +115,7 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.image = image_.get();
     params.inpaint_mode = inpaint_mode_names[inpaint_mode_];
     params.reload_model = reload_model_;
+    reload_model_ = false;
 
     if (mask_) {
         if (mask_blur_size_) {

@@ -69,6 +69,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;
     params.reload_model = reload_model_;
+    reload_model_ = false;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
         dexpert::py::control_net_t control;
