@@ -46,6 +46,13 @@ ConfigWindow::ConfigWindow() {
     gfpgan_weight_ = new Fl_Float_Input(0, 0, 1, 1, "Face restoration weigth");
     page_upscalers_->end();
 
+    page_dirs_ = new Fl_Group(0, 0, 1, 1, "Directories");
+    page_dirs_->begin();
+    add_model_dir_ = new Fl_Input(1, 1, 1, 1, "Additional stable diffusion model dir");
+    add_lora_dir_ = new Fl_Input(1, 1, 1, 1, "Additional lora model dir");
+    add_emb_dir_ = new Fl_Input(1, 1, 1, 1, "Additional embedding dir");
+    page_dirs_->end();
+
     tabs_->end();
 
     btnOk_.reset(new Button(xpm::image(xpm::button_ok_16x16), [this] {
@@ -83,6 +90,14 @@ ConfigWindow::ConfigWindow() {
     gfpgan_arch_->value(0);
     gfpgan_weight_->value("0.5");
 
+    add_model_dir_->align(FL_ALIGN_TOP_LEFT);
+    add_lora_dir_->align(FL_ALIGN_TOP_LEFT);
+    add_emb_dir_->align(FL_ALIGN_TOP_LEFT);
+
+    add_model_dir_->tooltip("The additional directory for stable diffusion models");
+    add_lora_dir_->tooltip("The additional directory for lora model");
+    add_emb_dir_->tooltip("The additional directory for embedding model");
+
     align_components();
     load_configuration();
 }
@@ -96,6 +111,7 @@ void ConfigWindow::align_components() {
     tabs_->resize(0, 0, window_->w(), window_->h() - 50);
     page_sd_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     page_upscalers_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
+    page_dirs_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     int left = tabs_->x() + 10;
     int top = tabs_->y() + 55;
     int height = 30;
@@ -116,6 +132,11 @@ void ConfigWindow::align_components() {
     gfpgan_arch_->resize(left, top, 200, height);
     gfpgan_only_center_faces_->resize(gfpgan_arch_->x() + gfpgan_arch_->w() + 5, top, 200, height);
     gfpgan_weight_->resize(gfpgan_only_center_faces_->x() + gfpgan_only_center_faces_->w() + 5, top, 200, height);
+
+    // TAB: directories
+    add_model_dir_->resize(left, top, page_dirs_->w() - 20, height);
+    add_lora_dir_->resize(left, add_model_dir_->y() + add_model_dir_->h() + 20, page_dirs_->w() - 20, height);
+    add_emb_dir_->resize(left, add_lora_dir_->y() + add_lora_dir_->h() + 20, page_dirs_->w() - 20, height);
 }
 
 void ConfigWindow::load_configuration() {
@@ -139,6 +160,9 @@ void ConfigWindow::load_configuration() {
         schedulers_->value(index);
     }
     controlnetCount_->value(c.getControlnetCount());
+    add_emb_dir_->value(c.getAdditionalEmbsDir().c_str());
+    add_lora_dir_->value(c.getAdditionalLoraDir().c_str());
+    add_model_dir_->value(c.getAdditionalModelDir().c_str());
 }
 
 void ConfigWindow::save_configuration() {
@@ -166,6 +190,10 @@ void ConfigWindow::save_configuration() {
         c.setScheduler(schedulers_->text(0));
     }
     c.setControlnetCount(controlnetCount_->value());
+
+    c.setAdditionalEmbsDir(add_emb_dir_->value());
+    c.setAdditionalModelDir(add_model_dir_->value());
+    c.setAdditionalLoraDir(add_lora_dir_->value());
     c.save();
 
     const char *msg;

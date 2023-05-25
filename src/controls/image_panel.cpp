@@ -577,9 +577,8 @@ namespace dexpert
                 draw_buffer(img);
             }
         }
-        draw_tool();
-
         blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
+        draw_tool();
     }
 
     bool ImagePanel::hasSelection() {
@@ -770,8 +769,8 @@ namespace dexpert
 
 
     void ImagePanel::setBrushSize(uint8_t size) {
-        if (size > 32)
-            brush_size_ = 32;
+        if (size > 128)
+            brush_size_ = 128;
         else 
             brush_size_ = size;
         scheduleRedraw();

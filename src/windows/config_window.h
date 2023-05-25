@@ -7,6 +7,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tabs.H>
 #include <Fl/Fl_Check_Button.H>
+#include <Fl/Fl_Input.H>
 #include <Fl/Fl_Choice.H>
 #include <Fl/Fl_Float_Input.H>
 
@@ -46,6 +47,7 @@ class ConfigWindow {
  private:
     Fl_Group *page_sd_;
     Fl_Group *page_upscalers_;
+    Fl_Group *page_dirs_;
     Fl_Tabs *tabs_;
     Fl_Check_Button *nsfw_check_;
     Fl_Check_Button *privacy_check_;
@@ -56,6 +58,9 @@ class ConfigWindow {
     Fl_Choice *gfpgan_arch_;
     Fl_Check_Button *gfpgan_only_center_faces_;
     Fl_Float_Input *gfpgan_weight_;
+    Fl_Input *add_model_dir_;
+    Fl_Input *add_lora_dir_;
+    Fl_Input *add_emb_dir_;
 
     ModalWindow *window_ = NULL;
     std::unique_ptr<Button> btnOk_;

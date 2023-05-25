@@ -17,6 +17,15 @@ def report(message):
     progress_title(f'[Text To Image] - {message}')
 
 
+def get_lora_path(lora: str) -> str:
+    for d in (LORA_DIR, get_setting('add_lora_dir', '')):
+        for e in ('.safetensors', '.ckpt'):
+            filepath = os.path.join(d, f'{lora}{e}')
+            if os.path.exists(filepath):
+                return filepath
+    return None
+
+
 def parse_prompt_loras(prompt: str):
     lora_re = re.compile('<lora:[^:]+:[^>]+>')
     lora_list = re.findall(lora_re, prompt)
@@ -33,11 +42,9 @@ def parse_prompt_loras(prompt: str):
         except Exception:
             report(f"Invalid lora weigth {p[1]}")
             continue
-        filepath = os.path.join(LORA_DIR, f'{p[0]}.safetensors')
-        if not os.path.exists(filepath):
-            filepath = os.path.join(LORA_DIR, f'{p[0]}.ckpt')
-        if not os.path.exists(filepath):
-            report(f"File not found: {filepath}")
+        filepath = get_lora_path(p[0])
+        if not filepath:
+            report(f"Lora not found: {p[0]}")
             continue
         lora_items.append([filepath, weight])
     return re.sub(lora_re, '', prompt), lora_items

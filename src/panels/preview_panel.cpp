@@ -114,7 +114,7 @@ void PreviewPanel::updateImage() {
         if (sz < 100) {
             sz = 100;
         }
-        miniature_->setLayerImage(image_type_image, img->resizeInTheCenter(sz, sz));
+        miniature_->setLayerImage(image_type_image, img->duplicate());
         miniature_->zoomFit();
     }
 

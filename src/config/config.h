@@ -67,6 +67,14 @@ namespace dexpert
     std::string& lastImageSaveDir();
     std::string& lastImageOpenDir();
 
+    void setAdditionalModelDir(const std::string& value);
+    void setAdditionalLoraDir(const std::string& value);
+    void setAdditionalEmbsDir(const std::string& value);
+    std::string getAdditionalModelDir();
+    std::string getAdditionalLoraDir();
+    std::string getAdditionalEmbsDir();
+
+
     bool save();
     bool load();
     
@@ -80,7 +88,9 @@ namespace dexpert
     std::wstring pythonMainPy_;
     std::wstring modelsRootDir_;
     std::wstring sdModelsDir_;
-
+    std::string additionalModelDir_;
+    std::string additionalLoraDir_;
+    std::string additionalEmbDir_;
     std::string last_image_open_dir_;
     std::string last_image_save_dir_;
 

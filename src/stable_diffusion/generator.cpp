@@ -115,24 +115,7 @@ namespace dexpert
 
     int GeneratorBase::computeVariationSeed(bool left)
     {
-        if (left)
-        {
-            for (auto i = variations_.rbegin(); i != variations_.rend(); ++i)
-            {
-                if (i->first)
-                {
-                    return i->second - 1;
-                }
-            }
-        }
-        for (auto i = variations_.begin(); i != variations_.end(); ++i)
-        {
-            if (i->first)
-            {
-                return i->second + 1;
-            }
-        }
-        return image_seed_ + (left ? -1 : 1);
+        return rand();
     }
 
 } // namespace dexpert

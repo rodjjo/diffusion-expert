@@ -51,7 +51,7 @@ class MainWindow : Fl_Menu_Window {
   void resizeBottom(); 
   void resizePicture();
   void resizeCanvas();
-  void resizeSelection();
+  void resizeSelection(int width);
   void restoreSelectionFace();
   void upScale(float scale);
 

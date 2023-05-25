@@ -254,6 +254,30 @@ void Config::setPrivacyMode(bool value) {
     privacy_mode_ = value;
 }
 
+void Config::setAdditionalModelDir(const std::string& value) {
+    additionalModelDir_ = value;
+}
+
+void Config::setAdditionalLoraDir(const std::string& value) {
+    additionalLoraDir_ = value;
+}
+
+void Config::setAdditionalEmbsDir(const std::string& value) {
+    additionalEmbDir_ = value;
+}
+
+std::string Config::getAdditionalModelDir() {
+    return additionalModelDir_;
+}
+
+std::string Config::getAdditionalLoraDir() {
+    return additionalLoraDir_;
+}
+
+std::string Config::getAdditionalEmbsDir() {
+    return additionalEmbDir_;
+}
+
 bool Config::save() {
     try {
         json data;
@@ -265,6 +289,9 @@ bool Config::save() {
         sd["controlnet_count"] = controlnetCount_;
         sd["use_float16"] = use_float16_;
         sd["use_gpu"] = use_gpu_;
+        sd["add_model_dir"] = additionalModelDir_;
+        sd["add_emb_dir"] = additionalEmbDir_;
+        sd["add_lora_dir"] = additionalLoraDir_;
         data["stable_diffusion"] = sd;
         json files;
         files["last_image_save_dir"] = last_image_save_dir_;
@@ -329,6 +356,15 @@ bool Config::load() {
             }
             if (sd.contains("use_gpu")) {
                 use_gpu_ = sd["use_gpu"].get<bool>();
+            }
+            if (sd.contains("add_model_dir")) {
+                additionalModelDir_ = sd["add_model_dir"].get<std::string>();
+            }
+            if (sd.contains("add_emb_dir")) {
+                additionalEmbDir_ = sd["add_emb_dir"].get<std::string>();
+            }
+            if (sd.contains("add_lora_dir")) {
+                additionalLoraDir_ = sd["add_lora_dir"].get<std::string>();
             }
         }
         if (data.contains("files")) {

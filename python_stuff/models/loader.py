@@ -447,26 +447,30 @@ def load_lora(unet, text_encoder, lora_path, lora_weight):
 
 
 def get_textual_inversion_paths():
-    files = os.listdir(EMBEDDING_DIR)
+    files = [os.path.join(EMBEDDING_DIR, f) for f in os.listdir(EMBEDDING_DIR)]
+    add_dir = get_setting('add_emb_dir', '')
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
     result = []
     for f in files:
         lp = f.lower()
-        path = os.path.join(EMBEDDING_DIR, f) 
         if lp.endswith('.bin') or lp.endswith('.pt'):
-            result.append((False, path))
+            result.append((False, f))
         elif lp.endswith('.safetensors'):
-            result.append((True, path))
+            result.append((True, f))
     return result
 
 
 def get_lora_paths():
-    files = os.listdir(LORA_DIR)
+    files = [os.path.join(LORA_DIR, f) for f in os.listdir(LORA_DIR)]
+    add_dir = get_setting('add_lora_dir', '')
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
     result = []
     for f in files:
         lp = f.lower()
-        path = os.path.join(LORA_DIR, f) 
         if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
-            result.append(path)
+            result.append(f)
     return result
 
 
@@ -624,7 +628,7 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
         if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
             local_files_only = True
 
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
 
         if  get_setting("nsfw_filter", True) is True:
             report("safety checker")

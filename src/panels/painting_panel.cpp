@@ -539,6 +539,7 @@ void PaintingPanel::newMask() {
                 image_panel_->setEditType(edit_type_paste);
                 image_panel_->adjustPasteImageSize();
             } else {
+                image_panel_->setLayerImage(image_type_controlnet, dexpert::py::image_ptr_t());
                 image_panel_->setLayerImage(image_type_mask, dexpert::py::newImage(prompt_->getWidth(), prompt_->getHeight(), true));
                 image_panel_->setEditType(edit_type_mask);
             }
