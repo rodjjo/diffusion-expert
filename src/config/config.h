@@ -74,6 +74,7 @@ namespace dexpert
     std::string getAdditionalLoraDir();
     std::string getAdditionalEmbsDir();
 
+    int getMaxGeneratedImages();
 
     bool save();
     bool load();

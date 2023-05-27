@@ -20,6 +20,8 @@ namespace
 
 
  GeneratorImg2Image::GeneratorImg2Image(
+        std::shared_ptr<SeedGenerator> seed_gen, 
+        bool variation,
         const std::string& prompt,
         const std::string& negative,
         const std::string& model,
@@ -38,7 +40,9 @@ namespace
         bool reload_model,
         float mask_blur_size,
         inpaint_mode_t inpaint_mode
-    ) : prompt_(prompt), 
+    ) : 
+        GeneratorBase(seed_gen, variation),
+        prompt_(prompt), 
         negative_(negative), 
         model_(model), 
         controlnets_(controlnets),
@@ -68,16 +72,19 @@ namespace
     }
 }
 
-std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
+std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate(bool variation) {
     std::shared_ptr<GeneratorImg2Image> d;
+    int seed = variation ? this->seed_ : this->getSeedGenerator()->newSeed();
     d.reset(new GeneratorImg2Image(
+        this->getSeedGenerator(),
+        variation,
         this->prompt_,
         this->negative_,
         this->model_,
         this->controlnets_,
         this->image_,
         this->mask_,
-        this->seed_,
+        seed,
         this->width_,
         this->height_,
         this->steps_,
@@ -93,7 +100,7 @@ std::shared_ptr<GeneratorBase> GeneratorImg2Image::duplicate() {
     return d;
 }
 
-void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_variation) {
+void GeneratorImg2Image::generate(generator_cb_t cb) {
     bool success = false;
 
     const char *message = "Unexpected error. Callback to generate image not called";
@@ -105,8 +112,8 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.prompt = prompt_.c_str();
     params.negative = negative_.c_str();
     params.model = model_.c_str();
-    params.seed = seed_ + seed_index;
-    params.variation = enable_variation == 0 ? 0 : computeVariationSeed(enable_variation < 0);
+    params.seed = seed_;
+    params.variation = isVariation() ? rand() : 0;
     params.var_stren = var_strength_;
     params.steps = steps_;
     params.cfg = cfg_;
@@ -144,7 +151,7 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
         );
     } 
 
-    if (enable_variation == 0) {
+    if (!isVariation()) {
         params.var_stren = 0;
     }
     
@@ -171,11 +178,7 @@ void GeneratorImg2Image::generate(generator_cb_t cb, int seed_index, int enable_
             result = result->getCrop(0, 0, image_orig_w_, image_orig_h_);
         }
 
-        if (enable_variation == 0) {
-            setImage(result, params.seed);
-        } else  {
-            addVariation(result, params.variation, enable_variation < 0);
-        }
+        setImage(result);
     }
 
     cb(success, message, result);

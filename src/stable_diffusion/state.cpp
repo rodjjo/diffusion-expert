@@ -77,23 +77,6 @@ std::string StableDiffusionState::getSdModelPath(const std::string& name) {
     return "";
 }
 
-void StableDiffusionState::scroll_down_generators() {
-    for (size_t i = generators_.size(); i > 1; --i) {
-        if ((int)i - 1 > 0) {
-            generators_[i - 1] = generators_[i - 2];
-        }
-    }
-    generators_.begin()->g.reset();
-}
-
-void StableDiffusionState::scroll_up_generators() {
-    for (size_t i = 0; i < generators_.size(); ++i) {
-        if (i + 1 < generators_.size()) {
-            generators_[i] = generators_[i + 1];
-        }
-    }
-    generators_.rbegin()->g.reset();
-}
 
 int StableDiffusionState::randomSeed() {
     int any_random = ((size_t) rand()) % INT32_MAX;
@@ -114,126 +97,45 @@ generator_cb_t StableDiffusionState::generatorMakeCallback() {
 }
 
 void StableDiffusionState::clearGenerators() {
-    for (size_t i = 0; i < generators_.size(); ++i) {
-        generators_[i].g.reset();
-        generators_[i].seed_increment = 0;
-    }
+    generators_.clear();
 }
 
-void StableDiffusionState::clearImage(int index, int variation) {
+void StableDiffusionState::clearImage(int index) {
     if (index >= generators_.size() || index < 0)
         return;
-    if (!generators_[index].g) 
-        return;
-    if (variation == 0) {
-        return generators_[index].g->clearImage();
-    }
-
-    return generators_[index].g->clearVariation(variation - 1);
+    generators_.erase(generators_.begin() + index);
 }
 
 bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator) {
     last_error_.clear();
 
-    clearGenerators();
-
     size_t index = 0;
-    generator->generate(generatorMakeCallback(), 0);
+    generator->generate(generatorMakeCallback());
 
     if (generator->getImage()) {
-        generators_[index].g = generator;
-        generators_[index].seed_increment = 0;
+        generators_.push_back(generator);
+    }
+
+    if (generators_.size() > getConfig().getMaxGeneratedImages()) {
+        generators_.erase(generators_.begin());
     }
 
     return last_error_.empty();
 }
 
-bool StableDiffusionState::generatePreviousImage(int index) {
-    last_error_ = "Wrong index";
-    if (index < 0 || index >= generators_.size())
-        return false;
-    auto g = generators_[index];
-    if (!g.g) {
-        last_error_ = "No Generator";
-        return false;
-    }
-
-    last_error_.clear();
-    g.g = g.g->duplicate();
-    g.seed_increment -= 1;
-
-    g.g->generate(generatorMakeCallback(), g.seed_increment, 0);
-    
-    if (g.g->getImage()) {
-        if (generators_[0].g) {
-            scroll_down_generators();
-        }
-        generators_[0] = g;
-    }
-
-    return last_error_.empty();
-}
 
 bool StableDiffusionState::generateNextImage(int index) {
     last_error_ = "Wrong index";
     if (index < 0 || index >= generators_.size())
         return false;
-    auto g = generators_[index];
-    if (!g.g) {
-        last_error_ = "No Generator";
-        return false;
-    }
-    last_error_.clear();
-    
-    index = generators_.size() - 1;
-    bool scroll_up = false;
-    if (generators_[index].g) {
-        scroll_up = true;
-    } else {
-        while (index > 0) {
-            if (generators_[index - 1].g) {
-                break;
-            }
-            --index;
-        }
-    }
-    
-    g.g = g.g->duplicate();
-    g.seed_increment += 1;
-    
-    g.g->generate(generatorMakeCallback(), g.seed_increment, 0);
-
-    if (g.g->getImage()) {
-        if (scroll_up)
-            scroll_up_generators();
-        generators_[index] = g;
-    }
-
-    return last_error_.empty();
-}
-
-bool StableDiffusionState::generatePreviousVariation(int index) {
-    last_error_ = "Wrong index";
-    if (index < 0 || index >= generators_.size())
-        return false;
-    if (!generators_[index].g) 
-        return false;
-    last_error_ = "";
-    auto &g = generators_[index];
-    g.g->generate(generatorMakeCallback(), g.seed_increment, -1);
-    return last_error_.empty();
+    return generatorAdd(generators_[index]->duplicate(false));
 }
 
 bool StableDiffusionState::generateNextVariation(int index) {
     last_error_ = "Wrong index";
     if (index < 0 || index >= generators_.size())
         return false;
-    if (!generators_[index].g) 
-        return false;
-    last_error_ = "";
-    auto &g = generators_[index];
-    g.g->generate(generatorMakeCallback(), g.seed_increment, 1);
-    return last_error_.empty();
+    return generatorAdd(generators_[index]->duplicate(true));
 }
 
 
@@ -284,31 +186,18 @@ bool StableDiffusionState::saveImage(const char *path, RawImage *image) {
 }
 
 
-RawImage *StableDiffusionState::getResultsImage(int index, int variation) {
+RawImage *StableDiffusionState::getResultsImage(int index) {
     if (index >= generators_.size() || index < 0)
         return NULL;
-    if (!generators_[index].g) 
-        return NULL;
-    if (variation == 0) {
-        return generators_[index].g->getImage();
-    }
-    return generators_[index].g->getVariation(variation - 1);
-}
-
-RawImage *StableDiffusionState::getControlNetImage(int index) {
-    return NULL;
-}
-
-int StableDiffusionState::getMaxResultImages() {
-    return generators_.size();
-}
-
-int StableDiffusionState::getMaxResultVariations() {
-    return  GeneratorBase::maxVariations() + 1; // +1 of original image
+    return generators_[index]->getImage();
 }
 
 const char* StableDiffusionState::lastError() {
     return last_error_.c_str();
+}
+
+size_t StableDiffusionState::getGeneratorSize() {
+    return generators_.size();
 }
     
 } // namespace dexpert

@@ -34,7 +34,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
     
-    resultsPanel_ = new ResultsPanel(0, 0, 1, 1, inputImage_);
+    resultsPanel_ = new PreviewPanel(inputImage_);
     pages_[page_results] = resultsPanel_;
 
     promptPanel_->setImagePanel(inputImage_);
@@ -118,9 +118,6 @@ bool Pages::goPage(page_t page) {
         }
     }
 
-    if (active_page_ == page_results) {
-        resultsPanel_->updatePanels();
-    }
     return result;
 }
 
@@ -244,6 +241,8 @@ void Pages::textToImage() {
         }
 
         g.reset(new GeneratorImg2Image(
+            std::make_shared<SeedGenerator>(),
+            false,
             promptPanel_->getPrompt(),
             promptPanel_->getNegativePrompt(),
             get_sd_state()->getSdModelPath(model),
@@ -265,6 +264,8 @@ void Pages::textToImage() {
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
+            std::make_shared<SeedGenerator>(),
+            false,
             promptPanel_->getPrompt(),
             promptPanel_->getNegativePrompt(),
             get_sd_state()->getSdModelPath(model),
@@ -281,10 +282,11 @@ void Pages::textToImage() {
         ));
     }
 
+    get_sd_state()->clearGenerators();
     if (!get_sd_state()->generatorAdd(g)) {
         show_error(get_sd_state()->lastError());
-    } else if (active_page_ == page_results) {
-        resultsPanel_->updatePanels();
+    } else {
+        resultsPanel_->goLastImage();
     }
 }
 

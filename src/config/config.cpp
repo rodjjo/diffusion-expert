@@ -319,6 +319,11 @@ bool Config::save() {
     return false;
 }
 
+int Config::getMaxGeneratedImages() {
+    return 16;
+}
+
+
 bool Config::load() {
     const std::wstring path = getConfigDir() + kCONFIG_FILE;
     std::ifstream f(path.c_str());

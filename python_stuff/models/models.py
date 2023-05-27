@@ -252,4 +252,5 @@ def get_embeddings():
         if os.path.exists(picture_path):
             with Image.open(picture_path) as im:
                 r['image'] = pil_as_dict(im)
+    result.sort(key=lambda x: x['name'].lower())
     return result

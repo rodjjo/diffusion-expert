@@ -1,82 +1,46 @@
 #include "src/stable_diffusion/generator.h"
 
-#define MAX_VARIATIONS 4
-
 namespace dexpert
 {
+    SeedGenerator::SeedGenerator() {
+        seed_ = rand();
+    }
 
-    GeneratorBase::GeneratorBase()
+    int SeedGenerator::newSeed() {
+        return ++seed_;
+    }
+
+    GeneratorBase::GeneratorBase(std::shared_ptr<SeedGenerator> seed_gen, bool variation)
     {
-        for (int i = 0; i < MAX_VARIATIONS; ++i)
-        {
-            variations_.push_back(std::make_pair(image_ptr_t(), 0));
-        }
+        variation_ = variation;
+        seed_gen_ = seed_gen;
+        image_seed_ = seed_gen_->newSeed();
     }
 
     GeneratorBase::~GeneratorBase()
     {
     }
 
-    int GeneratorBase::maxVariations()
-    {
-        return MAX_VARIATIONS;
+    bool GeneratorBase::isVariation() {
+        return variation_;
     }
 
-    void GeneratorBase::setImage(image_ptr_t image, int seed)
+    void GeneratorBase::setImage(image_ptr_t image)
     {
         image_ = image;
-        image_seed_ = seed;
-    }
-
-    void GeneratorBase::addVariation(image_ptr_t image, int variation, bool left)
-    {
-        if (left)
-        {
-            if (variations_.begin()->first)
-            {
-                for (auto it = variations_.rbegin(); it != variations_.rend(); ++it)
-                {
-                    auto it2 = it;
-                    std::advance(it2, 1);
-                    if (it2 != variations_.rend())
-                    {
-                        it->first = it2->first;
-                        it->second = it2->second;
-                    }
-                }
-            }
-            variations_.begin()->first = image;
-            variations_.begin()->second = variation;
-        }
-        else
-        {
-            for (auto it = variations_.begin(); it != variations_.end(); ++it)
-            {
-                if (!it->first)
-                {
-                    it->first = image;
-                    it->second = variation;
-                    return;
-                }
-            }
-            for (auto it = variations_.begin(); it != variations_.end(); ++it)
-            {
-                auto it2 = it;
-                std::advance(it2, 1);
-                if (it2 != variations_.end())
-                {
-                    it->first = it2->first;
-                    it->second = it2->second;
-                }
-            }
-            variations_.rbegin()->first = image;
-            variations_.rbegin()->second = variation;
-        }
     }
 
     int GeneratorBase::getSeed()
     {
         return image_seed_;
+    }
+
+    std::shared_ptr<SeedGenerator> GeneratorBase::getSeedGenerator() {
+        return seed_gen_;
+    }
+
+    void GeneratorBase::setSeed(int value) {
+        value;
     }
 
     RawImage *GeneratorBase::getImage()
@@ -86,36 +50,6 @@ namespace dexpert
 
     void GeneratorBase::clearImage() {
         image_.reset();
-    }
-
-    void GeneratorBase::clearVariation(int index) {
-        if (index < 0 || index >= variations_.size())
-            return;
-        return variations_[index].first.reset();
-    }
-
-    int GeneratorBase::getVariationCount()
-    {
-        return variations_.size();
-    }
-
-    RawImage *GeneratorBase::getVariation(int index)
-    {
-        if (index < 0 || index >= variations_.size())
-            return NULL;
-        return variations_[index].first.get();
-    }
-
-    int GeneratorBase::getVariationSeed(int index)
-    {
-        if (index < 0 || index >= variations_.size())
-            return 0;
-        return variations_[index].second;
-    }
-
-    int GeneratorBase::computeVariationSeed(bool left)
-    {
-        return rand();
     }
 
 } // namespace dexpert

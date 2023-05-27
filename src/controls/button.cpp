@@ -149,4 +149,8 @@ void Button::getColor(uint8_t *r, uint8_t *g, uint8_t *b) {
     *b = color_[2];
 }
 
+void Button::set_visible() {
+    button_->set_visible();
+}
+
 }  // namespace dexpert
