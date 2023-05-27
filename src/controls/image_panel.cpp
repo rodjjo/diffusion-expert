@@ -4,6 +4,8 @@
 #include <FL/Fl.H>
 #include <FL/gl.h>
 
+#include "src/opengl_utils/routines.h"
+#include "src/config/config.h"
 #include "src/dialogs/utils.h"
 #include "src/dialogs/common_dialogs.h"
 #include "src/controls/image_panel.h"
@@ -264,6 +266,12 @@ namespace dexpert
         current_x_ = move_x;
         current_y_ = move_y;
         mouse_changed_ = true;
+
+        auto ref = getReferenceImage();
+        if (!ref) {
+            return;
+        }
+
         if (isPainting()) {
             drawing_changed_ = true;
             drawing_clear_ = !left_button && right_button;
@@ -273,10 +281,6 @@ namespace dexpert
             if (tool_ == image_tool_brush && edit_type_ != edit_type_none) {
                 scheduleRedraw();
             }
-        }
-        auto ref = getReferenceImage();
-        if (!ref) {
-            return;
         }
 
         if (isDragging()) {
@@ -290,6 +294,10 @@ namespace dexpert
             selection_start_.y = down_y;
             selection_end_.x = move_x;
             selection_end_.y = move_y;
+            scheduleRedraw();
+        }
+        
+        if (getConfig().getPrivacyMode()) {
             scheduleRedraw();
         }
     };
@@ -569,9 +577,10 @@ namespace dexpert
                 draw_buffer(img);
             }
         }
-
+        blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
         draw_tool();
     }
+
     bool ImagePanel::hasSelection() {
         return selection_start_.x != selection_end_.x && selection_start_.y != selection_end_.y;
     }
@@ -760,8 +769,8 @@ namespace dexpert
 
 
     void ImagePanel::setBrushSize(uint8_t size) {
-        if (size > 32)
-            brush_size_ = 32;
+        if (size > 128)
+            brush_size_ = 128;
         else 
             brush_size_ = size;
         scheduleRedraw();
@@ -827,6 +836,27 @@ namespace dexpert
     void ImagePanel::draw_overlay()
     {
         // Do Nothing
+    }
+
+    void ImagePanel::zoomFit() {
+        auto ref = getReferenceImage();
+        if (!ref) {
+            return;
+        }
+        float sx = 2.0 / w();
+        float sy = 2.0 / h();
+        float rx = ref->w() * sx;
+        float ry = ref->h() * sy;
+        int z = 5;
+        float v;
+        for (int zl = 5; zl < 400; zl += 5) {
+            v = z / 100.0;
+            if (v * rx >= 2.0 || v * ry >= 2.0)  {
+                break;
+            }
+            z = zl;
+        }
+        setZoomLevel(z / 100.0);
     }
 
     RawImage* ImagePanel::getReferenceImage() {
@@ -1029,13 +1059,13 @@ namespace dexpert
         setScroll(0, 0);
     }
 
-    void ImagePanel::upScale(float scale) {
+    void ImagePanel::upScale(float scale, float weight) {
         auto img = images_[image_type_image].get();
         if (!img) {
             return;
         }
 
-        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, 
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, weight,
             [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
                 if (!success) {
                     show_error(message);
@@ -1055,13 +1085,13 @@ namespace dexpert
         scrollAgain();
     }
 
-    void ImagePanel::restoreSelectionFace() {
+    void ImagePanel::restoreSelectionFace(float weight) {
         auto img = getSelectedImage(image_type_image);
         if (!img) {
             show_error("No Selection!");
             return;
         }
-        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, 
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, weight,
             [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
                 if (!success) {
                     show_error(message);
@@ -1090,6 +1120,12 @@ namespace dexpert
     }
 
     void ImagePanel::resizeSelection(int w, int h) {
+        int cx = (selection_start_.x + selection_end_.x) / 2;
+        int cy = (selection_start_.y + selection_end_.y) / 2;
+        cx -= w / 2;
+        cy -= h / 2;
+        selection_start_.x = cx;
+        selection_start_.y = cy;
         selection_end_.x = selection_start_.x + w;
         selection_end_.y = selection_start_.y + h;
         scrollAgain();
@@ -1126,7 +1162,7 @@ namespace dexpert
     bool ImagePanel::pickupColor(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
         RawImage *img = NULL;
 
-        if (edit_type_ == edit_type_controlnet && controlnet_image_type_ == controlnet_segmentation) {
+        if (edit_type_ == edit_type_controlnet && (controlnet_image_type_ == controlnet_segmentation || controlnet_image_type_ == controlnet_lineart)) {
             img = images_[image_type_controlnet].get();
         } else {
             img = getPasteImage();

@@ -1,62 +1,99 @@
 #include "src/data/event_manager.h"
 #include "src/data/xpm.h"
+#include "src/dialogs/common_dialogs.h"
+#include "src/windows/image_viewer.h"
 #include "src/stable_diffusion/state.h"
+
 #include "src/panels/preview_panel.h"
+
 
 namespace dexpert
 {
 
 
-PreviewPanel::PreviewPanel(int x, int y, int w, int h, bool main_preview) : Fl_Group(x, y, w, h) {
+PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), painting_(painting) {
     begin();
-    miniature_ = new Miniature(0, 0, 1, 1);
+    miniature_ = new ImagePanel(0, 0, 1, 1, []{});
     btnUse_.reset(new Button(xpm::image(xpm::green_pin_16x16), [this] {
-        trigger_event(this, preview_event_use);
-    }));
-    btnPrevious_.reset(new Button(xpm::image(xpm::arrow_up_16x16), [this] {
-        trigger_event(this, preview_event_previous);
-    }));
-    btnNext_.reset(new Button(xpm::image(xpm::arrow_down_16x16), [this] {
-        trigger_event(this, preview_event_next);
-    }));
-    btnPreviousVar_.reset(new Button(xpm::image(xpm::arrow_left_16x16), [this] {
-        trigger_event(this, preview_event_previous_var);
-    }));
-    btnNextVar_.reset(new Button(xpm::image(xpm::arrow_right_16x16), [this] {
-        trigger_event(this, preview_event_next_var);
+        if (ask("Do you want to set this as input image ?")) {
+            painting_->setImage(get_sd_state()->getResultsImage(getRow()));
+            painting_->clearPasteImage();
+        }
     }));
     btnView_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
-        trigger_event(this, preview_event_view);
+        auto img = get_sd_state()->getResultsImage(getRow());
+        if (img) {
+            view_image(img->duplicate());
+        }
     }));
     btnRemove_.reset(new Button(xpm::image(xpm::button_delete), [this] {
-        trigger_event(this, preview_event_remove);
+        if (ask("Do you want remove this image ?")) {
+            get_sd_state()->clearImage(getRow());
+            updateImage();
+        }
     }));
+    btnScrollLeft_.reset(new Button(xpm::image(xpm::arrow_left_16x16), [this] {
+        if (row_ > 0) {
+            setRow(row_ - 1);
+        }
+    }));
+    btnScrollRight_.reset(new Button(xpm::image(xpm::arrow_right_16x16), [this] {
+        if (row_ + 1 < get_sd_state()->getGeneratorSize()) {
+            if (Fl::event_shift() != 0) {
+                get_sd_state()->generateNextVariation(getRow());
+                goLastImage();
+            } else {
+                setRow(row_ + 1);
+            }
+        } else {
+            if (Fl::event_shift() != 0) {
+                get_sd_state()->generateNextVariation(getRow());
+            } else {
+                get_sd_state()->generateNextImage(getRow());
+            }
+            goLastImage();
+        }
+    }));
+    lblCounter_ = new Fl_Box(0, 0, 1, 1, "0/0");
     end();
     box(FL_DOWN_BOX);
 
     alignComponents();
-    main_preview_ = main_preview;
-    
-    btnPrevious_->hide();
-    btnPreviousVar_->hide();
-    btnNextVar_->hide();
-    btnNext_->hide();
-    
-    btnUse_->hide();
-    btnView_->hide();
-    btnRemove_->hide();
 
-    btnPrevious_->tooltip("Generate the previous image");
-    btnPreviousVar_->tooltip("Generate the previous variation");
-    btnNextVar_->tooltip("Generate the next variation");
-    btnNext_->tooltip("Generate the next image");
     btnUse_->tooltip("Use this image as input image (as the result)");
     btnView_->tooltip("Preview the image");
     btnRemove_->tooltip("Remove the image");
+    btnScrollLeft_->tooltip("Navigate to the previous generated image");
+    btnScrollRight_->tooltip("Navigate to the next generated image. (hold shift to create a variation)");
+
+    enableControls(false);
 }
 
 PreviewPanel::~PreviewPanel() {
 
+}
+
+void PreviewPanel::enableControls(bool should_redraw) {
+    if (get_sd_state()->getGeneratorSize() > 0) {
+        miniature_->set_visible();
+        btnUse_->set_visible();
+        lblCounter_->set_visible();
+        btnScrollLeft_->set_visible();
+        btnScrollRight_->set_visible();
+        btnView_->set_visible();
+        btnRemove_->set_visible();
+        if (should_redraw && this->visible_r()) {
+            redraw();
+        }
+    } else {
+        miniature_->hide();
+        btnUse_->hide();
+        lblCounter_->hide();
+        btnScrollLeft_->hide();
+        btnScrollRight_->hide();
+        btnView_->hide();
+        btnRemove_->hide();
+    }
 }
 
 void PreviewPanel::resize(int x, int y, int w, int h) {
@@ -65,47 +102,46 @@ void PreviewPanel::resize(int x, int y, int w, int h) {
 }
     
 void PreviewPanel::alignComponents() {
-    miniature_->resize(x() + 3, y() + 3, w() - 6 - 26, h()- 6);
-    btnPrevious_->size(20, 20);
-    btnPreviousVar_->size(20, 20);
-    btnNextVar_->size(20, 20);
-    btnNext_->size(20, 20);
+    miniature_->resize(x() + 3, y() + 3, w() - 6 - 26, h()- 36);
     btnUse_->size(20, 20);
     btnView_->size(20, 20);
     btnRemove_->size(20, 20);
+    btnScrollLeft_->size(20, 20);
+    btnScrollRight_->size(20, 20);
 
-    btnPrevious_->position(x() + w() - 23, y() + 3 );
-    btnNext_->position(x() + w() - 23,  btnPrevious_->y() + btnPrevious_->h() + 2);
-
-    btnUse_->position(x() + w() - 23, btnNext_->y() + btnNext_->h() + 12);
+    btnUse_->position(x() + w() - 23, y() + 3);
     btnView_->position(x() + w() - 23, btnUse_->y() + btnUse_->h() + 2);
     btnRemove_->position(x() + w() - 23, btnView_->y() + btnView_->h() + 2);
 
-    btnPreviousVar_->position(x() + w() - 23, btnRemove_->y() + btnRemove_->h() + 12);
-    btnNextVar_->position(x() + w() - 23, btnPreviousVar_->y() + btnPreviousVar_->h() + 2);
+    int navWidth = 210;
     
-}
-
-void PreviewPanel::setCol(size_t value) {
-    col_ = value;
-}
-
-size_t PreviewPanel::getCol() {
-    return col_;
+    btnScrollLeft_->position(x() + w() / 2 - navWidth / 2, y() + h() - 31);
+    lblCounter_->resize(btnScrollLeft_->x() + btnScrollLeft_->w() + 5, btnScrollLeft_->y(), 160, 20);
+    btnScrollRight_->position(lblCounter_->x() + lblCounter_->w() + 5, btnScrollLeft_->y());
 }
 
 void PreviewPanel::setRow(size_t value) {
     row_ = value;
+    updateImage();
 }
 
 size_t PreviewPanel::getRow() {
     return row_;
 }
 
+void PreviewPanel::goLastImage() {
+    if (get_sd_state()->getGeneratorSize() < 1) {
+        row_ = 0;
+        return;
+    }
+    row_ = get_sd_state()->getGeneratorSize() - 1;
+    updateImage();
+}
+
 void PreviewPanel::updateImage() {
-    auto img = get_sd_state()->getResultsImage(getRow(), getCol());
+    auto img = get_sd_state()->getResultsImage(getRow());
     if (!img) {
-        miniature_->clearPicture();
+        miniature_->close();
     } else {
         int sz = w();
         if (h() > sz) {
@@ -114,29 +150,14 @@ void PreviewPanel::updateImage() {
         if (sz < 100) {
             sz = 100;
         }
-        miniature_->setPicture(img->resizeInTheCenter(sz, sz));
+        miniature_->setLayerImage(image_type_image, img->duplicate());
+        miniature_->zoomFit();
     }
 
-    if (!main_preview_ || !miniature_->getPicture()) {
-        btnPrevious_->hide();
-        btnPreviousVar_->hide();
-        btnNextVar_->hide();
-        btnNext_->hide();
-    } else {
-        btnPrevious_->show();
-        btnPreviousVar_->show();
-        btnNextVar_->show();
-        btnNext_->show();
-    }
-    if (miniature_->getPicture()) {
-        btnUse_->show();
-        btnView_->show();
-        btnRemove_->show();
-    } else {
-        btnUse_->hide();
-        btnView_->hide();
-        btnRemove_->hide();
-    }
+    enableControls(true);
+    char buffer[100] = "";
+    sprintf(buffer, "%d of %d",  (int)row_ + 1, (int)get_sd_state()->getGeneratorSize());
+    lblCounter_->copy_label(buffer);
 }
 
     

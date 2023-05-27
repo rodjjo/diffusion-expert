@@ -3,6 +3,8 @@
 #include <FL/Fl.H>
 #include <FL/gl.h>
 
+#include "src/config/config.h"
+#include "src/opengl_utils/routines.h"
 #include "src/data/event_manager.h"
 #include "src/panels/miniature.h"
 
@@ -18,10 +20,26 @@ Miniature::Miniature(uint32_t x, uint32_t y, uint32_t w, uint32_t h): Fl_Gl_Wind
     vp_[2] = this->w();
     vp_[3] = this->h();
     valid(0);
+    Fl::add_timeout(0.01, Miniature::imageRefresh, this);
 }
 
 Miniature::~Miniature() {
+     Fl::remove_timeout(Miniature::imageRefresh, this);
 }
+
+void Miniature::imageRefresh(void *cbdata) {
+    ((Miniature *) cbdata)->imageRefresh();
+    Fl::repeat_timeout(0.018, Miniature::imageRefresh, cbdata); // retrigger timeout
+}
+
+void Miniature::imageRefresh() {
+    if (!should_refresh_) return;
+    should_refresh_ = true;
+    if (!visible_r()) return;
+    if (!getConfig().getPrivacyMode()) return;
+    redraw();
+}
+
 
 void Miniature::setPicture(image_ptr_t image) {
     if (!image.get()) {
@@ -78,6 +96,7 @@ int Miniature::handle(int event) {
                 mouse_down_y_ = Fl::event_y();
             }
             mouse_move(mouse_down_left_, mouse_down_right_, mouse_down_x_, mouse_down_y_, Fl::event_x(), Fl::event_y());
+            should_refresh_ = true;
         } break;
 
         case FL_PUSH: {
@@ -186,6 +205,7 @@ void Miniature::draw()  {
     }
     draw_buffer(buffer, w, h, format);
     draw_next();
+    blur_gl_contents(this->w(), this->h(), mouse_down_x_, mouse_down_y_);
 }
 
 void Miniature::draw_overlay() {

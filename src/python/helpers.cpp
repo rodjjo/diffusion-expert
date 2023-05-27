@@ -136,14 +136,15 @@ namespace dexpert
             };
         }
 
-        callback_t upscale_image(RawImage *image, float scale, image_callback_t status_cb)
+        callback_t upscale_image(RawImage *image, float scale, float weight, image_callback_t status_cb)
         {
             enable_progress_window(false);
-            return [status_cb, image, scale]
+            return [status_cb, image, scale, weight]
             {
                 try {
                     py11::dict d;
                     py11::dict params;
+                    params["gfpgan.weight"] = weight;
                     image->toPyDict(d);
                     auto r = dexpert::py::getModule().attr("gfpgan_upscale")(d, py11::float_(scale), params);
                     py11::dict d2 = r.cast<py11::dict>();
@@ -350,6 +351,9 @@ namespace dexpert
                     settings["gfpgan.only_center_face"] = c.gfpgan_get_only_center_face();
                     settings["gfpgan.paste_back"] = c.gfpgan_get_paste_back();
                     settings["gfpgan.weight"] = c.gfpgan_get_weight();
+                    settings["add_model_dir"] = c.getAdditionalModelDir();
+                    settings["add_emb_dir"] = c.getAdditionalEmbsDir();
+                    settings["add_lora_dir"] = c.getAdditionalLoraDir();
                     auto r = dexpert::py::getModule().attr("set_user_settings")(settings);
                     status_cb(true, NULL);
                 } catch(std::runtime_error e) {

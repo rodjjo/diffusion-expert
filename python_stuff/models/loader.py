@@ -1,6 +1,7 @@
 import os
 import safetensors
 import torch
+from collections import defaultdict
 from diffusers import (
     AutoencoderKL,
     PNDMScheduler,
@@ -382,30 +383,33 @@ def get_state_dict_from_checkpoint(pl_sd):
 
     return pl_sd
 
-def load_lora(unet, text_encoder, lora_path, lora_weight):
+
+def load_lora_weights(unet, text_encoder, lora_path, lora_weight):
+    LORA_PREFIX_UNET = "lora_unet"
+    LORA_PREFIX_TEXT_ENCODER = "lora_te"
+
+    # load LoRA weight from .safetensors
     if lora_path.lower().endswith('.safetensors'):
         state_dict = safetensors.torch.load_file(lora_path, device="cpu") 
     else:
         state_dict = torch.load(lora_path, map_location="cpu")
 
-    LORA_PREFIX_UNET = 'lora_unet'
-    LORA_PREFIX_TEXT_ENCODER = 'lora_te'
+    updates = defaultdict(dict)
+    for key, value in state_dict.items():
+        # it is suggested to print out the key, it usually will be something like below
+        # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
 
-    alpha = lora_weight
-    visited = []
+        layer, elem = key.split('.', 1)
+        updates[layer][elem] = value
 
     # directly update weight in diffusers model
-    for key in state_dict:
-        
-        # as we have set the alpha beforehand, so just skip
-        if '.alpha' in key or key in visited:
-            continue
-            
-        if 'text' in key:
-            layer_infos = key.split('.')[0].split(LORA_PREFIX_TEXT_ENCODER+'_')[-1].split('_')
+    for layer, elems in updates.items():
+
+        if "text" in layer:
+            layer_infos = layer.split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
             curr_layer = text_encoder
         else:
-            layer_infos = key.split('.')[0].split(LORA_PREFIX_UNET+'_')[-1].split('_')
+            layer_infos = layer.split(LORA_PREFIX_UNET + "_")[-1].split("_")
             curr_layer = unet
 
         # find the target layer
@@ -419,55 +423,55 @@ def load_lora(unet, text_encoder, lora_path, lora_weight):
                     break
             except Exception:
                 if len(temp_name) > 0:
-                    temp_name += '_'+layer_infos.pop(0)
+                    temp_name += "_" + layer_infos.pop(0)
                 else:
                     temp_name = layer_infos.pop(0)
-        
-        # org_forward(x) + lora_up(lora_down(x)) * multiplier
-        pair_keys = []
-        if 'lora_down' in key:
-            pair_keys.append(key.replace('lora_down', 'lora_up'))
-            pair_keys.append(key)
+
+        # get elements for this layer
+        weight_up = elems['lora_up.weight'].to(torch.float32)
+        weight_down = elems['lora_down.weight'].to(torch.float32)
+        alpha = elems['alpha']
+        if alpha:
+            alpha = alpha.item() / weight_up.shape[1]
         else:
-            pair_keys.append(key)
-            pair_keys.append(key.replace('lora_up', 'lora_down'))
-        
-        # update weight
-        if len(state_dict[pair_keys[0]].shape) == 4:
-            weight_up = state_dict[pair_keys[0]].squeeze(3).squeeze(2).to(torch.float32)
-            weight_down = state_dict[pair_keys[1]].squeeze(3).squeeze(2).to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
+            alpha = 1.0
+
+        if len(weight_up.shape) == 4:
+            weight_up = weight_up.squeeze(3).squeeze(2).to(torch.float32)
+            weight_down = weight_down.squeeze(3).squeeze(2).to(torch.float32)
+            if len(weight_up.shape) == len(weight_down.shape):
+                curr_layer.weight.data += lora_weight * alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
+            else:
+                curr_layer.weight.data += lora_weight * alpha * torch.einsum('a b, b c h w -> a c h w', weight_up, weight_down)       
         else:
-            weight_up = state_dict[pair_keys[0]].to(torch.float32)
-            weight_down = state_dict[pair_keys[1]].to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down)
-            
-        # update visited list
-        for item in pair_keys:
-            visited.append(item)
+            curr_layer.weight.data += lora_weight * alpha * torch.mm(weight_up, weight_down)
 
 
 def get_textual_inversion_paths():
-    files = os.listdir(EMBEDDING_DIR)
+    files = [os.path.join(EMBEDDING_DIR, f) for f in os.listdir(EMBEDDING_DIR)]
+    add_dir = get_setting('add_emb_dir', '')
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
     result = []
     for f in files:
         lp = f.lower()
-        path = os.path.join(EMBEDDING_DIR, f) 
         if lp.endswith('.bin') or lp.endswith('.pt'):
-            result.append((False, path))
+            result.append((False, f))
         elif lp.endswith('.safetensors'):
-            result.append((True, path))
+            result.append((True, f))
     return result
 
 
 def get_lora_paths():
-    files = os.listdir(LORA_DIR)
+    files = [os.path.join(LORA_DIR, f) for f in os.listdir(LORA_DIR)]
+    add_dir = get_setting('add_lora_dir', '')
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
     result = []
     for f in files:
         lp = f.lower()
-        path = os.path.join(LORA_DIR, f) 
         if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
-            result.append(path)
+            result.append(f)
     return result
 
 
@@ -522,9 +526,10 @@ def load_lora_list(lora_list, unet, text_model):
     else:
         scale = 1
     for lm in lora_list:
-        lm[1] = scale * lm[1]
-        report(f"Adding lora {os.path.basename(lm[0])} with weight {lm[1]}")
-        load_lora(unet, text_model, lm[0], lm[1])
+        w = scale * lm[1]
+        report(f"Adding lora {os.path.basename(lm[0])} with weight {w}")
+        load_lora_weights(unet, text_model, lm[0], w)
+
 
 def load_stable_diffusion_model(model_path: str, lora_list: list):
     report(f"loading {model_path}")
@@ -624,7 +629,7 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
         if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
             local_files_only = True
 
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
 
         if  get_setting("nsfw_filter", True) is True:
             report("safety checker")

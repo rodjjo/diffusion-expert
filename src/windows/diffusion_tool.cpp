@@ -48,6 +48,9 @@ DiffusionTool::DiffusionTool():  Fl_Window(
 void DiffusionTool::initRightPanel() {
     rightPanel_ = new Fl_Group(this->w() - 205, 20, 200, this->h() - 120);
     rightPanel_->begin();
+    generateBtn_.reset(new Button(xpm::image(xpm::button_play), [this] {
+        pages_->textToImage();
+    }));
     page_browser_ = new Fl_Select_Browser(0, 0, 1, 1);
     page_browser_->callback(pageChangeCallback, this);
     rightPanel_->end();
@@ -55,6 +58,7 @@ void DiffusionTool::initRightPanel() {
     pages_->goPage(page_prompts);
     refreshBrowser();
     pages_->end();
+    generateBtn_->tooltip("Generate a new image. [shortcut key: F9]");
 }
 
 void DiffusionTool::refreshBrowser() {
@@ -115,7 +119,7 @@ void DiffusionTool::alignComponents() {
     rightPanel_->position(leftW + centerW, topH);
     rightPanel_->size(rightW - 5, centerH);
 
-    page_browser_->resize(rightPanel_->x(), rightPanel_->y(), rightPanel_->w(), rightPanel_->h());
+    page_browser_->resize(rightPanel_->x(), rightPanel_->y() + 60, rightPanel_->w(), rightPanel_->h() - 60);
     
     toolsPanel_->position(0, h - toolbarH);
     toolsPanel_->size(w, toolbarH);
@@ -127,6 +131,9 @@ void DiffusionTool::alignComponents() {
     cancelBtn_->position(toolsPanel_->x() + toolsPanel_->w() - confirmBtn_->w() - 5, toolsPanel_->y() + 5);
 
     consoleBtn_->position(5, toolsPanel_->y() + toolsPanel_->h() / 2 - consoleBtn_->h() / 2);
+
+    generateBtn_->position(page_browser_->x() + page_browser_->w() / 2 - 25, page_browser_->y() - 55);
+    generateBtn_->size(50, 50);
     
 }
 

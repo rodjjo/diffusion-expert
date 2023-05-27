@@ -27,7 +27,7 @@ typedef std::function<void()>  callback_t;
 
 class PromptPanel: public EventListener, public Fl_Group {
  public:
-    PromptPanel(int x, int y, int w, int h, callback_t on_generate);
+    PromptPanel(int x, int y, int w, int h);
     virtual ~PromptPanel();
     const char *getPrompt();
     const char *getNegativePrompt();
@@ -69,7 +69,6 @@ class PromptPanel: public EventListener, public Fl_Group {
    Fl_Check_Button *restore_face_;
    EmbeddingPanel *textualPanel_;
    EmbeddingPanel *loraPanel_;
-   std::unique_ptr<Button> generateBtn_;
    std::unique_ptr<Button> interrogateBtn1_;
    std::unique_ptr<Button> interrogateBtn2_;
 };

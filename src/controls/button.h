@@ -30,6 +30,7 @@ class Button {
     void tooltip(const char *text);
     void hide();
     void show();
+    void set_visible();
     int x();
     int y();
     int w();

@@ -110,34 +110,36 @@ void MainWindow::initMenu() {
     menuPanel_->end();
     callback_t noCall = []{};
 
-    menu_->addItem([this] { newImage(false); }, "", "File/New");
-    menu_->addItem([this] { newImage(true); }, "", "File/New art");
-    menu_->addItem([this] { openImage(); }, "", "File/Open");
-    menu_->addItem([this] { saveImage(); }, "", "File/Save");
+    menu_->addItem([this] { newImage(false); }, "", "File/New", "", 0, xpm::file_new_16x16);
+    menu_->addItem([this] { newImage(true); }, "", "File/New art", "^n", 0, xpm::file_new_16x16);
+    menu_->addItem([this] { openImage(); }, "", "File/Open", "^o", 0, xpm::directory_16x16);
+    menu_->addItem([this] { saveImage(); }, "", "File/Save", "^s", 0, xpm::save_16x16);
     menu_->addItem([this] { image_editor_->close(); }, "", "File/Close");
-    menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit");
-    menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All");
-    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings");
-    menu_->addItem([this] { editSelection(painting_img2img); }, "", "Selection/Image to image");
-    menu_->addItem([this] { editSelection(painting_inpaint_masked); }, "", "Selection/Inpaint");
-    menu_->addItem([this] { image_editor_->pasteImage(); }, "", "Selection/Merge to image");
+    menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit", "", 0, xpm::exit_16x16);
+    menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All", "^a");
+    menu_->addItem([this] { image_editor_->noSelection(); }, "", "Edit/Select None");
+    menu_->addItem([this] { editConfig(); }, "", "Edit/Settings", "", 0, xpm::edit_16x16);
+    menu_->addItem([this] { editSelection(painting_img2img); }, "", "Selection/Image to image", "#i");
+    menu_->addItem([this] { editSelection(painting_inpaint_masked); }, "", "Selection/Inpaint", "^i");
     menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Selection/Discart changes");
     menu_->addItem([this] { image_editor_->cropToSelection(); }, "", "Selection/Crop to Selection");
-    menu_->addItem([this] { resizeSelection(); }, "", "Selection/Edit size");
+    menu_->addItem([this] { resizeSelection(0); }, "", "Selection/Expand/Custom", "^e");
+    menu_->addItem([this] { resizeSelection(512); }, "", "Selection/Expand/512x512", "^1");
+    menu_->addItem([this] { resizeSelection(768); }, "", "Selection/Expand/768x768", "^2");
+    menu_->addItem([this] { resizeSelection(1024); }, "", "Selection/Expand/1024x1024", "^3");
+    menu_->addItem([this] { restoreSelectionFace(); }, "", "Selection/Restore Face");
     menu_->addItem([this] { resizeCanvas();  }, "", "Image/Resize Canvas");
     menu_->addItem([this] { resizePicture(); }, "", "Image/Resize Picture");
     menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize direction/Left");
     menu_->addItem([this] { resizeRight(); }, "", "Image/Resize direction/Right");
     menu_->addItem([this] { resizeTop(); }, "", "Image/Resize direction/Top");
     menu_->addItem([this] { resizeBottom(); }, "", "Image/Resize direction/Bottom");
-    menu_->addItem([this] { restoreSelectionFace(); }, "", "Image/Restore Face");
     menu_->addItem([this] { upScale(1.5); }, "", "Image/Upscale/1.5x");
     menu_->addItem([this] { upScale(2.0); }, "", "Image/Upscale/2x");
     menu_->addItem([this] { upScale(2.5); }, "", "Image/Upscale/2.5x");
     menu_->addItem([this] { upScale(3.0); }, "", "Image/Upscale/3x");
     menu_->addItem([this] { upScale(3.5); }, "", "Image/Upscale/3.5x");
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
-    menu_->addItem([this] { get_stable_diffusion_image(); }, "", "Tools/AI Editor");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
 }
@@ -197,14 +199,15 @@ void MainWindow::saveImage() {
 }
 
 void MainWindow::upScale(float scale) {
-    image_editor_->upScale(scale);
+    image_editor_->upScale(scale, getConfig().gfpgan_get_weight());
 }
 
 void MainWindow::restoreSelectionFace() {
-    image_editor_->restoreSelectionFace();
+    image_editor_->restoreSelectionFace(getConfig().gfpgan_get_weight());
+    image_editor_->pasteImage();
 }
 
-void MainWindow::resizeSelection() {
+void MainWindow::resizeSelection(int width) {
     int x1 = 0, x2 = 0, y1 = 0, y2 = 0;
     image_editor_->getSelection(&x1, &y1, &x2, &y2);
     if (x1 == x2 && y1 == y2) {
@@ -213,9 +216,11 @@ void MainWindow::resizeSelection() {
     }
     int w = x2 - x1;
     int h = y2 - y1;
-    if (getSizeFromDialog("Resize the selection area", &w, &h)) {
+    if (width > 0) {
+        image_editor_->resizeSelection(width, width);
+    } else if (getSizeFromDialog("Resize the selection area", &w, &h)) {
         image_editor_->resizeSelection(w, h);
-    }
+    } 
 }
 
 void MainWindow::resizeLeft() {
@@ -276,6 +281,7 @@ void MainWindow::editSelection(painting_mode_t mode) {
         auto img = get_stable_diffusion_image(selection.get(), mode);
         if (img) {
             image_editor_->setPasteImageAtSelection(image_type_image, img.get());
+            image_editor_->pasteImage();
         }
     } else {
         show_error("Invalid selection. No image to process.");

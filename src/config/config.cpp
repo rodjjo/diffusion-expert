@@ -246,6 +246,38 @@ void Config::inpaint_set_mask_blur(float value) {
     inpaint_mask_blur_ = value;
 }
 
+bool Config::getPrivacyMode() {
+    return privacy_mode_;
+}
+
+void Config::setPrivacyMode(bool value) {
+    privacy_mode_ = value;
+}
+
+void Config::setAdditionalModelDir(const std::string& value) {
+    additionalModelDir_ = value;
+}
+
+void Config::setAdditionalLoraDir(const std::string& value) {
+    additionalLoraDir_ = value;
+}
+
+void Config::setAdditionalEmbsDir(const std::string& value) {
+    additionalEmbDir_ = value;
+}
+
+std::string Config::getAdditionalModelDir() {
+    return additionalModelDir_;
+}
+
+std::string Config::getAdditionalLoraDir() {
+    return additionalLoraDir_;
+}
+
+std::string Config::getAdditionalEmbsDir() {
+    return additionalEmbDir_;
+}
+
 bool Config::save() {
     try {
         json data;
@@ -257,6 +289,9 @@ bool Config::save() {
         sd["controlnet_count"] = controlnetCount_;
         sd["use_float16"] = use_float16_;
         sd["use_gpu"] = use_gpu_;
+        sd["add_model_dir"] = additionalModelDir_;
+        sd["add_emb_dir"] = additionalEmbDir_;
+        sd["add_lora_dir"] = additionalLoraDir_;
         data["stable_diffusion"] = sd;
         json files;
         files["last_image_save_dir"] = last_image_save_dir_;
@@ -270,6 +305,9 @@ bool Config::save() {
         gfpgan["has_aligned"] = gfpgan_has_aligned_;
         gfpgan["paste_back"] = gfpgan_paste_back_;
         data["gfpgan"] = gfpgan;
+        json general;
+        general["privacy_mode"] = privacy_mode_;
+        data["general"] = general;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
         std::ofstream f(path.c_str());
         f << std::setw(2) << data << std::endl;
@@ -280,6 +318,11 @@ bool Config::save() {
 
     return false;
 }
+
+int Config::getMaxGeneratedImages() {
+    return 16;
+}
+
 
 bool Config::load() {
     const std::wstring path = getConfigDir() + kCONFIG_FILE;
@@ -319,6 +362,15 @@ bool Config::load() {
             if (sd.contains("use_gpu")) {
                 use_gpu_ = sd["use_gpu"].get<bool>();
             }
+            if (sd.contains("add_model_dir")) {
+                additionalModelDir_ = sd["add_model_dir"].get<std::string>();
+            }
+            if (sd.contains("add_emb_dir")) {
+                additionalEmbDir_ = sd["add_emb_dir"].get<std::string>();
+            }
+            if (sd.contains("add_lora_dir")) {
+                additionalLoraDir_ = sd["add_lora_dir"].get<std::string>();
+            }
         }
         if (data.contains("files")) {
             auto files = data["files"];
@@ -352,6 +404,12 @@ bool Config::load() {
             }
             if (gfpgan.contains("paste_back")) {
                 gfpgan_paste_back_ = gfpgan["paste_back"].get<bool>();
+            }
+        }
+        if (data.contains("general")) {
+            auto general = data["general"];
+            if (general.contains("privacy_mode")) {
+                privacy_mode_ = general["privacy_mode"].get<bool>();
             }
         }
         return true;
