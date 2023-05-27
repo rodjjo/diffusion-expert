@@ -18,6 +18,8 @@ typedef std::list<std::shared_ptr<ControlNet> > controlnet_list_t;
 class GeneratorTxt2Image: public GeneratorBase {
     public:
         GeneratorTxt2Image(
+            std::shared_ptr<SeedGenerator> seed_gen, 
+            bool variation,
             const std::string& prompt,
             const std::string& negative,
             const std::string& model,
@@ -34,13 +36,11 @@ class GeneratorTxt2Image: public GeneratorBase {
         );
 
         void generate(
-            generator_cb_t cb,
-            int seed_index,
-            int enable_variation = 0
+            generator_cb_t cb
         ) override;
 
         
-        std::shared_ptr<GeneratorBase> duplicate();
+        std::shared_ptr<GeneratorBase> duplicate(bool variation) override;
         
     private:
         std::string prompt_;

@@ -33,6 +33,7 @@ typedef enum {
     controlnet_deepth,
     controlnet_pose,
     controlnet_segmentation,
+    controlnet_lineart,
     // keep controlnet_type_count at the end
     controlnet_type_count
 } controlnet_type_t;
@@ -115,14 +116,15 @@ namespace dexpert
         void newImage(int w, int h);
         void noSelection();
         void selectAll();
-        void upScale(float scale);
-        void restoreSelectionFace();
+        void upScale(float scale, float weight);
+        void restoreSelectionFace(float weight);
         void cropToSelection();
         void resizeSelection(int w, int h);
         void close();
         void adjustPasteImageSize();
         bool clicked();
         void scheduleRedraw();
+        void zoomFit();
 
     protected:
         int handle(int event) override;

@@ -19,13 +19,10 @@ namespace {
     std::string last_negative_prompt;
 }
 
-PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : EventListener(), Fl_Group(x, y, w, h), on_generate_(on_generate) {
+PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group(x, y, w, h) {
     this->begin();
     positivePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Prompt");
     negativePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Negative Prompt");
-    generateBtn_.reset(new Button(xpm::image(xpm::button_play), [this] {
-        this->on_generate_();
-    }));
     interrogateBtn1_.reset(new Button("?", [this] {
         this->interrogate("Clip");
     }));
@@ -61,13 +58,12 @@ PromptPanel::PromptPanel(int x, int y, int w, int h, callback_t on_generate) : E
 
     positivePrompt_->value(last_prompt.c_str());
     negativePrompt_->value(last_negative_prompt.c_str());
-    generateBtn_->tooltip("Generate a new image. [shortcut key: F9]");
     
     interrogateBtn1_->tooltip("Interrogate Clip");
     interrogateBtn2_->tooltip("Interrogate DeepBooru");
 
     seed_->value("-1");
-    steps_->value("50");
+    steps_->value("25");
     guidance_->value("7.5");
     var_strength_->value("0.1");
     width_->value("512");
@@ -202,19 +198,13 @@ float PromptPanel::getVariationStrength() {
 
 void PromptPanel::alignComponents() {
 
-    positivePrompt_->resize(x() + 5, y() + 25, w() - 67 - 55, 50);
+    positivePrompt_->resize(x() + 5, y() + 25, w() - 67, 50);
 
     interrogateBtn1_->size(50, 24);
     interrogateBtn2_->size(50, 24);
     interrogateBtn1_->position(positivePrompt_->x() + positivePrompt_->w() + 5, positivePrompt_->y());
     interrogateBtn2_->position(interrogateBtn1_->x(), interrogateBtn1_->y() + interrogateBtn1_->h() + 2);
 
-    generateBtn_->position(
-        interrogateBtn1_->x() + interrogateBtn1_->w() + 5, 
-        positivePrompt_->y()
-    );
-    generateBtn_->size(50, 50);
-    
     negativePrompt_->resize(
         x() + 5, 
         positivePrompt_->y() + positivePrompt_->h() + 25, 
@@ -421,7 +411,7 @@ void PromptPanel::event_trigged(const void *sender, int event, void *data) {
                 return;
             }
             std::string text = positivePrompt_->value();
-            text += " <" + item->name + ":1.0>";
+            text += " <lora:" + item->name + ":1.0>";
             positivePrompt_->value(text.c_str());
         } else if (event == embedding_define_image) {
             if (image_panel_) {

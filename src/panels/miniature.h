@@ -39,7 +39,9 @@ class Miniature: public Fl_Gl_Window {
     virtual void mouse_up(bool left_button, bool right_button, int down_x, int down_y, int up_x, int up_y);
     virtual void mouse_cancel() {};
     virtual void draw_next() {};
-    
+   static void imageRefresh(void *cbdata);
+   void imageRefresh();
+
  protected:
     int handle(int event) override;
     void draw() override;
@@ -48,6 +50,7 @@ class Miniature: public Fl_Gl_Window {
 
  private:
     image_ptr_t image_;
+    bool should_refresh_ = false;
     bool mouse_down_left_;
     bool mouse_down_right_;
     int mouse_down_x_;

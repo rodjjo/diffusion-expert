@@ -23,6 +23,7 @@ def download_file(url, directory, filename):
     model_path = os.path.join(directory, filename)
     if os.path.exists(model_path):
         report(f'skipping {filename} model download. File exists')
+        report(f'Processing...')
         return
     report(f'URL: {url}')
     report(f'downloading the model {filename} Please wait...')
@@ -37,5 +38,5 @@ def download_file(url, directory, filename):
         with zipfile.ZipFile(model_path, "r") as zip_ref:
             zip_ref.extractall(directory)
         os.remove(model_path)
-
+    report(f'Processing...')
     progress(0, 100, {})

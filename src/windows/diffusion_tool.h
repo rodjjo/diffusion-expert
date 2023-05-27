@@ -48,9 +48,11 @@ class DiffusionTool : public Fl_Window {
     Fl_Group  *rightPanel_ = NULL;
     Fl_Group  *toolsPanel_ = NULL;
     Pages *pages_ = NULL;
+
     Fl_Select_Browser *page_browser_;
     bool confirmed_ = false;
     bool selecting_page_ = false;
+    std::unique_ptr<Button> generateBtn_;
     std::unique_ptr<Button> cancelBtn_;
     std::unique_ptr<Button> confirmBtn_;
     std::unique_ptr<Button> consoleBtn_;

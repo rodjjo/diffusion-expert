@@ -6,7 +6,7 @@ from models.models import create_pipeline, current_model_is_in_painting, models_
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
-from utils.images import pil_as_dict, pil_from_dict, fill_image
+from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
 
@@ -17,28 +17,34 @@ def report(message):
     progress_title(f'[Text To Image] - {message}')
 
 
+def get_lora_path(lora: str) -> str:
+    for d in (LORA_DIR, get_setting('add_lora_dir', '')):
+        for e in ('.safetensors', '.ckpt'):
+            filepath = os.path.join(d, f'{lora}{e}')
+            if os.path.exists(filepath):
+                return filepath
+    return None
+
+
 def parse_prompt_loras(prompt: str):
-    lora_re = re.compile('<[^:]+:[^>]+>')
+    lora_re = re.compile('<lora:[^:]+:[^>]+>')
     lora_list = re.findall(lora_re, prompt)
 
     lora_items = []
     for lora in lora_list:
         lora = lora.replace('<', '').replace('>', '')
         p = lora.split(':')
-        if len(p) == 1:
-            p = [p, '1.0']
-        if len(p) != 2:
+        if len(p) != 3:
             continue
+        p = [p[1], p[2]]
         try:
             weight = float(p[1])
         except Exception:
             report(f"Invalid lora weigth {p[1]}")
             continue
-        filepath = os.path.join(LORA_DIR, f'{p[0]}.safetensors')
-        report(filepath)
-        if not os.path.exists(filepath):
-            filepath = os.path.join(LORA_DIR, f'{p[0]}.ckpt')
-        if not os.path.exists(filepath):
+        filepath = get_lora_path(p[0])
+        if not filepath:
+            report(f"Lora not found: {p[0]}")
             continue
         lora_items.append([filepath, weight])
     return re.sub(lora_re, '', prompt), lora_items
@@ -163,7 +169,7 @@ def _run_pipeline(pipeline_type, params):
         mask = pil_from_dict(input_mask)
         
         if inpaint_mode != 'original':
-            image = fill_image(image, mask)
+            image = inpaint_fill_image(image, mask)
 
         additional_args = {
             'image': image,

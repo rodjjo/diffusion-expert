@@ -4,6 +4,7 @@
 #include <atomic>
 #include "src/data/xpm.h"
 #include "src/python/raw_image.h"
+#include "src/config/config.h"
 #include "src/windows/progress_window.h"
 
 

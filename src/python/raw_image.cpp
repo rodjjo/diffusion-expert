@@ -127,7 +127,7 @@ image_ptr_t RawImage::removeBackground(bool white) {
     img.draw_image(0, 0, src);
     
     if (white) {
-        img.fill("if(i0==255&&i1==255&&i2==255,0,i)", true);
+        img.fill("if(i0>=255&&i1==255&&i2==255,0,i)", true);
     } else {
         img.fill("if(i0!=0||i1!=0||i2!=0,i,0)", true);
     }

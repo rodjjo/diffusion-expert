@@ -10,7 +10,7 @@
 
 #include "src/panels/painting_panel.h"
 #include "src/panels/prompt_panel.h"
-#include "src/panels/results_panel.h"
+#include "src/panels/preview_panel.h"
 #include "src/python/raw_image.h"
 
 namespace dexpert
@@ -61,7 +61,7 @@ class Pages: public Fl_Group {
     PaintingPanel *controlNets_[4] = {};
     PromptPanel *promptPanel_ = NULL;
     PaintingPanel *inputImage_ = NULL;
-    ResultsPanel *resultsPanel_ = NULL;
+    PreviewPanel *resultsPanel_ = NULL;
     std::string current_open_input_dir_;
 };
     

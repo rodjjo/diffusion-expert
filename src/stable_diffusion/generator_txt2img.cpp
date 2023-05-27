@@ -7,6 +7,8 @@ namespace dexpert
 {
 
  GeneratorTxt2Image::GeneratorTxt2Image(
+        std::shared_ptr<SeedGenerator> seed_gen, 
+        bool variation,
         const std::string& prompt,
         const std::string& negative,
         const std::string& model,
@@ -20,7 +22,7 @@ namespace dexpert
         bool restore_faces,
         bool enable_codeformer,
         bool reload_model
-    ) : prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
+    ) : GeneratorBase(seed_gen, variation), prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
         seed_(seed), width_(width), height_(height), steps_(steps), 
         cfg_(cfg), var_strength_(var_stren), 
         restore_faces_(restore_faces), enable_codeformer_(enable_codeformer), reload_model_(reload_model)
@@ -28,14 +30,17 @@ namespace dexpert
 
 }
 
-std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
+std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate(bool variation) {
     std::shared_ptr<GeneratorTxt2Image> d;
+    int seed = variation ? this->seed_ : this->getSeedGenerator()->newSeed();
     d.reset(new GeneratorTxt2Image(
+        this->getSeedGenerator(),
+        variation,
         this->prompt_,
         this->negative_,
         this->model_,
         this->controlnets_,
-        this->seed_,
+        seed,
         this->width_,
         this->height_,
         this->steps_,
@@ -48,7 +53,7 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate() {
     return d;
 }
 
-void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_variation) {
+void GeneratorTxt2Image::generate(generator_cb_t cb) {
     bool success = false;
 
     const char *message = "Unexpected error. Callback to generate image not called";
@@ -59,8 +64,8 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.prompt = prompt_.c_str();
     params.negative = negative_.c_str();
     params.model = model_.c_str();
-    params.seed = seed_ + seed_index;
-    params.variation = enable_variation == 0 ? 0 : computeVariationSeed(enable_variation < 0);
+    params.seed = seed_;
+    params.variation = isVariation() ? rand() : 0;
     params.var_stren = var_strength_;
     params.steps = steps_;
     params.cfg = cfg_;
@@ -69,6 +74,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;
     params.reload_model = reload_model_;
+    reload_model_ = false;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {
         dexpert::py::control_net_t control;
@@ -80,7 +86,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
         );
     } 
 
-    if (enable_variation == 0) {
+    if (!isVariation()) {
         params.var_stren = 0;
     }
 
@@ -96,11 +102,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb, int seed_index, int enable_
         if (image->w() != width_ || image->h() != height_) {
             image = image->getCrop(0, 0, width_, height_);
         }
-        if (enable_variation == 0) {
-            setImage(image, params.seed);
-        } else  {
-            addVariation(image, params.variation, enable_variation < 0);
-        }
+        setImage(image);
     }
 
     cb(success, message, image);

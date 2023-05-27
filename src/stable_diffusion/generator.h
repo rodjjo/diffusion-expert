@@ -17,7 +17,9 @@ namespace dexpert
 typedef enum {
     inpaint_original,
     inpaint_fill,
-    inpaint_latent_other,
+    inpaint_wholepicture,
+    inpaint_wholefill,
+    // inpaint_none,
     // keep inpaint_mode_count at the end
     inpaint_mode_count
 } inpaint_mode_t;
@@ -25,37 +27,41 @@ typedef enum {
 
 typedef std::function<void(bool success, const char* msg, image_ptr_t result)> generator_cb_t;
 
+
+class SeedGenerator {
+ public:
+    SeedGenerator();
+    virtual ~SeedGenerator(){}
+    int newSeed();
+ private:
+    int seed_ = 0;
+};
+
 class GeneratorBase {
   public:
-    GeneratorBase();
+    GeneratorBase(std::shared_ptr<SeedGenerator> seed_gen, bool variation);
     virtual ~GeneratorBase();
-    virtual void generate(
-            generator_cb_t cb,
-            int seed_index,
-            int enable_variation = 0
-    ) = 0;
+    virtual void generate(generator_cb_t cb) = 0;
 
-    virtual std::shared_ptr<GeneratorBase> duplicate() = 0;
+    virtual std::shared_ptr<GeneratorBase> duplicate(bool variation) = 0;
 
     RawImage* getImage();
-    RawImage* getVariation(int index);
     void clearImage();
-    void clearVariation(int index);
-    int getVariationSeed(int index);
-    int getVariationCount();
-    int computeVariationSeed(bool left);
+    int getSeed();
 
-    static int maxVariations();
+    bool isVariation();
+
+    std::shared_ptr<SeedGenerator> getSeedGenerator();
 
   protected:
-    void setImage(image_ptr_t image, int seed);
-    void addVariation(image_ptr_t image,  int variation, bool left);
-    int getSeed();
+    void setImage(image_ptr_t image);
+    void setSeed(int value);
 
   private:
     int image_seed_ = 0;
+    bool variation_ = false;
     image_ptr_t image_;
-    std::vector<std::pair<image_ptr_t, int> > variations_;
+    std::shared_ptr<SeedGenerator> seed_gen_;
 };
     
 }  // namespace dexpert

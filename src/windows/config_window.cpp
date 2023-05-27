@@ -32,6 +32,7 @@ ConfigWindow::ConfigWindow() {
     page_sd_ = new Fl_Group(0, 0, 1, 1, "Stable Diffusion");
     page_sd_->begin();
     nsfw_check_ = new Fl_Check_Button(0, 0, 1, 1, "Filter NSFW");
+    privacy_check_ = new Fl_Check_Button(0, 0, 1, 1, "Privacy Mode");
     float16_check_ = new Fl_Check_Button(0, 0, 1, 1, "Use float16");
     gpu_check_ = new Fl_Check_Button(0, 0, 1, 1, "Use GPU (CUDA)");
     schedulers_ = new Fl_Choice(0, 0, 1, 1, "Scheduler");
@@ -44,6 +45,13 @@ ConfigWindow::ConfigWindow() {
     gfpgan_only_center_faces_ = new Fl_Check_Button(0, 0, 1, 1, "Only centered faces");
     gfpgan_weight_ = new Fl_Float_Input(0, 0, 1, 1, "Face restoration weigth");
     page_upscalers_->end();
+
+    page_dirs_ = new Fl_Group(0, 0, 1, 1, "Directories");
+    page_dirs_->begin();
+    add_model_dir_ = new Fl_Input(1, 1, 1, 1, "Additional stable diffusion model dir");
+    add_lora_dir_ = new Fl_Input(1, 1, 1, 1, "Additional lora model dir");
+    add_emb_dir_ = new Fl_Input(1, 1, 1, 1, "Additional embedding dir");
+    page_dirs_->end();
 
     tabs_->end();
 
@@ -82,6 +90,14 @@ ConfigWindow::ConfigWindow() {
     gfpgan_arch_->value(0);
     gfpgan_weight_->value("0.5");
 
+    add_model_dir_->align(FL_ALIGN_TOP_LEFT);
+    add_lora_dir_->align(FL_ALIGN_TOP_LEFT);
+    add_emb_dir_->align(FL_ALIGN_TOP_LEFT);
+
+    add_model_dir_->tooltip("The additional directory for stable diffusion models");
+    add_lora_dir_->tooltip("The additional directory for lora model");
+    add_emb_dir_->tooltip("The additional directory for embedding model");
+
     align_components();
     load_configuration();
 }
@@ -95,6 +111,7 @@ void ConfigWindow::align_components() {
     tabs_->resize(0, 0, window_->w(), window_->h() - 50);
     page_sd_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     page_upscalers_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
+    page_dirs_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     int left = tabs_->x() + 10;
     int top = tabs_->y() + 55;
     int height = 30;
@@ -105,6 +122,7 @@ void ConfigWindow::align_components() {
     controlnetCount_->resize(nsfw_check_->x() + nsfw_check_->w() + 5, top, 200, height);
     float16_check_->resize(left, top + 5 + controlnetCount_->h(), 200, height);
     gpu_check_->resize(float16_check_->x() + float16_check_->w() + 5, float16_check_->y(), 200, height);
+    privacy_check_->resize(gpu_check_->x() + gpu_check_->w() + 5, gpu_check_->y(), 200, height);
     btnOk_->position(window_->w() - 215, window_->h() - 40);
     btnOk_->size(100, 30);
     btnCancel_->position(btnOk_->x() + btnOk_->w() + 2, btnOk_->y());
@@ -114,11 +132,17 @@ void ConfigWindow::align_components() {
     gfpgan_arch_->resize(left, top, 200, height);
     gfpgan_only_center_faces_->resize(gfpgan_arch_->x() + gfpgan_arch_->w() + 5, top, 200, height);
     gfpgan_weight_->resize(gfpgan_only_center_faces_->x() + gfpgan_only_center_faces_->w() + 5, top, 200, height);
+
+    // TAB: directories
+    add_model_dir_->resize(left, top, page_dirs_->w() - 20, height);
+    add_lora_dir_->resize(left, add_model_dir_->y() + add_model_dir_->h() + 20, page_dirs_->w() - 20, height);
+    add_emb_dir_->resize(left, add_lora_dir_->y() + add_lora_dir_->h() + 20, page_dirs_->w() - 20, height);
 }
 
 void ConfigWindow::load_configuration() {
     auto &c = getConfig();
     nsfw_check_->value(c.getSafeFilter());
+    privacy_check_->value(c.getPrivacyMode());
     float16_check_->value(c.getUseFloat16());
     gpu_check_->value(c.getUseGPU());
 
@@ -136,12 +160,16 @@ void ConfigWindow::load_configuration() {
         schedulers_->value(index);
     }
     controlnetCount_->value(c.getControlnetCount());
+    add_emb_dir_->value(c.getAdditionalEmbsDir().c_str());
+    add_lora_dir_->value(c.getAdditionalLoraDir().c_str());
+    add_model_dir_->value(c.getAdditionalModelDir().c_str());
 }
 
 void ConfigWindow::save_configuration() {
     window_->hide();
     auto &c = getConfig();
     c.setSafeFilter(nsfw_check_->value() == 1);
+    c.setPrivacyMode(privacy_check_->value() == 1);
     c.setUseFloat16(float16_check_->value() == 1);
     c.setUseGPU(gpu_check_->value() == 1);
 
@@ -162,6 +190,10 @@ void ConfigWindow::save_configuration() {
         c.setScheduler(schedulers_->text(0));
     }
     c.setControlnetCount(controlnetCount_->value());
+
+    c.setAdditionalEmbsDir(add_emb_dir_->value());
+    c.setAdditionalModelDir(add_model_dir_->value());
+    c.setAdditionalLoraDir(add_lora_dir_->value());
     c.save();
 
     const char *msg;

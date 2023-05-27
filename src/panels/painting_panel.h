@@ -31,7 +31,8 @@ typedef enum {
    painting_pose,
    painting_deepth,
    painting_segmentation,
-
+   painting_lineart,
+   painting_mangaline,
    // keep painting_mode_max ath the end
    painting_mode_max
 } painting_mode_t;
@@ -45,6 +46,7 @@ typedef enum {
    brush_size_16,
    brush_size_32,
    brush_size_64,
+   brush_size_128,
    // 
    brush_size_count
 } brush_size_t;
@@ -87,10 +89,7 @@ class PaintingPanel: public Fl_Group {
     void openImage();
     void newMask();
     void openMask();
-    void extractCanny();
-    void extractScribble();
-    void extractPose();
-    void extractDeepth();
+    void preprocessImage();
     bool ensureControlPresent();
     bool ensureImagePresent();
     bool ensureMaskPresent();
@@ -121,10 +120,7 @@ class PaintingPanel: public Fl_Group {
     std::unique_ptr<Button> btnNewMask_;
     std::unique_ptr<Button> btnOpenMask_;
     std::unique_ptr<Button> btnSaveMask_;
-    std::unique_ptr<Button> btnScribble_;
-    std::unique_ptr<Button> btnCanny_;
-    std::unique_ptr<Button> btnPose_;
-    std::unique_ptr<Button> btnDeepth_;
+    std::unique_ptr<Button> btnPreprocess_;
 };
     
 }   // namespace dexpert

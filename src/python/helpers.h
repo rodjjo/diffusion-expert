@@ -98,7 +98,7 @@ callback_t configure_stable_diffusion(status_callback_t status_cb);
 
 callback_t open_image(const char* path, image_callback_t status_cb);
 callback_t save_image(const char* path, RawImage *image, status_callback_t status_cb);
-callback_t upscale_image(RawImage *image, float scale, image_callback_t status_cb);
+callback_t upscale_image(RawImage *image, float scale, float weight, image_callback_t status_cb);
 callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb);
 callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb); 
 callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 

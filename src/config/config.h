@@ -46,6 +46,8 @@ namespace dexpert
     bool getUseGPU();
     void setUseFloat16(bool value);
     void setUseGPU(bool value);
+    bool getPrivacyMode();
+    void setPrivacyMode(bool value);
     float gfpgan_get_weight();
     void gfpgan_set_weight(float value);
     const char* gfpgan_get_arch();
@@ -65,6 +67,15 @@ namespace dexpert
     std::string& lastImageSaveDir();
     std::string& lastImageOpenDir();
 
+    void setAdditionalModelDir(const std::string& value);
+    void setAdditionalLoraDir(const std::string& value);
+    void setAdditionalEmbsDir(const std::string& value);
+    std::string getAdditionalModelDir();
+    std::string getAdditionalLoraDir();
+    std::string getAdditionalEmbsDir();
+
+    int getMaxGeneratedImages();
+
     bool save();
     bool load();
     
@@ -78,12 +89,15 @@ namespace dexpert
     std::wstring pythonMainPy_;
     std::wstring modelsRootDir_;
     std::wstring sdModelsDir_;
-
+    std::string additionalModelDir_;
+    std::string additionalLoraDir_;
+    std::string additionalEmbDir_;
     std::string last_image_open_dir_;
     std::string last_image_save_dir_;
 
   private:
     // configs
+    bool privacy_mode_ = false;
     bool use_gpu_ = true;
     bool use_float16_ = true;
     float gfpgan_weight_ = 0.5;
