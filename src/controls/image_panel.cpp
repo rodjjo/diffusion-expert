@@ -188,13 +188,6 @@ namespace dexpert
     }
 
     bool ImagePanel::isSelecting() {
-        if (images_[image_type_paste]) {
-            selection_start_ = paste_coords_;
-            selection_end_ = paste_coords_;
-            selection_end_.x += images_[image_type_paste]->w();
-            selection_end_.y += images_[image_type_paste]->h();
-            return false;
-        }
         return tool_ == image_tool_select && mouse_down_left_;
     }
 
@@ -619,6 +612,26 @@ namespace dexpert
     void ImagePanel::draw_tool() {
         float sx = 2.0 / this->w();
         float sy = 2.0 / this->h();
+
+        auto r = getReferenceImage();
+        if (r) {
+            coordinate_t s1, s2;
+            s1.x = -1;
+            s1.y = -1;
+            s2.x = r->w()+2;
+            s2.y = r->h()+2;
+            convertToScreenCoords(&s1.x, &s1.y);
+            convertToScreenCoords(&s2.x, &s2.y);
+            glBegin(GL_LINE_LOOP);
+            glColor4f(0.5, 0.5, 0.5, 0.3);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s1.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s2.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s2.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
+            glEnd();
+        }
+
         if (tool_ == image_tool_brush) {
             glBegin(GL_LINE_LOOP);
             float theta;
@@ -1047,7 +1060,7 @@ namespace dexpert
     }
 
     void ImagePanel::selectAll() {
-         if (images_[image_type_paste]) {
+        if (images_[image_type_paste]) {
             return;
         }
         auto r = getReferenceImage();
