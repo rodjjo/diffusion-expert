@@ -23,13 +23,25 @@ EmbeddingPanel::EmbeddingPanel(embedding_type_t embedding_type, int x, int y, in
 
     btnLeft_.reset(new Button(xpm::image(xpm::arrow_left_16x16), [this]{
         if (index_ > 0) {
-            --index_;
+            if (Fl::event_shift() != 0) {
+                if ((int)index_ - (int)images_.size() >= 0) {
+                    index_ -= images_.size();
+                } else {
+                    index_ = 0;
+                }
+            } else if (index_> 0){
+                --index_;
+            }
         }
         updateData();
     }));
 
     btnRight_.reset(new Button(xpm::image(xpm::arrow_right_16x16), [this]{
-        ++index_;
+        if (Fl::event_shift() != 0) {
+            index_ += images_.size();
+        } else {
+            ++index_;
+        }
         updateData();
     }));
 

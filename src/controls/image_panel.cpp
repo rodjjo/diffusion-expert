@@ -188,13 +188,6 @@ namespace dexpert
     }
 
     bool ImagePanel::isSelecting() {
-        if (images_[image_type_paste]) {
-            selection_start_ = paste_coords_;
-            selection_end_ = paste_coords_;
-            selection_end_.x += images_[image_type_paste]->w();
-            selection_end_.y += images_[image_type_paste]->h();
-            return false;
-        }
         return tool_ == image_tool_select && mouse_down_left_;
     }
 
@@ -497,11 +490,19 @@ namespace dexpert
         scrollAgain();
     }
 
+    void ImagePanel::setMaskPanel(ImagePanel *mask_panel) {
+        mask_panel_ = mask_panel;
+    }
+
     RawImage* ImagePanel::get_cached_image(int layer) {
         /*
             Dim the image to fit the window. Don't draw a huge image in a smaller area...
         */
         RawImage *original = images_[layer].get();
+        if (mask_panel_ != NULL && layer == image_type_mask && mask_panel_->image_visible_[layer]) {
+            original = mask_panel_->images_[layer].get();
+        }
+
         if (layer == image_type_paste) {
             return NULL;
         } else if (layer == image_type_image && original == NULL) {
@@ -523,6 +524,7 @@ namespace dexpert
         }
 
         image_ptr_t &cache = caches_[layer];
+
         if (!cache.get() || 
             !valid_caches_[layer] ||
             cache_versions_[layer] != original->getVersion() ||
@@ -546,6 +548,8 @@ namespace dexpert
                 s1.x -= xmove * zoom_;
                 s1.y -= ymove * zoom_;
                 cache->pasteAt(s1.x , s1.y, img->w() * zoom_, img->h() * zoom_, img);
+            } else if (layer == image_type_mask && caches_[image_type_image].get() != NULL) {
+                cache->pasteInvertMask(caches_[image_type_image].get());
             }
         }
 
@@ -577,6 +581,7 @@ namespace dexpert
                 draw_buffer(img);
             }
         }
+        
         blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
         draw_tool();
     }
@@ -607,6 +612,26 @@ namespace dexpert
     void ImagePanel::draw_tool() {
         float sx = 2.0 / this->w();
         float sy = 2.0 / this->h();
+
+        auto r = getReferenceImage();
+        if (r) {
+            coordinate_t s1, s2;
+            s1.x = -1;
+            s1.y = -1;
+            s2.x = r->w()+2;
+            s2.y = r->h()+2;
+            convertToScreenCoords(&s1.x, &s1.y);
+            convertToScreenCoords(&s2.x, &s2.y);
+            glBegin(GL_LINE_LOOP);
+            glColor4f(0.5, 0.5, 0.5, 0.3);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s1.y * sy);
+            glVertex2f(s2.x * sx - 1.0, 1.0 - s2.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s2.y * sy);
+            glVertex2f(s1.x * sx - 1.0, 1.0 - s1.y * sy);
+            glEnd();
+        }
+
         if (tool_ == image_tool_brush) {
             glBegin(GL_LINE_LOOP);
             float theta;
@@ -766,7 +791,6 @@ namespace dexpert
         }
         scrollAgain();
     }
-
 
     void ImagePanel::setBrushSize(uint8_t size) {
         if (size > 128)
@@ -1036,7 +1060,7 @@ namespace dexpert
     }
 
     void ImagePanel::selectAll() {
-         if (images_[image_type_paste]) {
+        if (images_[image_type_paste]) {
             return;
         }
         auto r = getReferenceImage();

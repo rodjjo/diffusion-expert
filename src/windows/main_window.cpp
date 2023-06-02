@@ -10,10 +10,6 @@
 
 #include "src/windows/main_window.h"
 
-
-#define MIN_WIDTH 860
-#define MIN_HEIGHT 480
-
 namespace dexpert {
 
 MainWindow::~MainWindow() {
@@ -28,7 +24,7 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 ) {
     auto wnd = this;
 
-    wnd->size_range(MIN_WIDTH, MIN_HEIGHT);
+    wnd->size_range(860, 480);
 
     wnd->begin();
 
@@ -37,29 +33,8 @@ MainWindow::MainWindow():  Fl_Menu_Window(
     });
 
     initMenubar();
-    
-    leftPanel_ = new Fl_Group(0, 0, 1, 1);
-    leftPanel_->end();
+
     bottomPanel_ = new Fl_Group(0, 0, 1, 1);
-    bottomPanel_->end();
-
-    leftPanel_->begin();
-
-    btn_none_.reset(new Button("", [this] { 
-        toolClicked(btn_none_.get());
-        image_editor_->setTool(image_tool_none);
-    }));
-    btn_drag_.reset(new Button(xpm::image(xpm::drag_icon), [this] { 
-        toolClicked(btn_drag_.get());
-        image_editor_->setTool(image_tool_drag);
-    }));
-    btn_select_.reset(new Button(xpm::image(xpm::select_icon), [this] {
-        toolClicked(btn_select_.get());
-        image_editor_->setTool(image_tool_select);
-    }));
-
-    leftPanel_->end();
-
     bottomPanel_->begin();
     
     label_zoom_ = new Fl_Box(0, 0, 1, 1);
@@ -71,27 +46,15 @@ MainWindow::MainWindow():  Fl_Menu_Window(
 
     wnd->end();
 
-    leftPanel_->box(FL_DOWN_BOX);
     bottomPanel_->box(FL_DOWN_BOX);
-
-    btn_none_->position(1, 1);
-    btn_drag_->position(1, 1);
-    btn_select_->position(1, 1);
-
-    btn_none_->tooltip("Disable tools");
-    btn_drag_->tooltip("Drag tool");
-    btn_select_->tooltip("Select tool");
-
-    btn_none_->enableDownUp();
-    btn_drag_->enableDownUp();
-    btn_select_->enableDownUp();
-    btn_none_->down(true);
 
     wnd->resizable(wnd);
 
     this->show();
 
     alignComponents();
+
+    image_editor_->setTool(image_tool_select);
 }
 
 void MainWindow::initMenubar() {
@@ -114,7 +77,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { newImage(true); }, "", "File/New art", "^n", 0, xpm::file_new_16x16);
     menu_->addItem([this] { openImage(); }, "", "File/Open", "^o", 0, xpm::directory_16x16);
     menu_->addItem([this] { saveImage(); }, "", "File/Save", "^s", 0, xpm::save_16x16);
-    menu_->addItem([this] { image_editor_->close(); }, "", "File/Close");
+    menu_->addItem([this] { closeImage(); }, "", "File/Close");
     menu_->addItem([this] { Fl::delete_widget(this); }, "", "File/Exit", "", 0, xpm::exit_16x16);
     menu_->addItem([this] { image_editor_->selectAll(); }, "", "Edit/Select All", "^a");
     menu_->addItem([this] { image_editor_->noSelection(); }, "", "Edit/Select None");
@@ -152,18 +115,8 @@ void MainWindow::alignComponents() {
     menuPanel_->size(w, menu_->h());
     menu_->position(0, 0);
     menu_->size(w, menuPanel_->h());
-    image_editor_->resize(40, menuPanel_->h() + 5, w - 50, h - 15 - menuPanel_->h() - stabusbar_h);
-
-    btn_none_->size(30, 30);
-    btn_drag_->size(30, 30);
-    btn_select_->size(30, 30);
-
-    leftPanel_->resize(3, image_editor_->y(), image_editor_->x() - 6, image_editor_->h());
+    image_editor_->resize(5, menuPanel_->h() + 5, w - 10, h - 15 - menuPanel_->h() - stabusbar_h);
     bottomPanel_->resize(3, image_editor_->y() + image_editor_->h() + 3, w - 10, stabusbar_h);
-
-    btn_none_->position(5, leftPanel_->y() +2);
-    btn_drag_->position(5, btn_none_->y() + btn_none_->h() + 2);
-    btn_select_->position(5, btn_drag_->y() + btn_drag_->h() + 2);
 
     label_size_->resize(bottomPanel_->x() + 5, bottomPanel_->y() + 2, 200, stabusbar_h - 4);
     label_zoom_->resize(label_size_->x() + label_size_->w() + 2, label_size_->y(), 200, stabusbar_h - 4);
@@ -186,6 +139,14 @@ void MainWindow::newImage(bool fromStableDiffusion) {
         int szx = 512, szy = 512;
         if (getSizeFromDialog("Size of the new image", &szx, &szy)) {
             image_editor_->newImage(szx, szy);
+        }
+    }
+}
+
+void MainWindow::closeImage() {
+    if (image_editor_->hasReference()) {
+        if (ask("Do you want to close the image ?")) {
+            image_editor_->close();
         }
     }
 }
@@ -291,20 +252,6 @@ void MainWindow::editSelection(painting_mode_t mode) {
 void MainWindow::resize(int x, int y, int w, int h) {
     Fl_Menu_Window::resize(x, y, w, h);
     alignComponents();
-}
-
-void MainWindow::toolClicked(Button* btn) {
-    btn->down(true);
-    Button* buttons[] = {
-        btn_none_.get(),
-        btn_drag_.get(),
-        btn_select_.get(),
-    };
-    for (int i = 0; i < sizeof(buttons)/sizeof(buttons[0]); ++i) {
-        if (btn != buttons[i]) {
-            buttons[i]->down(false);
-        }
-    }
 }
 
 int MainWindow::handle(int event) {

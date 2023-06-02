@@ -39,7 +39,6 @@ class MainWindow : Fl_Menu_Window {
   void initMenu();
   void alignComponents();
   void editConfig();
-  void toolClicked(Button* btn);
   void updateStatusbar();
   void newImage(bool fromStableDiffusion);
   void openImage();
@@ -54,10 +53,10 @@ class MainWindow : Fl_Menu_Window {
   void resizeSelection(int width);
   void restoreSelectionFace();
   void upScale(float scale);
+  void closeImage();
 
  private:
     Fl_Group *menuPanel_ = NULL;
-    Fl_Group *leftPanel_ = NULL;
     Fl_Group *bottomPanel_ = NULL;
     Fl_Box * label_zoom_ = NULL;
     Fl_Box * label_select_ = NULL;
@@ -65,9 +64,6 @@ class MainWindow : Fl_Menu_Window {
     Fl_Box * label_size_ = NULL;
     MainMenu *menu_ = NULL;
     ImagePanel *image_editor_;
-    std::unique_ptr<Button> btn_none_;
-    std::unique_ptr<Button> btn_drag_;
-    std::unique_ptr<Button> btn_select_;
 };
 
 
