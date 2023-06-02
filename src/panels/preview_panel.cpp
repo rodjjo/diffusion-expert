@@ -126,6 +126,9 @@ void PreviewPanel::setRow(size_t value) {
 }
 
 size_t PreviewPanel::getRow() {
+    if (row_ >= get_sd_state()->getGeneratorSize() && get_sd_state()->getGeneratorSize() > 0) {
+        row_ = get_sd_state()->getGeneratorSize() - 1;
+    }
     return row_;
 }
 

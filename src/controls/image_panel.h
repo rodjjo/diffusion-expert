@@ -11,8 +11,8 @@
 typedef enum {
   image_type_image,         // the final image
   image_type_paste,         // a image that floats before being pasted in the image
-  image_type_controlnet,    // pre-processed
   image_type_mask,  
+  image_type_controlnet,    // pre-processed
   // keep layer count at the end
   image_type_count
 } image_type_t;
@@ -42,8 +42,9 @@ typedef enum {
     edit_type_none,         // edit disabled
     edit_type_image,        // the user can change the main image
     edit_type_paste,
-    edit_type_controlnet,   // the user can change the controlnet image
     edit_type_mask,         // the user can change the mask
+    edit_type_controlnet,   // the user can change the controlnet image
+
     // keep edit_type_count at the end.
     edit_type_count
 } edit_type_t;
@@ -125,6 +126,7 @@ namespace dexpert
         bool clicked();
         void scheduleRedraw();
         void zoomFit();
+        void setMaskPanel(ImagePanel *mask_panel);
 
     protected:
         int handle(int event) override;
@@ -159,10 +161,10 @@ namespace dexpert
 
         void convertToImageCoords(int *x, int *y);
         void convertToScreenCoords(int *x, int *y);
-
         void applyBrush(int mousex, int mousey, bool clear);
         
     private:
+        ImagePanel *mask_panel_ = NULL;
         callback_t on_change_;
         image_tool_t tool_ = image_tool_none;
         bool mouse_changed_ = false;

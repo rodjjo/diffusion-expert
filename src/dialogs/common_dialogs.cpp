@@ -131,17 +131,31 @@ std::string executeChooser(Fl_File_Chooser *fc) {
 }
 
 std::string choose_image_to_open_fl(std::string* current_dir) {
-    Fl_File_Chooser dialog("", kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE, "Open image");
-    return executeChooser(&dialog);
+    if (!path_exists(current_dir->c_str())) {
+        *current_dir = "";
+    }
+    Fl_File_Chooser dialog(current_dir->c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE, "Open image");
+    std::string result = executeChooser(&dialog);
+    if (!result.empty()) {
+        size_t latest = result.find_last_of("/\\");
+        *current_dir = result.substr(0, latest);
+    }
+    return result;
 }
 
 std::string choose_image_to_save_fl(std::string* current_dir) {
-    Fl_File_Chooser dialog("", kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
+    if (!path_exists(current_dir->c_str())) {
+        *current_dir = "";
+    }
+    Fl_File_Chooser dialog(current_dir->c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
     std::string result = executeChooser(&dialog);
     
     if (!result.empty() && path_exists(result.c_str())) {
         if (!ask("Do you want to replace the destination file ?")) {
             result.clear();
+        } else {
+            size_t latest = result.find_last_of("/\\");
+            *current_dir = result.substr(0, latest);
         }
     }
 

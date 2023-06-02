@@ -11,7 +11,7 @@ namespace dexpert
 
 image_ptr_t open_image_from_dialog() {
     image_ptr_t result;
-    std::string path = choose_image_to_open(&getConfig().lastImageSaveDir());
+    std::string path = choose_image_to_open(&getConfig().lastImageOpenDir());
     if (!path.empty()) {
         result = get_sd_state()->openImage(path.c_str());
         if (!result) {
