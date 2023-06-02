@@ -280,28 +280,14 @@ void PromptPanel::refreshModels() {
         return;
     }
     
-    std::string modelName = "";
-    std::string modelInpaint = "";
-    if (models_->value() >= 0) {
-        modelName = models_->text(models_->value());
-    } else {
-        modelName = getConfig().getLatestSdModel();
-    }
-    if (modelsInpaint_->value() >= 0) {
-        modelInpaint = modelsInpaint_->text(modelsInpaint_->value());
-    } else {
-        modelInpaint = getConfig().getLatestSdModelInpaint();
-    }
+    std::string modelName = getConfig().getLatestSdModel();
+    std::string modelInpaint = getConfig().getLatestSdModelInpaint();
 
     models_->clear();
     modelsInpaint_->clear();
     
     auto mdls = get_sd_state()->getSdModels();
 
-    int index = 0;
-    int inpaintIndex = 0;
-    int value = -1;
-    int valueInpaint = -1;
     std::string name_lower;
 
     for (auto it = mdls.cbegin(); it != mdls.cend(); it++) {
@@ -309,19 +295,14 @@ void PromptPanel::refreshModels() {
         std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
         if (name_lower.find("inpaint") != std::string::npos) {
             modelsInpaint_->add(it->name.c_str());
-            if (valueInpaint == -1 && it->name == modelInpaint) {
-                valueInpaint = inpaintIndex;
-            }
-            ++inpaintIndex;
         } else {
             models_->add(it->name.c_str());
-            if (value == -1 && it->name == modelName) {
-                value = index;
-            }
-            ++index;
         }
     }
-    
+
+    int value = models_->find_index(modelName.c_str());
+    int valueInpaint = modelsInpaint_->find_index(modelInpaint.c_str());
+   
     if (value < 0) 
         value = 0;
 
@@ -350,11 +331,9 @@ const char *PromptPanel::getSdModel(bool for_inpainting) {
         if (hasInpaint) {
             return modelsInpaint_->text(modelsInpaint_->value());
         }
-    } else {
-        if (hasNormal) {
-            return models_->text(models_->value());
-        }
-    }
+    } else if (hasNormal) {
+        return models_->text(models_->value());
+    }   
 
     return NULL;
 }

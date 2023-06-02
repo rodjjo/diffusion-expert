@@ -222,6 +222,8 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
 
     if (!inputPanel_) {
         btnInput_->hide();
+    } else {
+        this->image_panel_->setMaskPanel(inputPanel_->image_panel_);
     }
     
     blur_mask_->hide();
@@ -508,6 +510,7 @@ void PaintingPanel::modeSelected() {
         case painting_canny:
         case painting_scribble:
         case painting_deepth: {
+            image_panel_->setLayerVisible(image_type_mask, only_control_net_);
             image_panel_->setEditType(edit_type_controlnet);
             image_panel_->setControlnetImageType(controltype_from_mode(getSelectedMode()));
             image_panel_->setLayerVisible(image_type_controlnet, true);

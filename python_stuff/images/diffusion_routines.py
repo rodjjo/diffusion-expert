@@ -13,8 +13,19 @@ from models.paths import LORA_DIR
 from dexpert import progress, progress_canceled, progress_title
 
 
+REPORT_PREFIX = 'Text To Image'
+REPORT_PREFIXES = {
+    'txt2img': 'Text to Image',
+    'inpaint2img': 'Inpaint',
+    'img2img': 'Image to Image',
+}
+
+def set_prefix(text):
+    global REPORT_PREFIX
+    REPORT_PREFIX = text
+
 def report(message):
-    progress_title(f'[Text To Image] - {message}')
+    progress_title(f'[{REPORT_PREFIX}] - {message}')
 
 
 def get_lora_path(lora: str) -> str:
@@ -90,10 +101,13 @@ def _run_pipeline(pipeline_type, params):
     latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
     
     generator = None if seed == -1  else torch.Generator(device=device).manual_seed(seed)
-    report("started")
 
     if pipeline_type == 'img2img' and input_mask is not None:
         pipeline_type = 'inpaint2img'
+
+    set_prefix(REPORT_PREFIXES.get(pipeline_type, "Text to Image"))
+
+    report("started")
 
     report("creating the pipeline")
     pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list, reload_model=reload_model) 

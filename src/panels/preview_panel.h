@@ -37,8 +37,6 @@ namespace dexpert
         Fl_Box *lblCounter_;
 
         std::unique_ptr<Button> btnUse_;
-        std::unique_ptr<Button> btnNext_;
-        std::unique_ptr<Button> btnNextVar_;
         std::unique_ptr<Button> btnRemove_;
         std::unique_ptr<Button> btnView_;
         std::unique_ptr<Button> btnScrollLeft_;

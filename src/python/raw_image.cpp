@@ -256,6 +256,29 @@ void RawImage::pasteAt(int x, int y, int w, int h, RawImage *image) {
     src.permute_axes("cxyz");
 }
 
+void RawImage::pasteInvertMask(RawImage *image) {
+    // the current image is a mask
+    // we-re going to draw the image over the mask, but invert the pixels
+    CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
+    CImg<unsigned char> img(this->buffer(), format_channels[this->format()], this->w(), this->h(), 1, true);
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    auto resized = src.get_resize(w(), h());
+    img.draw_image(0, 0, 0, 0, resized, img.get_shared_channel(3), 1, 255);
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+
+    if (this->format() == img_rgba) {
+        unsigned char *p = this->buffer_;
+        for (int i = 0; i < this->buffer_len_; i += 4) {
+            *p = 255 - *p; ++p;
+            *p = 255 - *p; ++p;
+            *p = 255 - *p; ++p;
+            ++p;
+        }
+    }
+}
+
 void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     int w = this->w();
     int h = this->h();

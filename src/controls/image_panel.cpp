@@ -497,11 +497,19 @@ namespace dexpert
         scrollAgain();
     }
 
+    void ImagePanel::setMaskPanel(ImagePanel *mask_panel) {
+        mask_panel_ = mask_panel;
+    }
+
     RawImage* ImagePanel::get_cached_image(int layer) {
         /*
             Dim the image to fit the window. Don't draw a huge image in a smaller area...
         */
         RawImage *original = images_[layer].get();
+        if (mask_panel_ != NULL && layer == image_type_mask && mask_panel_->image_visible_[layer]) {
+            original = mask_panel_->images_[layer].get();
+        }
+
         if (layer == image_type_paste) {
             return NULL;
         } else if (layer == image_type_image && original == NULL) {
@@ -523,6 +531,7 @@ namespace dexpert
         }
 
         image_ptr_t &cache = caches_[layer];
+
         if (!cache.get() || 
             !valid_caches_[layer] ||
             cache_versions_[layer] != original->getVersion() ||
@@ -546,6 +555,8 @@ namespace dexpert
                 s1.x -= xmove * zoom_;
                 s1.y -= ymove * zoom_;
                 cache->pasteAt(s1.x , s1.y, img->w() * zoom_, img->h() * zoom_, img);
+            } else if (layer == image_type_mask && caches_[image_type_image].get() != NULL) {
+                cache->pasteInvertMask(caches_[image_type_image].get());
             }
         }
 
@@ -577,6 +588,7 @@ namespace dexpert
                 draw_buffer(img);
             }
         }
+        
         blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
         draw_tool();
     }
@@ -766,7 +778,6 @@ namespace dexpert
         }
         scrollAgain();
     }
-
 
     void ImagePanel::setBrushSize(uint8_t size) {
         if (size > 128)
