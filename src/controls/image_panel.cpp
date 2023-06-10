@@ -110,6 +110,7 @@ namespace dexpert
     void ImagePanel::setLayerImage(image_type_t layer, image_ptr_t image)
     {
         images_[layer] = image;
+        invalidate_caches();
         adjustSizes();
         scrollAgain();
     }
