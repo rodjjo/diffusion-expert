@@ -20,6 +20,17 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
             painting_->clearPasteImage();
         }
     }));
+    btnUse2_.reset(new Button(xpm::image(xpm::yellow_pin_16x16), [this] {
+        if (!painting_->getImage()) {
+            show_error("No input image to replace");
+            return;
+        }
+        auto r = copy_inpaint(painting_->getImage()->duplicate(), get_sd_state()->getResultsImage(getRow())->duplicate());
+        if (r.get() != NULL) {
+            painting_->setImage(r.get());
+            painting_->clearPasteImage();
+        }
+    }));
     btnView_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
         auto img = get_sd_state()->getResultsImage(getRow());
         if (img) {
@@ -61,6 +72,7 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
     alignComponents();
 
     btnUse_->tooltip("Use this image as input image (as the result)");
+    btnUse2_->tooltip("Select a area of the image and set it as the result");
     btnView_->tooltip("Preview the image");
     btnRemove_->tooltip("Remove the image");
     btnScrollLeft_->tooltip("Navigate to the previous generated image");
@@ -77,6 +89,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
     if (get_sd_state()->getGeneratorSize() > 0) {
         miniature_->set_visible();
         btnUse_->set_visible();
+        btnUse2_->set_visible();
         lblCounter_->set_visible();
         btnScrollLeft_->set_visible();
         btnScrollRight_->set_visible();
@@ -88,6 +101,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
     } else {
         miniature_->hide();
         btnUse_->hide();
+        btnUse2_->hide();
         lblCounter_->hide();
         btnScrollLeft_->hide();
         btnScrollRight_->hide();
@@ -104,13 +118,15 @@ void PreviewPanel::resize(int x, int y, int w, int h) {
 void PreviewPanel::alignComponents() {
     miniature_->resize(x() + 3, y() + 3, w() - 6 - 26, h()- 36);
     btnUse_->size(20, 20);
+    btnUse2_->size(20, 20);
     btnView_->size(20, 20);
     btnRemove_->size(20, 20);
     btnScrollLeft_->size(20, 20);
     btnScrollRight_->size(20, 20);
 
     btnUse_->position(x() + w() - 23, y() + 3);
-    btnView_->position(x() + w() - 23, btnUse_->y() + btnUse_->h() + 2);
+    btnUse2_->position(x() + w() - 23, btnUse_->y() + btnUse_->h() + 2);
+    btnView_->position(x() + w() - 23, btnUse2_->y() + btnUse2_->h() + 2);
     btnRemove_->position(x() + w() - 23, btnView_->y() + btnView_->h() + 2);
 
     int navWidth = 210;
