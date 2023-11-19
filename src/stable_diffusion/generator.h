@@ -5,6 +5,7 @@
 #define SRC_STABLE_DIFFUSION_GENERATOR_H_
 
 #include <functional>
+#include <list>
 #include <vector>
 #include <memory>
 #include "src/python/raw_image.h"
@@ -25,7 +26,7 @@ typedef enum {
 } inpaint_mode_t;
 
 
-typedef std::function<void(bool success, const char* msg, image_ptr_t result)> generator_cb_t;
+typedef std::function<void(bool success, const char* msg, std::list<image_ptr_t> result)> generator_cb_t;
 
 
 class SeedGenerator {
@@ -42,8 +43,9 @@ class GeneratorBase {
     GeneratorBase(std::shared_ptr<SeedGenerator> seed_gen, bool variation);
     virtual ~GeneratorBase();
     virtual void generate(generator_cb_t cb) = 0;
+    virtual int batchSize() = 0;
 
-    virtual std::shared_ptr<GeneratorBase> duplicate(bool variation) = 0;
+    virtual std::shared_ptr<GeneratorBase> duplicate(bool variation, image_ptr_t img) = 0;
 
     RawImage* getImage();
     void clearImage();
@@ -56,6 +58,7 @@ class GeneratorBase {
   protected:
     void setImage(image_ptr_t image);
     void setSeed(int value);
+    
 
   private:
     int image_seed_ = 0;

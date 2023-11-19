@@ -30,7 +30,6 @@ def have_dependencies():
     lib_names = [
         'torch',
         'torchvision',
-        'torchaudio',
         'numpy',
         'diffusers',
         'transformers',

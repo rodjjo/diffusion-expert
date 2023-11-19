@@ -86,12 +86,15 @@ int StableDiffusionState::randomSeed() {
 }
 
 generator_cb_t StableDiffusionState::generatorMakeCallback() {
-    return [this] (bool success, const char* msg, image_ptr_t result) {
-        if (!success || !result) {
+    return [this] (bool success, const char* msg, std::list<image_ptr_t> result) {
+        generated_images_.clear();
+        if (!success || result.empty()) {
             if (msg)
                 last_error_ = msg;
             else 
                 last_error_ = "Generator failed without error message";
+        } else {
+            generated_images_ = result;
         }
     };
 }
@@ -109,14 +112,15 @@ void StableDiffusionState::clearImage(int index) {
 bool StableDiffusionState::generatorAdd(std::shared_ptr<GeneratorBase> generator) {
     last_error_.clear();
 
-    size_t index = 0;
+    //size_t index = 0;
+    generated_images_.clear();
     generator->generate(generatorMakeCallback());
 
-    if (generator->getImage()) {
-        generators_.push_back(generator);
+    for (auto & img: generated_images_) {
+        generators_.push_back(generator->duplicate(false, img));
     }
 
-    if (generators_.size() > getConfig().getMaxGeneratedImages()) {
+    while (generators_.size() > getConfig().getMaxGeneratedImages()) {
         generators_.erase(generators_.begin());
     }
 
@@ -128,14 +132,14 @@ bool StableDiffusionState::generateNextImage(int index) {
     last_error_ = "Wrong index";
     if (index < 0 || index >= generators_.size())
         return false;
-    return generatorAdd(generators_[index]->duplicate(false));
+    return generatorAdd(generators_[index]->duplicate(false, image_ptr_t()));
 }
 
 bool StableDiffusionState::generateNextVariation(int index) {
     last_error_ = "Wrong index";
     if (index < 0 || index >= generators_.size())
         return false;
-    return generatorAdd(generators_[index]->duplicate(true));
+    return generatorAdd(generators_[index]->duplicate(true, dexpert::image_ptr_t()));
 }
 
 
@@ -145,10 +149,12 @@ image_ptr_t StableDiffusionState::openImage(const char *path) {
 
     const char *message = kNO_ERROR_MESSAGE;
     image_ptr_t image;
-    auto cb = dexpert::py::open_image(path, [&image, &success, &message] (bool status, const char* msg, image_ptr_t img) {
+    auto cb = dexpert::py::open_image(path, [&image, &success, &message] (bool status, const char* msg, std::list<image_ptr_t> img) {
         success = status;
         message = msg;
-        image = img;
+        if (img.size()) {
+            image = *img.begin();
+        }
     });
 
     dexpert::py::get_py()->execute_callback(cb);
@@ -198,6 +204,13 @@ const char* StableDiffusionState::lastError() {
 
 size_t StableDiffusionState::getGeneratorSize() {
     return generators_.size();
+}
+
+int StableDiffusionState::lastBatchSize() {
+    if (!generators_.empty()) {
+        return (*generators_.rbegin())->batchSize();
+    }
+    return 1;
 }
     
 } // namespace dexpert

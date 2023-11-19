@@ -40,6 +40,7 @@ class txt2img_config_t {
     const char *negative = "";
     const char *model = "";
     int seed = -1;
+    int batch_size = 1;
     size_t width = 512;
     size_t height = 512;
     size_t steps = 50;
@@ -86,7 +87,7 @@ typedef std::list<embedding_t> embedding_list_t;
 
 typedef std::function<void()> callback_t;
 typedef std::function<void(bool success, const char *message)> status_callback_t;
-typedef std::function<void(bool success, const char *message, std::shared_ptr<RawImage> image)> image_callback_t;
+typedef std::function<void(bool success, const char *message, std::list<std::shared_ptr<RawImage> > image)> image_callback_t;
 typedef std::function<void(bool success, const char *message, const model_list_t &models)> model_callback_t;
 typedef std::function<void(bool success, const char *message, const model_url_list_t &models)> model_url_callback_t;
 typedef std::function<void(bool success, const char *message, const embedding_list_t &values)> embedding_callback_t;

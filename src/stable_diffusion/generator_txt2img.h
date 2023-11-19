@@ -24,6 +24,7 @@ class GeneratorTxt2Image: public GeneratorBase {
             const std::string& negative,
             const std::string& model,
             controlnet_list_t controlnets,
+            int batch_size,
             int seed,
             size_t width,
             size_t height,
@@ -39,8 +40,10 @@ class GeneratorTxt2Image: public GeneratorBase {
             generator_cb_t cb
         ) override;
 
+        int batchSize() override;
+
         
-        std::shared_ptr<GeneratorBase> duplicate(bool variation) override;
+        std::shared_ptr<GeneratorBase> duplicate(bool variation, image_ptr_t img) override;
         
     private:
         std::string prompt_;
@@ -48,6 +51,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         std::string model_;
         controlnet_list_t controlnets_;
         int seed_ = -1;
+        int batch_size_ = 1;
         size_t width_ = 512;
         size_t height_ = 512;
         size_t steps_ = 50;

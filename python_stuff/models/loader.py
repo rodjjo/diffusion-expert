@@ -1,3 +1,4 @@
+import json
 import os
 import safetensors
 import torch
@@ -6,12 +7,17 @@ from diffusers import (
     AutoencoderKL,
     PNDMScheduler,
     DDIMScheduler,
+    AutoPipelineForText2Image,
+    AutoPipelineForInpainting,
+    EulerDiscreteScheduler,
+    EulerAncestralDiscreteScheduler,
     LMSDiscreteScheduler,
     UniPCMultistepScheduler,
+    LCMScheduler,
     UNet2DConditionModel
 )
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
-from transformers import CLIPTextModel, CLIPTokenizer, AutoFeatureExtractor
+from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR, EMBEDDING_DIR, LORA_DIR
 from exceptions.exceptions import CancelException
@@ -19,6 +25,96 @@ from utils.settings import get_setting
 from utils.downloader import download_file
 
 from dexpert import progress_title, progress_canceled
+
+unnet_xl_config = json.loads('''
+{
+  "_class_name": "UNet2DConditionModel",
+  "_diffusers_version": "0.19.0.dev0",
+  "act_fn": "silu",
+  "addition_embed_type": "text_time",
+  "addition_embed_type_num_heads": 64,
+  "addition_time_embed_dim": 256,
+  "attention_head_dim": [
+    5,
+    10,
+    20
+  ],
+  "block_out_channels": [
+    320,
+    640,
+    1280
+  ],
+  "center_input_sample": false,
+  "class_embed_type": null,
+  "class_embeddings_concat": false,
+  "conv_in_kernel": 3,
+  "conv_out_kernel": 3,
+  "cross_attention_dim": 2048,
+  "cross_attention_norm": null,
+  "down_block_types": [
+    "DownBlock2D",
+    "CrossAttnDownBlock2D",
+    "CrossAttnDownBlock2D"
+  ],
+  "downsample_padding": 1,
+  "dual_cross_attention": false,
+  "encoder_hid_dim": null,
+  "encoder_hid_dim_type": null,
+  "flip_sin_to_cos": true,
+  "freq_shift": 0,
+  "in_channels": 4,
+  "layers_per_block": 2,
+  "mid_block_only_cross_attention": null,
+  "mid_block_scale_factor": 1,
+  "mid_block_type": "UNetMidBlock2DCrossAttn",
+  "norm_eps": 1e-05,
+  "norm_num_groups": 32,
+  "num_attention_heads": null,
+  "num_class_embeds": null,
+  "only_cross_attention": false,
+  "out_channels": 4,
+  "projection_class_embeddings_input_dim": 2816,
+  "resnet_out_scale_factor": 1.0,
+  "resnet_skip_time_act": false,
+  "resnet_time_scale_shift": "default",
+  "sample_size": 128,
+  "time_cond_proj_dim": null,
+  "time_embedding_act_fn": null,
+  "time_embedding_dim": null,
+  "time_embedding_type": "positional",
+  "timestep_post_act": null,
+  "transformer_layers_per_block": [
+    1,
+    2,
+    10
+  ],
+  "up_block_types": [
+    "CrossAttnUpBlock2D",
+    "CrossAttnUpBlock2D",
+    "UpBlock2D"
+  ],
+  "upcast_attention": null,
+  "use_linear_projection": true
+}
+''')
+
+scheduler_config_sdxl = json.loads(
+'''
+{
+  "_class_name": "EulerDiscreteScheduler",
+  "_diffusers_version": "0.19.0.dev0",
+  "beta_end": 0.012,
+  "beta_schedule": "scaled_linear",
+  "beta_start": 0.00085,
+  "interpolation_type": "linear",
+  "num_train_timesteps": 1000,
+  "prediction_type": "epsilon",
+  "steps_offset": 1,
+  "timestep_spacing": "leading",
+  "trained_betas": null,
+  "use_karras_sigmas": false
+}
+''')
 
 
 usefp16 = {
@@ -32,7 +128,7 @@ def convert_ldm_clip_checkpoint(checkpoint):
     local_files_only = False
     if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
         local_files_only = True
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
+    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
     keys = list(checkpoint.keys())
 
@@ -461,6 +557,14 @@ def get_textual_inversion_paths():
             result.append((True, f))
     return result
 
+def get_lora_location(lora: str) -> str:
+    for d in (LORA_DIR, get_setting('add_lora_dir', '')):
+        for e in ('.safetensors', '.ckpt'):
+            filepath = os.path.join(d, f'{lora}{e}')
+            if os.path.exists(filepath):
+                return filepath
+    return None
+
 
 def get_lora_paths():
     files = [os.path.join(LORA_DIR, f) for f in os.listdir(LORA_DIR)]
@@ -531,53 +635,85 @@ def load_lora_list(lora_list, unet, text_model):
         load_lora_weights(unet, text_model, lm[0], w)
 
 
-def load_stable_diffusion_model(model_path: str, lora_list: list):
+def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting):
     report(f"loading {model_path}")
 
-    if model_path.endswith('.safetensors'):
+    loader_class = AutoPipelineForInpainting if for_inpainting else AutoPipelineForText2Image
+    
+    xl_model = 'xl' in model_path.lower()
+    cloud_word = '/hugging/' if '/hugging/' in model_path else '/hugging-xl/'
+    from_cloud = cloud_word in model_path 
+
+    if from_cloud:
+        model_path = model_path.split(cloud_word, maxsplit=1)[1]
+
+    if xl_model:
+        checkpoint = {}
+    elif from_cloud:
+        checkpoint = loader_class.from_pretrained(
+            model_path, 
+            torch_dtype=usefp16[get_setting('use_float16', True)],
+            cache_dir=CACHE_DIR
+        )
+    elif model_path.endswith('.safetensors'):
         checkpoint = safetensors.torch.load_file(model_path, device="cpu")
     else:
         checkpoint = torch.load(model_path, map_location="cpu")
     checkpoint = get_state_dict_from_checkpoint(checkpoint)
     report("model loaded")
-    
-    b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
 
-    if b is not None and b.shape[1] == 9:
-        in_painting = True
-        inference_file = 'v1-inpainting-inference.yaml'
-    else:
-        in_painting = False
-        inference_file = 'v1-inference.yaml'
+    if not from_cloud:
+        b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
 
-    inference_path = os.path.join(CONFIG_DIR, inference_file)
+        if b is not None and b.shape[1] == 9:
+            in_painting = True
+            inference_file = 'v1-inpainting-inference.yaml'
+        else:
+            in_painting = False
+            inference_file = 'v1-inference.yaml'
 
-    report(f"loading {inference_path}")
-    config = OmegaConf.load(inference_path)
-    num_train_timesteps = config.model.params.timesteps
-    beta_start = config.model.params.linear_start
-    beta_end = config.model.params.linear_end
-    report(f"inference config loaded")
+        inference_path = os.path.join(CONFIG_DIR, inference_file)
+
+        report(f"loading {inference_path}")
+        config = OmegaConf.load(inference_path)
+        num_train_timesteps = config.model.params.timesteps
+        beta_start = config.model.params.linear_start
+        beta_end = config.model.params.linear_end
+        report(f"inference config loaded")
 
     scheduler_name = get_setting('scheduler', 'PNDMScheduler')
-    if scheduler_name == 'PNDMScheduler': 
-        scheduler = PNDMScheduler(
+    if xl_model:
+        pass
+    elif scheduler_name == 'LCMScheduler':
+        scheduler = LCMScheduler.from_config(checkpoint.scheduler.config) if from_cloud else LCMScheduler(
+            beta_start=beta_start,
+            beta_end=beta_end,
+            beta_schedule="scaled_linear",
+            clip_sample=False,
+            set_alpha_to_one=False,
+            prediction_type="epsilon",
+        ) 
+    elif scheduler_name == 'DDIMScheduler' or xl_model:
+        if xl_model:
+            scheduler = EulerDiscreteScheduler.from_config(checkpoint.scheduler.config) if from_cloud else EulerDiscreteScheduler(**scheduler_config_sdxl)
+        else:
+            scheduler = DDIMScheduler.from_config(checkpoint.scheduler.config) if from_cloud else  DDIMScheduler(
+                beta_start=beta_start,
+                beta_end=beta_end,
+                beta_schedule="scaled_linear",
+                clip_sample=False,
+                set_alpha_to_one=False,
+            )
+    elif scheduler_name == 'PNDMScheduler': 
+        scheduler = PNDMScheduler.from_config(checkpoint.scheduler.config) if from_cloud else  PNDMScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
             beta_schedule="scaled_linear",
             num_train_timesteps=num_train_timesteps,
             skip_prk_steps=True,
         )
-    elif scheduler_name == 'DDIMScheduler':
-        scheduler = DDIMScheduler(
-            beta_start=beta_start,
-            beta_end=beta_end,
-            beta_schedule="scaled_linear",
-            clip_sample=False,
-            set_alpha_to_one=False,
-        )
     elif  scheduler_name == 'UniPCMultistepScheduler':
-        scheduler = UniPCMultistepScheduler(
+        scheduler = UniPCMultistepScheduler.from_config(checkpoint.scheduler.config) if from_cloud else UniPCMultistepScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
             beta_schedule="scaled_linear",
@@ -585,41 +721,89 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
             # set_alpha_to_one=False,
         )
     else:
-         scheduler = LMSDiscreteScheduler(beta_start=beta_start, beta_end=beta_end, beta_schedule="scaled_linear")
+         scheduler = LMSDiscreteScheduler.from_config(checkpoint.scheduler.config) if from_cloud else LMSDiscreteScheduler(beta_start=beta_start, beta_end=beta_end, beta_schedule="scaled_linear")
 
-    # Convert the UNet2DConditionModel model.
-    report("converting UNet2DConditionModel model (unet-config)")
-    unet_config = create_unet_diffusers_config(config)
+    if not xl_model:
+        if from_cloud:
+            checkpoint.scheduler = scheduler
+            return {
+                'vae': checkpoint.vae,
+                'text_encoder': checkpoint.text_model,
+                'tokenizer': checkpoint.tokenizer,
+                'unet': checkpoint.unet,
+                'scheduler': checkpoint.scheduler,
+                'safety_checker': None,
+                'feature_extractor': None,
+                'requires_safety_checker': False
+            }, False, xl_model
+        # Convert the UNet2DConditionModel model.
+        report("converting UNet2DConditionModel model (unet-config)")
+        unet_config = create_unet_diffusers_config(config)
+        converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
+        report("unet config created")
 
-    converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
-    report("unet config created")
+        unet = UNet2DConditionModel(**unet_config)
+        unet.load_state_dict(converted_unet_checkpoint, strict=True)
+    else:
+        report("Loading XL model")
+        xl_model = True
+        pipe = loader_class.from_pretrained(
+            model_path if from_cloud else'segmind/SSD-1B', 
+            torch_dtype=usefp16[get_setting('use_float16', True)],
+            cache_dir=CACHE_DIR
+        )
+        pipe.load_lora_weights( "latent-consistency/lcm-lora-ssd-1b", cache_dir=CACHE_DIR)
+        pipe.fuse_lora()
+        scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        pipe.scheduler = scheduler
+        unet = pipe
+        vae = pipe.vae
+        # vae = pipe.vae 
 
-    unet = UNet2DConditionModel(**unet_config)
-    unet.load_state_dict(converted_unet_checkpoint, strict=True)
-
-    if get_setting('use_float16', True):
+        # unet.load_state_dict(converted_unet_checkpoint, strict=True)
+    
+    if get_setting('use_float16', True) and not xl_model:
         report("converting model to half precision")
         unet = unet.half()
 
-    del converted_unet_checkpoint
     report("unet loaded config")
 
     report("downloading VAE. please wait")
 
-    local_files_only = False
-    if os.path.exists(os.path.join(CACHE_DIR, 'models--CompVis--stable-diffusion-v1-4', 'snapshots')):
-        local_files_only = True
+    if not xl_model:
+        local_files_only = False
+        if os.path.exists(os.path.join(CACHE_DIR, 'models--CompVis--stable-diffusion-v1-4', 'snapshots')):
+            local_files_only = True
+        vae = AutoencoderKL.from_pretrained(
+            'CompVis/stable-diffusion-v1-4', 
+            subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
+    #else:
+    #    vae = AutoencoderKL.from_pretrained(
+    #        "segmind/SSD-1B", 
+    #        subfolder='vae',
+    #        torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
 
-    vae = AutoencoderKL.from_pretrained(
-        'CompVis/stable-diffusion-v1-4', 
-        subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR, local_files_only=local_files_only)
 
     report("VAE loaded")
 
     device_name = get_setting('device', 'cuda')
-    text_model_type = config.model.params.cond_stage_config.target.split(".")[-1]
+    if not xl_model:
+        text_model_type = config.model.params.cond_stage_config.target.split(".")[-1]
 
-    if text_model_type == "FrozenCLIPEmbedder":
+    if xl_model:
+        text_model = None
+        tokenizer = None
+        text_model2 = None
+        tokenizer2 = None
+        #text_model = CLIPTextModel.from_pretrained('segmind/SSD-1B', subfolder="text_encoder",  cache_dir=CACHE_DIR)
+        #tokenizer = CLIPTokenizer.from_pretrained('segmind/SSD-1B', subfolder="tokenizer", cache_dir=CACHE_DIR)
+        #text_model2 = CLIPTextModelWithProjection.from_pretrained('segmind/SSD-1B', subfolder="text_encoder_2",  cache_dir=CACHE_DIR)
+        #tokenizer2 = CLIPTokenizer.from_pretrained('segmind/SSD-1B', subfolder="tokenizer_2", cache_dir=CACHE_DIR)
+
+        safety_checker = None
+        feature_extractor = None
+        requires_safety_checker = False
+    elif text_model_type == "FrozenCLIPEmbedder":
         report("converting ldm clip")
         text_model = convert_ldm_clip_checkpoint(checkpoint)
         del checkpoint
@@ -629,7 +813,7 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
         if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
             local_files_only = True
 
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
+        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
         if  get_setting("nsfw_filter", True) is True:
             report("safety checker")
@@ -649,17 +833,42 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
             requires_safety_checker = False
 
     else:
+         text_model = None
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
 
-    load_lora_list(lora_list, unet, text_model)
+    if scheduler_name == 'LCMScheduler':
+        if xl_model:
+            pass
+        else:
+            load_lora_list(lora_list, unet, text_model)
+            load_embeddings(text_model, tokenizer)
+            load_lora_list([(get_lora_location('lcm-lora-sdv1-5'), 1.0)], unet, text_model)
+    elif not xl_model:
+        load_lora_list(lora_list, unet, text_model)
+        load_embeddings(text_model, tokenizer)
 
-    load_embeddings(text_model, tokenizer)
+    if not xl_model:
+        if vae:
+            vae.to(device_name)
 
-    vae.to(device_name)
-    text_model.to(device_name)
-    unet.to(device_name)
+        if text_model:
+            text_model.to(device_name)
+
+        unet.to(device_name)
     
     report("model full loaded")
+
+    if xl_model:
+        return {
+            'vae': vae,
+            'text_encoder': text_model,
+            'tokenizer': tokenizer,
+            'text_encoder_2': text_model2,
+            'tokenizer_2': tokenizer2,
+            'unet': unet,
+            'scheduler': scheduler,
+            'add_watermarker': False,
+        }, False, xl_model
 
     return {
         'vae': vae,
@@ -670,6 +879,6 @@ def load_stable_diffusion_model(model_path: str, lora_list: list):
         'safety_checker': safety_checker,
         'feature_extractor': feature_extractor,
         'requires_safety_checker': requires_safety_checker
-    }, in_painting
+    }, in_painting, xl_model
 
 

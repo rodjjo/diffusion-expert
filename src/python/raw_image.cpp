@@ -467,6 +467,19 @@ image_ptr_t RawImage::ensureMultipleOf8() {
     return duplicate();
 }
 
+image_ptr_t RawImage::fit1024() {
+    int nx, ny;
+    if (this->h() > this->w()) {
+        ny = 1024;
+        nx = (int)((this->w() / (float)this->h()) * 1024.0);
+    } else {
+        nx = 1024;
+        ny = (int)((this->h() / (float)this->w()) * 1024.0);
+    }
+    printf("Image resized from %dx%d to %dx%d\n", this->w(), this->h(), nx, ny);
+    return this->resizeImage(nx, ny);
+}
+
 image_ptr_t RawImage::resizeLeft(int value) {
     auto img = std::make_shared<RawImage>(
         (const unsigned char *) NULL, this->w() + value, this->h(), img_rgba, false
@@ -508,6 +521,18 @@ image_ptr_t rawImageFromPyDict(py11::dict &image) {
         image["height"].cast<py11::int_>(),
         format
     );
+}
+
+std::list<image_ptr_t> rawImageFromPyDictList(py11::list &images) {
+    std::list<image_ptr_t> result;
+    for (auto &i : images) {
+        auto c = py11::cast<py11::dict>(i);
+        if (c.contains("error")) {
+            continue;
+        }
+        result.push_back(rawImageFromPyDict(c));
+    }
+    return result;
 }
 
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha) {

@@ -25,6 +25,8 @@ namespace dexpert
         void resize(int x, int y, int w, int h) override;
         void updateImage();
         void goLastImage();
+        void goNextImage();
+        void goLastBatch();
 
     private:
         void alignComponents();
@@ -39,6 +41,7 @@ namespace dexpert
         std::unique_ptr<Button> btnUse_;
         std::unique_ptr<Button> btnUse2_;
         std::unique_ptr<Button> btnRemove_;
+        std::unique_ptr<Button> btnRemoveAll_;
         std::unique_ptr<Button> btnView_;
         std::unique_ptr<Button> btnScrollLeft_;
         std::unique_ptr<Button> btnScrollRight_;

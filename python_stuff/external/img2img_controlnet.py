@@ -12,15 +12,15 @@ from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 
 from diffusers import AutoencoderKL, ControlNetModel, DiffusionPipeline, UNet2DConditionModel, logging
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput, StableDiffusionSafetyChecker
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_controlnet import MultiControlNetModel
+from diffusers.pipelines.controlnet import MultiControlNetModel
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils import (
     PIL_INTERPOLATION,
     is_accelerate_available,
     is_accelerate_version,
-    randn_tensor,
     replace_example_docstring,
 )
+from diffusers.utils.torch_utils import (randn_tensor)
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name

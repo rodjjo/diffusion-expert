@@ -43,6 +43,12 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
             updateImage();
         }
     }));
+    btnRemoveAll_.reset(new Button(xpm::image(xpm::button_delete), [this] {
+        if (ask("Clear all generated images ?")) {
+            get_sd_state()->clearGenerators();
+            updateImage();
+        }
+    }));
     btnScrollLeft_.reset(new Button(xpm::image(xpm::arrow_left_16x16), [this] {
         if (row_ > 0) {
             setRow(row_ - 1);
@@ -51,18 +57,20 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
     btnScrollRight_.reset(new Button(xpm::image(xpm::arrow_right_16x16), [this] {
         if (row_ + 1 < get_sd_state()->getGeneratorSize()) {
             if (Fl::event_shift() != 0) {
-                get_sd_state()->generateNextVariation(getRow());
                 goLastImage();
-            } else {
+                get_sd_state()->generateNextVariation(getRow());
+                goLastBatch();
+            } else { 
                 setRow(row_ + 1);
             }
         } else {
+            goLastImage();
             if (Fl::event_shift() != 0) {
                 get_sd_state()->generateNextVariation(getRow());
             } else {
                 get_sd_state()->generateNextImage(getRow());
             }
-            goLastImage();
+            goLastBatch();
         }
     }));
     lblCounter_ = new Fl_Box(0, 0, 1, 1, "0/0");
@@ -75,6 +83,7 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
     btnUse2_->tooltip("Select a area of the image and set it as the result");
     btnView_->tooltip("Preview the image");
     btnRemove_->tooltip("Remove the image");
+    btnRemoveAll_->tooltip("Remove all the images");
     btnScrollLeft_->tooltip("Navigate to the previous generated image");
     btnScrollRight_->tooltip("Navigate to the next generated image. (hold shift to create a variation)");
 
@@ -95,6 +104,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
         btnScrollRight_->set_visible();
         btnView_->set_visible();
         btnRemove_->set_visible();
+        btnRemoveAll_->set_visible();
         if (should_redraw && this->visible_r()) {
             redraw();
         }
@@ -107,6 +117,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
         btnScrollRight_->hide();
         btnView_->hide();
         btnRemove_->hide();
+        btnRemoveAll_->hide();
     }
 }
 
@@ -121,6 +132,7 @@ void PreviewPanel::alignComponents() {
     btnUse2_->size(20, 20);
     btnView_->size(20, 20);
     btnRemove_->size(20, 20);
+    btnRemoveAll_->size(20, 20);
     btnScrollLeft_->size(20, 20);
     btnScrollRight_->size(20, 20);
 
@@ -128,7 +140,7 @@ void PreviewPanel::alignComponents() {
     btnUse2_->position(x() + w() - 23, btnUse_->y() + btnUse_->h() + 2);
     btnView_->position(x() + w() - 23, btnUse2_->y() + btnUse2_->h() + 2);
     btnRemove_->position(x() + w() - 23, btnView_->y() + btnView_->h() + 2);
-
+    btnRemoveAll_->position(x() + w() - 23, btnRemove_->y() + btnRemove_->h() + 2);
     int navWidth = 210;
     
     btnScrollLeft_->position(x() + w() / 2 - navWidth / 2, y() + h() - 31);
@@ -155,6 +167,27 @@ void PreviewPanel::goLastImage() {
     }
     row_ = get_sd_state()->getGeneratorSize() - 1;
     updateImage();
+}
+
+void PreviewPanel::goNextImage() {
+    if (get_sd_state()->getGeneratorSize() < 1) {
+        row_ = 0;
+        return;
+    } else {
+        row_ += 1;
+        if (row_ >= get_sd_state()->getGeneratorSize())  {
+            row_ = get_sd_state()->getGeneratorSize() - 1;
+        }
+    }
+    updateImage();
+}
+
+void PreviewPanel::goLastBatch() {
+    int place = get_sd_state()->getGeneratorSize() - get_sd_state()->lastBatchSize();
+    if (place < 0) {
+        place = 0;
+    } 
+    setRow(place);
 }
 
 void PreviewPanel::updateImage() {

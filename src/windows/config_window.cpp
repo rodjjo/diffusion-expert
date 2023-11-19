@@ -78,6 +78,8 @@ ConfigWindow::ConfigWindow() {
     schedulers_->add("PNDMScheduler");
     schedulers_->add("DDIMScheduler");
     schedulers_->add("LMSDiscreteScheduler");
+    schedulers_->add("LCMScheduler");
+
     schedulers_->value(0);
     
     for (int i = 0; i < controlnet_max; i++) {

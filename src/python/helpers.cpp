@@ -94,9 +94,9 @@ namespace dexpert
                     auto r = dexpert::py::getModule().attr("open_image")(path);
                     py11::dict d = r.cast<py11::dict>();
                     auto img = dexpert::py::rawImageFromPyDict(d);
-                    status_cb(true, NULL, img); // TODO: check error!
+                    status_cb(true, NULL, {img}); // TODO: check error!
                 } catch(std::runtime_error e) {
-                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                    status_cb(false, getError(e), std::list<image_ptr_t>()); // TODO: check error!
                 }
             };
         }
@@ -128,10 +128,10 @@ namespace dexpert
                     auto r = dexpert::py::getModule().attr("pre_process_image")(mode, d);
                     py11::dict asimg = r.cast<py11::dict>();
                     auto img = dexpert::py::rawImageFromPyDict(asimg);
-                    status_cb(true, NULL, img); // TODO: check error!
+                    status_cb(true, NULL, {img}); // TODO: check error!
                 }
                 catch(std::runtime_error e) {
-                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                    status_cb(false, getError(e), std::list<image_ptr_t>()); // TODO: check error!
                 }
             };
         }
@@ -149,9 +149,9 @@ namespace dexpert
                     auto r = dexpert::py::getModule().attr("gfpgan_upscale")(d, py11::float_(scale), params);
                     py11::dict d2 = r.cast<py11::dict>();
                     auto img = dexpert::py::rawImageFromPyDict(d2);
-                    status_cb(true, NULL, img); // TODO: check error!
+                    status_cb(true, NULL, {img}); // TODO: check error!
                 } catch(std::runtime_error e) {
-                    status_cb(false, getError(e), image_ptr_t()); // TODO: check error!
+                    status_cb(false, getError(e), std::list<image_ptr_t>()); // TODO: check error!
                 }
             };
         }
@@ -165,7 +165,8 @@ namespace dexpert
             params["height"] = this->height;
             params["steps"] = this->steps;
             params["cfg"] = this->cfg;
-            params["seed"] = this->seed;
+            params["seed"] = this->seed; 
+            params["batch_size"] = this->batch_size;
             params["variation"] = this->variation;
             params["var_stren"] = this->var_stren;
             params["reload_model"] = this->reload_model;
@@ -214,13 +215,20 @@ namespace dexpert
                     py11::dict params;
                     config.fill_prompt_dict(params);
                     auto r = dexpert::py::getModule().attr(fn_name)(params);
-                    py11::dict asimg = r.cast<py11::dict>();
-                    auto img = dexpert::py::rawImageFromPyDict(asimg);
-                    status_cb(true, errorFromPyDict(asimg, "Error generating the image"), img); // TODO: check error!
+                    py11::list asimg = r.cast<py11::list>();
+                    for (auto & d : asimg) {
+                        auto r = py11::cast<py11::dict>(d);
+                        if (r.contains("error")) {
+                            status_cb(true, errorFromPyDict(r, "Error generating the image"), {}); // TODO: check error!
+                            return;
+                        }
+                    }
+                    auto img = dexpert::py::rawImageFromPyDictList(asimg);
+                    status_cb(true, "Error generating the image", img); // TODO: check error!
                 } catch(std::runtime_error e) {
                     static std::string es;
                     es = e.what();
-                    status_cb(false, es.c_str(), image_ptr_t()); // TODO: check error!
+                    status_cb(false, es.c_str(), std::list<image_ptr_t>()); // TODO: check error!
                 }
             };
         }
@@ -243,7 +251,18 @@ namespace dexpert
             {
                 try {
                     model_list_t models;
+                    auto add = [&models] (const char *name, const char *path) {
+                        model_t model; 
+                        model.name = name;
+                        model.size = 0;
+                        model.hash = "";
+                        model.path = path;
+                        models.push_back(model);
+                    };
 
+                    add("SSD-1B XL", "/hugging-xl/segmind/SSD-1B");
+                    add("Stable Diffusion XL inpainting", "/hugging-xl/diffusers/stable-diffusion-xl-1.0-inpainting-0.1");
+                    
                     auto r = dexpert::py::getModule().attr("list_models")(path);
                     auto seq = r.cast<py11::sequence>();
                     for (size_t i = 0; i < seq.size(); ++i)

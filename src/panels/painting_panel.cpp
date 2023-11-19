@@ -643,10 +643,12 @@ void PaintingPanel::pre_process(const char* method) {
         dexpert::py::pre_process_image(
             method,
             image_panel_->getLayerImage(image_type_image),
-            [&msg, &success, &img] (bool suc, const char *message, dexpert::py::image_ptr_t image) {
+            [&msg, &success, &img] (bool suc, const char *message, std::list<dexpert::py::image_ptr_t> image) {
                 msg = message;
                 success = suc;
-                img = image;
+                if (image.size()) {
+                    img = *image.begin();
+                }
         })
     );
     if (msg) {

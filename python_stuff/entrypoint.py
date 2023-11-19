@@ -1,3 +1,5 @@
+import traceback
+
 import os
 from images.diffusion_routines import run_pipeline
 from utils.settings import set_user_settings, get_setting
@@ -40,7 +42,9 @@ def _list_models(directory=""):
 
 
 def list_models(directory=""):
-   return _list_models(directory) + _list_models(get_setting('add_model_dir', ''))
+    models = _list_models(directory) + _list_models(get_setting('add_model_dir', ''))
+    models = sorted(models, key=lambda x: x["name"].lower())
+    return models
 
 
 if __name__ == '__main__':

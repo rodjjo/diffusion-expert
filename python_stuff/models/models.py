@@ -9,8 +9,13 @@ from diffusers import (
         StableDiffusionControlNetPipeline, 
         StableDiffusionImg2ImgPipeline,
         StableDiffusionInpaintPipeline,
+        AutoPipelineForText2Image,
+        AutoPipelineForImage2Image,
+        AutoPipelineForInpainting,
         ControlNetModel
     )
+
+from diffusers.models.attention_processor import AttnProcessor2_0
 
 import safetensors
 
@@ -28,7 +33,7 @@ CURRENT_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
-def load_model(model_path: str, lora_list: list, reload_model: bool):
+def load_model(model_path: str, lora_list: list, reload_model: bool, for_inpaiting: bool = False):
     global CURRENT_MODEL_PARAMS
     global CURRENT_PIPELINE
     lora_list.sort()
@@ -39,13 +44,14 @@ def load_model(model_path: str, lora_list: list, reload_model: bool):
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
-        params, in_painting = load_stable_diffusion_model(model_path, lora_list=lora_list)
+        params, in_painting, xl_model = load_stable_diffusion_model(model_path, lora_list=lora_list, for_inpainting=for_inpaiting)
         CURRENT_MODEL_PARAMS = {
             'settings_version': settings_version(),
             'path': model_path,
             'lora_list': lora_list,
             'params': params,
-            'in_painting': in_painting
+            'in_painting': in_painting,
+            'xl_model':  xl_model
         }
     gc.collect()
 
@@ -57,7 +63,7 @@ usefp16 = {
 
 def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False):
     global CURRENT_PIPELINE
-    load_model(model_path, lora_list, reload_model)
+    load_model(model_path, lora_list, reload_model, mode == 'inpaint2img')
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
@@ -66,7 +72,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             settings_version() != CURRENT_PIPELINE.get('settings_version'):
         CURRENT_PIPELINE = {}
         gc.collect()
-        controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') else []
+        controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') and not current_model_is_xl_model() else []
         control_model = []
         have_controlnet = False
         model_repos = {
@@ -112,14 +118,32 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 pipe = StableDiffusionControlNetImg2ImgPipeline(**params)
 
         elif mode == 'img2img':
-            pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
+            if current_model_is_xl_model():
+                pipe = AutoPipelineForImage2Image.from_pipe(
+                    CURRENT_MODEL_PARAMS['params']['unet']
+                )
+            else:
+                pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
         elif mode == 'inpaint2img':
-            pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
+            if current_model_is_xl_model():
+                pipe = AutoPipelineForInpainting.from_pipe(
+                    CURRENT_MODEL_PARAMS['params']['unet']
+                )
+            else:
+                pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
         else:
-            pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
+            if current_model_is_xl_model():
+                pipe =  AutoPipelineForText2Image.from_pipe(
+                    CURRENT_MODEL_PARAMS['params']['unet']
+                )
+                pipe.enable_model_cpu_offload()
+            else:
+                pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
         # pipe.enable_model_cpu_offload()
-        pipe.enable_attention_slicing(1)
+        pipe.enable_attention_slicing()
         pipe.enable_xformers_memory_efficient_attention()
+        pipe.unet.set_attn_processor(AttnProcessor2_0())
+
         CURRENT_PIPELINE = {
             'settings_version': settings_version(),
             'mode': mode,
@@ -183,6 +207,8 @@ def models_memory_checker():
 def current_model_is_in_painting():
     return CURRENT_MODEL_PARAMS.get('in_painting', False) is True
 
+def current_model_is_xl_model():
+    return CURRENT_MODEL_PARAMS.get('xl_model', False) is True
 
 def download_sd_model(url, filename):
     download_file(url, MODELS_DIR, filename)

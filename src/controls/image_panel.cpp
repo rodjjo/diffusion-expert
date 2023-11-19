@@ -1091,11 +1091,11 @@ namespace dexpert
         }
 
         dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, weight,
-            [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
+            [this] (bool success, const char *message, std::list<image_ptr_t> image) {
                 if (!success) {
                     show_error(message);
-                } else if (image) {
-                    images_[image_type_image] = image;
+                } else if (image.size()) {
+                    images_[image_type_image] = *image.begin();
                 } else {
                     show_error("Unknown error, upscaler fail. No image was returned");
                 }
@@ -1117,11 +1117,11 @@ namespace dexpert
             return;
         }
         dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), 1, weight,
-            [this] (bool success, const char *message, std::shared_ptr<RawImage> image) {
+            [this] (bool success, const char *message, std::list<image_ptr_t> image) {
                 if (!success) {
                     show_error(message);
-                } else if (image) {
-                    setPasteImageAtSelection(image_type_image, image.get());
+                } else if (image.size()) {
+                    setPasteImageAtSelection(image_type_image, image.begin()->get());
                 } else {
                     show_error("Unknown error, upscaler fail. No image was returned");
                 }

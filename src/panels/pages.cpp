@@ -239,7 +239,6 @@ void Pages::textToImage() {
                 mask = maskRaw->duplicate();
             }
         }
-
         g.reset(new GeneratorImg2Image(
             std::make_shared<SeedGenerator>(),
             false,
@@ -250,6 +249,7 @@ void Pages::textToImage() {
             img,
             mask,
             seed,
+            promptPanel_->getBatchSize(),
             promptPanel_->getWidth(),
             promptPanel_->getHeight(),
             promptPanel_->getSteps(),
@@ -270,6 +270,7 @@ void Pages::textToImage() {
             promptPanel_->getNegativePrompt(),
             get_sd_state()->getSdModelPath(model),
             controlnets,
+            promptPanel_->getBatchSize(),
             seed,
             promptPanel_->getWidth(),
             promptPanel_->getHeight(),
@@ -281,12 +282,24 @@ void Pages::textToImage() {
             reload
         ));
     }
+    
+    if (Fl::event_shift() != 0) {
+        get_sd_state()->clearGenerators();
+    }
 
-    get_sd_state()->clearGenerators();
+    resultsPanel_->goLastImage();
+    bool wasEmpy = get_sd_state()->getGeneratorSize() == 0;
+    bool isFull = get_sd_state()->getGeneratorSize() == 16;
     if (!get_sd_state()->generatorAdd(g)) {
         show_error(get_sd_state()->lastError());
     } else {
-        resultsPanel_->goLastImage();
+        if (isFull) {
+            resultsPanel_->setRow(16 - promptPanel_->getBatchSize());
+        } else if (!wasEmpy) {
+            resultsPanel_->goNextImage();
+        } else {
+            resultsPanel_->setRow(0);
+        }
     }
 }
 

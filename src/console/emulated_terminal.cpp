@@ -151,7 +151,6 @@ namespace dexpert
     bool EmulatedTerminal::init_console()
     {
         LOG("CONSOLE INITIALIZE.");
-
         const char *stream_name = src_type == log_source_stdout ? "stdout" : "stderr";
 
         if (MAKE_PIPE(pipefd) == -1)

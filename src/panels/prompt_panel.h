@@ -33,6 +33,7 @@ class PromptPanel: public EventListener, public Fl_Group {
     const char *getNegativePrompt();
     const char *getSdModel(bool for_inpainting);
     int getSeed();
+    int getBatchSize();
     int getSteps();
     int getWidth();
     int getHeight();
@@ -59,6 +60,7 @@ class PromptPanel: public EventListener, public Fl_Group {
    Fl_Multiline_Input *positivePrompt_;
    Fl_Multiline_Input *negativePrompt_;
    Fl_Int_Input *seed_;
+   Fl_Int_Input *batch_;
    Fl_Int_Input *steps_;
    Fl_Float_Input *guidance_;
    Fl_Float_Input *var_strength_;

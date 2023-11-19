@@ -30,6 +30,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
         this->interrogate("DeepBooru");
     }));
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
+    batch_ = new Fl_Int_Input(0, 0, 1, 1, "Batch size");
     steps_ = new Fl_Int_Input(0, 0, 1, 1, "Steps");
     guidance_ = new Fl_Float_Input(0, 0, 1, 1, "CFG");
     var_strength_ = new Fl_Float_Input(0, 0, 1, 1, "Var Strength");
@@ -48,6 +49,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     positivePrompt_->align(FL_ALIGN_TOP_LEFT);
     negativePrompt_->align(FL_ALIGN_TOP_LEFT);
     seed_->align(FL_ALIGN_TOP_LEFT);
+    batch_->align(FL_ALIGN_TOP_LEFT);
     steps_->align(FL_ALIGN_TOP_LEFT);
     guidance_->align(FL_ALIGN_TOP_LEFT);
     width_->align(FL_ALIGN_TOP_LEFT);
@@ -63,6 +65,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     interrogateBtn2_->tooltip("Interrogate DeepBooru");
 
     seed_->value("-1");
+    batch_->value("1");
     steps_->value("25");
     guidance_->value("7.5");
     var_strength_->value("0.1");
@@ -122,6 +125,19 @@ void PromptPanel::setImagePanel(PaintingPanel *panel) {
 int PromptPanel::getSeed() {
     int result = -1;
     sscanf(seed_->value(), "%d", &result);
+    return result;
+}
+
+int PromptPanel::getBatchSize() {
+    int result = 1;
+    sscanf(batch_->value(), "%d", &result);
+    
+    if (result < 1) {
+        result = 1;
+    } 
+    if (result > 16) {
+        result = 16;
+    }
     return result;
 }
 
@@ -244,6 +260,12 @@ void PromptPanel::alignComponents() {
     var_strength_->resize(
         height_->x() + height_->w() + 5, 
         height_->y(),
+        75,
+        25
+    );
+    batch_->resize(
+        var_strength_->x() + var_strength_->w() + 5, 
+        var_strength_->y(),
         75,
         25
     );

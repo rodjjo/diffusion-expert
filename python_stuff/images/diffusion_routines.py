@@ -81,6 +81,7 @@ def _run_pipeline(pipeline_type, params):
     steps = params["steps"]
     width = params["width"]
     height = params["height"]
+    batch_size = params.get('batch_size', 1)
     reload_model = params.get("reload_model", False) 
     input_image = params.get("image")
     input_mask = params.get("mask")
@@ -100,7 +101,10 @@ def _run_pipeline(pipeline_type, params):
     shape = (4, height // 8, width // 8 )
     latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
     
-    generator = None if seed == -1  else torch.Generator(device=device).manual_seed(seed)
+    generator = None if seed == -1  else [
+        torch.Generator(device=device).manual_seed(seed + i)
+        for i in range(batch_size)
+    ]
 
     if pipeline_type == 'img2img' and input_mask is not None:
         pipeline_type = 'inpaint2img'
@@ -113,22 +117,26 @@ def _run_pipeline(pipeline_type, params):
     pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list, reload_model=reload_model) 
     report("pipeline created")
 
+    '''
     if pipeline_type == 'inpaint2img':
         if not current_model_is_in_painting():
-            return {
+            return [{
                 "error": "The current model is not for inpainting"
-            }
+            }]
     elif current_model_is_in_painting():
-        return {
+        return [{
             "error": "The current model is a inpainting model"
-        }
+        }]
+    '''
 
     def progress_preview(step, timestep, latents):
         progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
         if progress_canceled():
             raise CancelException()
     
-    additional_args = {}
+    additional_args = {
+        'generator': generator
+    }
     if pipeline_type == 'txt2img':
         additional_args = {
             'width': width, 
@@ -175,10 +183,12 @@ def _run_pipeline(pipeline_type, params):
             additional_args['controlnet_conditioning_image'] = images
             additional_args['controlnet_conditioning_scale'] = conds
     elif pipeline_type == 'inpaint2img':
+        '''
         if not current_model_is_in_painting():
-            return {
+            return [{
                 "error": "The current model is not for in painting"
-            }
+            }]
+        '''
         image = pil_from_dict(input_image)
         mask = pil_from_dict(input_mask)
         
@@ -213,22 +223,39 @@ def _run_pipeline(pipeline_type, params):
     latents_noise.to(device)
     report("generating the variation" if variation_enabled else "generating the image")
     with torch.inference_mode(), torch.autocast(device):
+        additional_args['callback'] = progress_preview
+        additional_args['callback_steps'] = 1
+        if type(pipeline.scheduler).__name__ == 'LCMScheduler':
+            if pipeline_type == 'txt2img':
+                cfg = 0
+            elif pipeline_type == 'inpaint2img':
+                cfg = 4
+            else:
+                cfg = 1
+            if steps < 30:
+                steps = 4
+            elif steps > 8:
+                steps = 8
+            if  batch_size > 1 and additional_args.get('latents') is not None:
+                del additional_args['latents']
+
+
         result = pipeline(
             prompt, 
             negative_prompt=negative, 
             guidance_scale=cfg, 
             num_inference_steps=steps,
-            generator=generator,
-            callback=progress_preview,
+            batch_size=batch_size,
+            num_images_per_prompt=batch_size,
             **additional_args,
-        ).images[0]
+        ).images 
 
     if restore_faces:
         progress(99, 100, pil_as_dict(result)) 
-        result = gfpgan_restore_faces(result)
-
+        for i, r in enumerate(result):
+            result[i] = gfpgan_restore_faces(r)
     report("image generated")
-    return pil_as_dict(result)
+    return [pil_as_dict(r) for r in result]
 
 
 def run_pipeline(mode: str, params: dict):

@@ -4,6 +4,7 @@
 #ifndef SRC_PYTHON_RAW_IMAGE_H_
 #define SRC_PYTHON_RAW_IMAGE_H_
 
+#include <list>
 #include <memory>
 #include <Python.h>
 #include <pybind11/embed.h> 
@@ -50,6 +51,7 @@ class RawImage {
     image_ptr_t resizeInTheCenter(uint32_t x, uint32_t y);
     image_ptr_t getCrop(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     image_ptr_t ensureMultipleOf8();
+    image_ptr_t fit1024();
     image_ptr_t resizeLeft(int value);
     image_ptr_t resizeRight(int value);
     image_ptr_t resizeTop(int value);
@@ -73,6 +75,7 @@ class RawImage {
 };
 
 image_ptr_t rawImageFromPyDict(py11::dict &image);
+std::list<image_ptr_t> rawImageFromPyDictList(py11::list &images);
 image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha);
 
 }  // namespace py

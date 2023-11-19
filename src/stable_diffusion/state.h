@@ -64,6 +64,7 @@ class StableDiffusionState {
     RawImage *getResultsImage(int index);
 
     size_t getGeneratorSize();
+    int lastBatchSize();
    
 private:
     void scroll_down_generators();
@@ -72,6 +73,7 @@ private:
 private:
     std::list<model_info_t> sdModels_;
     std::string last_error_;
+    std::list<image_ptr_t> generated_images_;
     std::vector<std::shared_ptr<GeneratorBase> > generators_;
 };
     

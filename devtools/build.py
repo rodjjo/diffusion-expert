@@ -82,6 +82,7 @@ def ensure_have_7zip():
 def ensure_have_cmake():
     ensure_have_tool('CMake', 'https://cmake.org/download/', ['cmake', '--version'])
 
+
 def apply_patches():
     try:
         nullfile = open(os.devnull, 'w')
