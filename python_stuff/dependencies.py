@@ -47,7 +47,8 @@ def have_dependencies():
         'torchdiffeq',
         'cv2',
         'filterpy',
-        'future'
+        'future',
+        'rembg',
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):

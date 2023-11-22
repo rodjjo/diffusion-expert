@@ -33,7 +33,8 @@ class GeneratorTxt2Image: public GeneratorBase {
             float var_stren,
             bool restore_faces,
             bool enable_codeformer,
-            bool reload_model
+            bool reload_model,
+            bool use_lcm
         );
 
         void generate(
@@ -60,6 +61,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         bool restore_faces_ = false;
         bool enable_codeformer_ = false;
         bool reload_model_ = false;
+        bool use_lcm_ = false;
 };
 
 

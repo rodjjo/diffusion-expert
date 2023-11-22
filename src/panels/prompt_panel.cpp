@@ -17,6 +17,8 @@ namespace dexpert
 namespace {
     std::string last_prompt;
     std::string last_negative_prompt;
+    std::string last_steps = "25";
+    bool last_use_lcm = false;
 }
 
 PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group(x, y, w, h) {
@@ -39,6 +41,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     models_ = new Fl_Choice(0, 0, 1, 1, "Model");
     modelsInpaint_ = new Fl_Choice(0, 0, 1, 1, "Inpainting Model");
     restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
+    use_lcm_ = new Fl_Check_Button(0, 0, 1, 1, "Boost Speed");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -66,11 +69,15 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
 
     seed_->value("-1");
     batch_->value("1");
-    steps_->value("25");
+    steps_->value(last_steps.c_str());
     guidance_->value("7.5");
     var_strength_->value("0.1");
     width_->value("512");
     height_->value("512");
+
+    if (last_use_lcm) {
+        use_lcm_->value(1);
+    }
 
     alignComponents();
     refreshModels();
@@ -142,14 +149,17 @@ int PromptPanel::getBatchSize() {
 }
 
 int PromptPanel::getSteps() {
+    last_steps = steps_->value();
     int result = 50;
     sscanf(steps_->value(), "%d", &result);
     if (result < 1) {
         steps_->value("1");
+        last_steps = steps_->value();
         return 1;
     }
     if (result > 150) {
         steps_->value("150");
+        last_steps = steps_->value();
         return 150;
     }
     return result;
@@ -283,6 +293,12 @@ void PromptPanel::alignComponents() {
     );
     restore_face_->resize(
         x() + 5,
+        models_->y() + models_->h() + 5,
+        120,
+        25
+    );
+    use_lcm_->resize(
+        restore_face_->x() +  restore_face_->w() + 5,
         models_->y() + models_->h() + 5,
         120,
         25
@@ -437,6 +453,11 @@ bool PromptPanel::shouldReload(bool clear) {
         return true;
     }
     return false;
+}
+
+bool PromptPanel::shouldUseLcm() {
+    last_use_lcm = use_lcm_->value() != 0;
+    return last_use_lcm;
 }
 
 } // namespace dexpert

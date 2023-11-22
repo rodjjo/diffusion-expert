@@ -192,7 +192,7 @@ void Pages::textToImage() {
         return;
     }
 
-    bool is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL;
+    bool is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL && inputImage_->getInpaintMode() != inpaint_img2img;
     const char* model = promptPanel_->getSdModel(is_inpaint);
 
     if (model == NULL) {
@@ -260,7 +260,8 @@ void Pages::textToImage() {
             false,
             reload,
             inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
-            inputImage_->getInpaintMode()
+            inputImage_->getInpaintMode(),
+            promptPanel_->shouldUseLcm()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -279,7 +280,8 @@ void Pages::textToImage() {
             promptPanel_->getVariationStrength(),
             promptPanel_->shouldRestoreFaces(),
             false,
-            reload
+            reload,
+            promptPanel_->shouldUseLcm()
         ));
     }
     

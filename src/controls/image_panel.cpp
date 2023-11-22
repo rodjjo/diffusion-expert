@@ -1084,6 +1084,15 @@ namespace dexpert
         setScroll(0, 0);
     }
 
+    void ImagePanel::flip(bool vertical) {
+        auto img = images_[image_type_image].get();
+        if (!img) {
+            return;
+        }
+        images_[image_type_image] = img->flip(vertical);
+        scrollAgain();
+    }
+
     void ImagePanel::upScale(float scale, float weight) {
         auto img = images_[image_type_image].get();
         if (!img) {
@@ -1108,6 +1117,24 @@ namespace dexpert
         }
 
         scrollAgain();
+    }
+
+    void ImagePanel::removeSelectionBackground() {
+        auto img = getSelectedImage(image_type_image);
+        if (!img) {
+            show_error("No Selection!");
+            return;
+        }
+        dexpert::py::get_py()->execute_callback(dexpert::py::remove_background(img.get(),
+            [this] (bool success, const char *message, std::list<image_ptr_t> image) {
+                if (!success) {
+                    show_error(message);
+                } else if (image.size()) {
+                    setPasteImageAtSelection(image_type_image, image.begin()->get());
+                } else {
+                    show_error("Unknown error, upscaler fail. No image was returned");
+                }
+        }));
     }
 
     void ImagePanel::restoreSelectionFace(float weight) {

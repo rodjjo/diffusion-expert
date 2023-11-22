@@ -50,6 +50,7 @@ class txt2img_config_t {
     bool restore_faces = false;
     bool enable_codeformer = false;
     bool reload_model = false;
+    bool use_lcm = false;
     std::list<control_net_t> controlnets;
     virtual ~txt2img_config_t() {};
     virtual const void fill_prompt_dict(py11::dict &params) const;
@@ -100,6 +101,7 @@ callback_t configure_stable_diffusion(status_callback_t status_cb);
 callback_t open_image(const char* path, image_callback_t status_cb);
 callback_t save_image(const char* path, RawImage *image, status_callback_t status_cb);
 callback_t upscale_image(RawImage *image, float scale, float weight, image_callback_t status_cb);
+callback_t remove_background(RawImage *image, image_callback_t status_cb);
 callback_t pre_process_image(const char *mode, RawImage *image, image_callback_t status_cb);
 callback_t txt2_image(const txt2img_config_t& config, image_callback_t status_cb); 
 callback_t img2_image(const img2img_config_t& config, image_callback_t status_cb); 

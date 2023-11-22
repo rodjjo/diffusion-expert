@@ -79,6 +79,7 @@ ConfigWindow::ConfigWindow() {
     schedulers_->add("DDIMScheduler");
     schedulers_->add("LMSDiscreteScheduler");
     schedulers_->add("LCMScheduler");
+    schedulers_->add("EulerAncestralDiscreteScheduler");
 
     schedulers_->value(0);
     

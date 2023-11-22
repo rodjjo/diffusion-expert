@@ -22,11 +22,12 @@ namespace dexpert
         float var_stren,
         bool restore_faces,
         bool enable_codeformer,
-        bool reload_model
+        bool reload_model,
+        bool use_lcm
     ) : GeneratorBase(seed_gen, variation), prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
         seed_(seed), batch_size_(batch_size), width_(width), height_(height), steps_(steps), 
         cfg_(cfg), var_strength_(var_stren), 
-        restore_faces_(restore_faces), enable_codeformer_(enable_codeformer), reload_model_(reload_model)
+        restore_faces_(restore_faces), enable_codeformer_(enable_codeformer), reload_model_(reload_model), use_lcm_(use_lcm)
         {
 }
 
@@ -49,7 +50,8 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate(bool variation, ima
         this->var_strength_,
         this->restore_faces_,
         this->enable_codeformer_,
-        false // only the first one should reload the model
+        false, // only the first one should reload the model
+        this->use_lcm_
     ));
     if (img) {
         d->setImage(img);
@@ -79,6 +81,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb) {
     params.restore_faces = restore_faces_;
     params.enable_codeformer = enable_codeformer_;
     params.reload_model = reload_model_;
+    params.use_lcm = use_lcm_;
     reload_model_ = false;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {

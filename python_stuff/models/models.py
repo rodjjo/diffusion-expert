@@ -33,7 +33,7 @@ CURRENT_PIPELINE = {}
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
-def load_model(model_path: str, lora_list: list, reload_model: bool, for_inpaiting: bool = False):
+def load_model(model_path: str, lora_list: list, reload_model: bool, for_inpaiting: bool = False, use_lcm = False):
     global CURRENT_MODEL_PARAMS
     global CURRENT_PIPELINE
     lora_list.sort()
@@ -44,14 +44,15 @@ def load_model(model_path: str, lora_list: list, reload_model: bool, for_inpaiti
         CURRENT_MODEL_PARAMS = {}
         CURRENT_PIPELINE = {}
         gc.collect()
-        params, in_painting, xl_model = load_stable_diffusion_model(model_path, lora_list=lora_list, for_inpainting=for_inpaiting)
+        params, in_painting, xl_model, tiny_vae = load_stable_diffusion_model(model_path, lora_list=lora_list, for_inpainting=for_inpaiting, use_lcm=use_lcm)
         CURRENT_MODEL_PARAMS = {
             'settings_version': settings_version(),
             'path': model_path,
             'lora_list': lora_list,
             'params': params,
             'in_painting': in_painting,
-            'xl_model':  xl_model
+            'xl_model':  xl_model,
+            'tiny_vae': tiny_vae
         }
     gc.collect()
 
@@ -62,12 +63,19 @@ usefp16 = {
 
 
 def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False):
+    current_mode = mode
+    if mode.startswith('lcm_'):
+        use_lcm = True
+        mode = mode.split('lcm_', maxsplit=1)[1]
+    else:
+        use_lcm = False    
     global CURRENT_PIPELINE
-    load_model(model_path, lora_list, reload_model, mode == 'inpaint2img')
+    reload_model = reload_model or current_mode != CURRENT_PIPELINE.get("mode")
+    load_model(model_path, lora_list, reload_model, mode == 'inpaint2img', use_lcm=use_lcm)
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
-            mode != CURRENT_PIPELINE.get("mode") or \
+            current_mode != CURRENT_PIPELINE.get("mode") or \
             reload_model or \
             settings_version() != CURRENT_PIPELINE.get('settings_version'):
         CURRENT_PIPELINE = {}
@@ -140,13 +148,16 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             else:
                 pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
         # pipe.enable_model_cpu_offload()
+        if CURRENT_MODEL_PARAMS['tiny_vae']:
+            pipe.vae = CURRENT_MODEL_PARAMS['tiny_vae']
+        pipe.to('cuda')
         pipe.enable_attention_slicing()
         pipe.enable_xformers_memory_efficient_attention()
         pipe.unet.set_attn_processor(AttnProcessor2_0())
 
         CURRENT_PIPELINE = {
             'settings_version': settings_version(),
-            'mode': mode,
+            'mode': current_mode,
             'model_path': model_path,
             'pipeline': pipe,
             'contronet': controlnet_modes

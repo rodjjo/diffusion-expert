@@ -20,6 +20,7 @@ typedef enum {
     inpaint_fill,
     inpaint_wholepicture,
     inpaint_wholefill,
+    inpaint_img2img,
     // inpaint_none,
     // keep inpaint_mode_count at the end
     inpaint_mode_count

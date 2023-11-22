@@ -62,7 +62,8 @@ namespace {
         "Original image",
         "Fill image",
         "Whole image (original)",
-        "Whole image (fill)"
+        "Whole image (fill)",
+        "Use Img2Image",
         // "Latent Noise",
         //"Latent Nothing"
     };
@@ -140,7 +141,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     }));
 
     btnFgColor_.reset(new Button([this] {
-        uint8_t r = 0, g = 0, b = 0;
+        uint8_t r = 255, g = 255, b = 255;
         btnFgColor_->getColor(&r, &g, &b);
         if (pickup_color("Foreground color", &r, &g, &b)) {
             btnFgColor_->setColor(r, g, b);
@@ -186,6 +187,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
     btnFgColor_->tooltip("Set the brush color");
     btnFgColor_->position(1, 1);
     btnFgColor_->size(30, 30);
+    btnFgColor_->setColor(255, 255, 255);
 
     denoise_->align(FL_ALIGN_TOP_LEFT);
     denoise_->tooltip("Image similarity %");

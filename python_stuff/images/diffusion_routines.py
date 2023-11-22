@@ -2,6 +2,7 @@ import gc
 import re
 import torch
 import os
+from datetime import datetime
 from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
@@ -83,10 +84,17 @@ def _run_pipeline(pipeline_type, params):
     height = params["height"]
     batch_size = params.get('batch_size', 1)
     reload_model = params.get("reload_model", False) 
+    use_lcm = params.get("use_lcm", False) 
     input_image = params.get("image")
     input_mask = params.get("mask")
     inpaint_mode = params.get("inpaint_mode", "original")
     controlnets = params.get("controlnets", [])
+
+    if 'img2img' in pipeline_type  and input_mask is not None:
+        pipeline_type = pipeline_type.replace('img2img', 'inpaint2img')
+
+    if 'inpaint2img' in pipeline_type and  inpaint_mode == "img2img":
+        pipeline_type = pipeline_type.replace('inpaint2img', 'img2img')
 
     if width % 8 != 0:
         width += 8 - width % 8
@@ -106,15 +114,17 @@ def _run_pipeline(pipeline_type, params):
         for i in range(batch_size)
     ]
 
-    if pipeline_type == 'img2img' and input_mask is not None:
-        pipeline_type = 'inpaint2img'
-
     set_prefix(REPORT_PREFIXES.get(pipeline_type, "Text to Image"))
 
     report("started")
 
     report("creating the pipeline")
-    pipeline = create_pipeline(pipeline_type, model, controlnets=controlnets, lora_list=lora_list, reload_model=reload_model) 
+    pipeline = create_pipeline(
+        f'{"lcm_" if use_lcm else ""}{pipeline_type}', model, 
+        controlnets=controlnets, 
+        lora_list=lora_list, 
+        reload_model=reload_model
+    ) 
     report("pipeline created")
 
     '''
@@ -130,7 +140,10 @@ def _run_pipeline(pipeline_type, params):
     '''
 
     def progress_preview(step, timestep, latents):
-        progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
+        if use_lcm:
+            progress(step, steps, {})
+        else:
+            progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
         if progress_canceled():
             raise CancelException()
     
@@ -192,7 +205,7 @@ def _run_pipeline(pipeline_type, params):
         image = pil_from_dict(input_image)
         mask = pil_from_dict(input_mask)
         
-        if inpaint_mode != 'original':
+        if inpaint_mode != 'original' and inpaint_mode != 'img2img':
             image = inpaint_fill_image(image, mask)
 
         additional_args = {
@@ -219,40 +232,46 @@ def _run_pipeline(pipeline_type, params):
             additional_args['controlnet_conditioning_image'] = images
             additional_args['controlnet_conditioning_scale'] = conds
 
-    pipeline.to(device)
     latents_noise.to(device)
     report("generating the variation" if variation_enabled else "generating the image")
     with torch.inference_mode(), torch.autocast(device):
         additional_args['callback'] = progress_preview
         additional_args['callback_steps'] = 1
+
+        if len(controlnets):
+            batch_size = 1
+
         if type(pipeline.scheduler).__name__ == 'LCMScheduler':
             if pipeline_type == 'txt2img':
-                cfg = 0
+                if cfg > 2:
+                    cfg = 2
             elif pipeline_type == 'inpaint2img':
-                cfg = 4
+                if cfg > 4:
+                    cfg = 4
             else:
-                cfg = 1
-            if steps < 30:
-                steps = 4
-            elif steps > 8:
-                steps = 8
-            if  batch_size > 1 and additional_args.get('latents') is not None:
-                del additional_args['latents']
+                if cfg > 1:
+                    cfg = 1
 
+            if steps > 8:
+                steps = 8
+        if  batch_size > 1 and additional_args.get('latents') is not None:
+            del additional_args['latents']
+
+        if batch_size > 1:
+            additional_args['batch_size'] = batch_size
+            additional_args['num_images_per_prompt'] = batch_size
 
         result = pipeline(
             prompt, 
             negative_prompt=negative, 
             guidance_scale=cfg, 
             num_inference_steps=steps,
-            batch_size=batch_size,
-            num_images_per_prompt=batch_size,
             **additional_args,
         ).images 
 
     if restore_faces:
-        progress(99, 100, pil_as_dict(result)) 
         for i, r in enumerate(result):
+            progress(99, 100, pil_as_dict(r)) 
             result[i] = gfpgan_restore_faces(r)
     report("image generated")
     return [pil_as_dict(r) for r in result]
@@ -262,10 +281,16 @@ def run_pipeline(mode: str, params: dict):
     progress(0, 100, {})
 
     try:
+        time_start = datetime.utcnow()
         data = _run_pipeline(mode, params)   
+        end_time = datetime.utcnow()
+        dur = round((end_time - time_start).total_seconds(), 2)
+        report(f"Image generation took {dur} seconds")
     except CancelException:
         print("Image generation canceled")
         data = {"error": "Operation canceled by the user"}
+    
+    torch.cuda.empty_cache()
     gc.collect()
 
     progress(100, 100, {})     

@@ -91,6 +91,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { resizeSelection(768); }, "", "Selection/Expand/768x768", "^2");
     menu_->addItem([this] { resizeSelection(1024); }, "", "Selection/Expand/1024x1024", "^3");
     menu_->addItem([this] { restoreSelectionFace(); }, "", "Selection/Restore Face");
+    menu_->addItem([this] { removeSelectionBackground(); }, "", "Selection/Remove background");
     menu_->addItem([this] { resizeCanvas();  }, "", "Image/Resize Canvas");
     menu_->addItem([this] { resizePicture(); }, "", "Image/Resize Picture");
     menu_->addItem([this] { resizeLeft();  }, "", "Image/Resize direction/Left");
@@ -103,6 +104,8 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(3.0); }, "", "Image/Upscale/3x");
     menu_->addItem([this] { upScale(3.5); }, "", "Image/Upscale/3.5x");
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
+    menu_->addItem([this] { flip(true); }, "", "Image/Flip/Vertical");
+    menu_->addItem([this] { flip(false); }, "", "Image/Flip/Horizontal");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
 }
@@ -163,8 +166,17 @@ void MainWindow::upScale(float scale) {
     image_editor_->upScale(scale, getConfig().gfpgan_get_weight());
 }
 
+void MainWindow::flip(bool vertical) {
+    image_editor_->flip(vertical);
+}
+
 void MainWindow::restoreSelectionFace() {
     image_editor_->restoreSelectionFace(getConfig().gfpgan_get_weight());
+    image_editor_->pasteImage();
+}
+
+void MainWindow::removeSelectionBackground() {
+    image_editor_->removeSelectionBackground();
     image_editor_->pasteImage();
 }
 

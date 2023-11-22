@@ -156,6 +156,27 @@ namespace dexpert
             };
         }
 
+        callback_t remove_background(RawImage *image, image_callback_t status_cb)
+        {
+            enable_progress_window(false);
+            return [status_cb, image]
+            {
+                try {
+                    py11::dict d;
+                    py11::dict params;
+                    // params["test"] = weight;
+                    image->toPyDict(d);
+                    auto r = dexpert::py::getModule().attr("remove_background")(d, params);
+                    py11::dict d2 = r.cast<py11::dict>();
+                    auto img = dexpert::py::rawImageFromPyDict(d2);
+                    status_cb(true, NULL, {img}); // TODO: check error!
+                } catch(std::runtime_error e) {
+                    status_cb(false, getError(e), std::list<image_ptr_t>()); // TODO: check error!
+                }
+            };
+        }
+
+
         const void txt2img_config_t::fill_prompt_dict(py11::dict &params) const
         {
             params["prompt"] = this->prompt;
@@ -170,6 +191,7 @@ namespace dexpert
             params["variation"] = this->variation;
             params["var_stren"] = this->var_stren;
             params["reload_model"] = this->reload_model;
+            params["use_lcm"] = this->use_lcm;
             params["restore_faces"] = this->restore_faces;
             params["enable_codeformer"] = this->enable_codeformer;
 
@@ -262,6 +284,8 @@ namespace dexpert
 
                     add("SSD-1B XL", "/hugging-xl/segmind/SSD-1B");
                     add("Stable Diffusion XL inpainting", "/hugging-xl/diffusers/stable-diffusion-xl-1.0-inpainting-0.1");
+                    add("Segmind Small-SD", "/hugging-xl/segmind/small-sd");
+                    add("SimianLuo LCM_Dreamshaper_v7", "/hugging-xl/SimianLuo/LCM_Dreamshaper_v7");
                     
                     auto r = dexpert::py::getModule().attr("list_models")(path);
                     auto seq = r.cast<py11::sequence>();

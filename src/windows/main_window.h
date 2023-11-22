@@ -52,7 +52,9 @@ class MainWindow : Fl_Menu_Window {
   void resizeCanvas();
   void resizeSelection(int width);
   void restoreSelectionFace();
+  void removeSelectionBackground();
   void upScale(float scale);
+  void flip(bool vertical);
   void closeImage();
 
  private:

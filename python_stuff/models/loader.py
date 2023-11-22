@@ -5,6 +5,7 @@ import torch
 from collections import defaultdict
 from diffusers import (
     AutoencoderKL,
+    AutoencoderTiny,
     PNDMScheduler,
     DDIMScheduler,
     AutoPipelineForText2Image,
@@ -622,23 +623,41 @@ def load_embeddings(text_encoder, tokenizer):
 
 
 def load_lora_list(lora_list, unet, text_model):
+    lora_list.sort(key=lambda s: (2, s) if 'lcm' in s[0] else (1, s))
     wsum = 0
     for lm in lora_list:
+        if 'lcm' in lm[0]:
+            continue
         wsum += lm[1]
     if wsum > 1:
         scale = 1.0 / wsum
     else:
         scale = 1
     for lm in lora_list:
+        if 'lcm' in lm[0]:
+            report(f"Adding lora {os.path.basename(lm[0])} with weight 1.0")
+            load_lora_weights(unet, text_model, lm[0], 1.0)    
+            continue
         w = scale * lm[1]
         report(f"Adding lora {os.path.basename(lm[0])} with weight {w}")
         load_lora_weights(unet, text_model, lm[0], w)
 
 
-def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting):
+MODEL_RAM_CACHE = {
+    "inpaint": None,
+    "normal": None,
+}
+
+def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting: bool, use_lcm: bool):
     report(f"loading {model_path}")
 
     loader_class = AutoPipelineForInpainting if for_inpainting else AutoPipelineForText2Image
+
+    should_convert = True
+    if for_inpainting:
+        cache_key = 'inpaint'
+    else:
+        cache_key = 'normal'
     
     xl_model = 'xl' in model_path.lower()
     cloud_word = '/hugging/' if '/hugging/' in model_path else '/hugging-xl/'
@@ -655,23 +674,34 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             torch_dtype=usefp16[get_setting('use_float16', True)],
             cache_dir=CACHE_DIR
         )
-    elif model_path.endswith('.safetensors'):
-        checkpoint = safetensors.torch.load_file(model_path, device="cpu")
     else:
-        checkpoint = torch.load(model_path, map_location="cpu")
-    checkpoint = get_state_dict_from_checkpoint(checkpoint)
+        key = 'inpaint' if for_inpainting else 'normal'
+        if MODEL_RAM_CACHE[key] and MODEL_RAM_CACHE[key]['path'] == model_path:
+            checkpoint = MODEL_RAM_CACHE[key]['checkpoint'] 
+            should_convert = False
+        elif model_path.endswith('.safetensors'):
+            checkpoint = safetensors.torch.load_file(model_path, device="cpu")
+        else:
+            checkpoint = torch.load(model_path, map_location="cpu")
+
+    if should_convert:
+        checkpoint = get_state_dict_from_checkpoint(checkpoint)
+
     report("model loaded")
 
     if not from_cloud:
-        b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
-
-        if b is not None and b.shape[1] == 9:
-            in_painting = True
+        # b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
+        #if b is not None and b.shape[1] == 9:
+        #    in_painting = True
+        #    inference_file = 'v1-inpainting-inference.yaml'
+        #else:
+        #    in_painting = False
+        #    inference_file = 'v1-inference.yaml'
+        in_painting = for_inpainting
+        if for_inpainting:
             inference_file = 'v1-inpainting-inference.yaml'
         else:
-            in_painting = False
             inference_file = 'v1-inference.yaml'
-
         inference_path = os.path.join(CONFIG_DIR, inference_file)
 
         report(f"loading {inference_path}")
@@ -682,9 +712,14 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         report(f"inference config loaded")
 
     scheduler_name = get_setting('scheduler', 'PNDMScheduler')
+
+    if use_lcm:
+        report("Using LCMScheduler to speed up..")
+        scheduler_name = 'LCMScheduler'
+
     if xl_model:
         pass
-    elif scheduler_name == 'LCMScheduler':
+    elif scheduler_name == 'LCMScheduler' or use_lcm:
         scheduler = LCMScheduler.from_config(checkpoint.scheduler.config) if from_cloud else LCMScheduler(
             beta_start=beta_start,
             beta_end=beta_end,
@@ -693,6 +728,13 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             set_alpha_to_one=False,
             prediction_type="epsilon",
         ) 
+    elif scheduler_name == 'EulerAncestralDiscreteScheduler':
+        scheduler = EulerAncestralDiscreteScheduler(
+            beta_start=beta_start,
+            beta_end=beta_end,
+            beta_schedule="scaled_linear",
+            prediction_type="epsilon"
+        )
     elif scheduler_name == 'DDIMScheduler' or xl_model:
         if xl_model:
             scheduler = EulerDiscreteScheduler.from_config(checkpoint.scheduler.config) if from_cloud else EulerDiscreteScheduler(**scheduler_config_sdxl)
@@ -722,6 +764,9 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         )
     else:
          scheduler = LMSDiscreteScheduler.from_config(checkpoint.scheduler.config) if from_cloud else LMSDiscreteScheduler(beta_start=beta_start, beta_end=beta_end, beta_schedule="scaled_linear")
+    
+    vae = None
+    tiny_vae = None
 
     if not xl_model:
         if from_cloud:
@@ -735,13 +780,22 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
                 'safety_checker': None,
                 'feature_extractor': None,
                 'requires_safety_checker': False
-            }, False, xl_model
+            }, False, xl_model, False
         # Convert the UNet2DConditionModel model.
         report("converting UNet2DConditionModel model (unet-config)")
-        unet_config = create_unet_diffusers_config(config)
-        converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
-        report("unet config created")
 
+        unet_config = create_unet_diffusers_config(config)
+        if should_convert:
+            converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
+            cached = {
+                'checkpoint': converted_unet_checkpoint,
+                'path': model_path,
+            }
+            MODEL_RAM_CACHE[cache_key] = cached
+        else:
+            converted_unet_checkpoint = MODEL_RAM_CACHE[cache_key]['checkpoint']
+        
+        report("unet config created")
         unet = UNet2DConditionModel(**unet_config)
         unet.load_state_dict(converted_unet_checkpoint, strict=True)
     else:
@@ -752,9 +806,15 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             torch_dtype=usefp16[get_setting('use_float16', True)],
             cache_dir=CACHE_DIR
         )
-        pipe.load_lora_weights( "latent-consistency/lcm-lora-ssd-1b", cache_dir=CACHE_DIR)
-        pipe.fuse_lora()
-        scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        SchedulerClass = pipe.scheduler.__class__ if for_inpainting or not use_lcm else LCMScheduler        
+        if SchedulerClass == LCMScheduler:
+            pipe.load_lora_weights( "latent-consistency/lcm-lora-ssd-1b", cache_dir=CACHE_DIR)
+            pipe.fuse_lora() 
+            tiny_vae = (MODEL_RAM_CACHE[cache_key] or {}).get('taesd_xl') or AutoencoderTiny.from_pretrained("madebyollin/taesdxl", cache_dir=CACHE_DIR, torch_dtype=usefp16[get_setting('use_float16', True)])
+            if MODEL_RAM_CACHE[cache_key]:
+                MODEL_RAM_CACHE[cache_key]['taesd_xl'] = tiny_vae
+
+        scheduler = SchedulerClass.from_config(pipe.scheduler.config)
         pipe.scheduler = scheduler
         unet = pipe
         vae = pipe.vae
@@ -767,24 +827,26 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         unet = unet.half()
 
     report("unet loaded config")
-
-    report("downloading VAE. please wait")
-
-    if not xl_model:
+    if not xl_model and vae is None:
         local_files_only = False
         if os.path.exists(os.path.join(CACHE_DIR, 'models--CompVis--stable-diffusion-v1-4', 'snapshots')):
             local_files_only = True
-        vae = AutoencoderKL.from_pretrained(
+        vae = MODEL_RAM_CACHE.get('vae') or AutoencoderKL.from_pretrained(
             'CompVis/stable-diffusion-v1-4', 
             subfolder="vae", torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
+        MODEL_RAM_CACHE['vae'] = vae
+        report("VAE loaded")
+        if use_lcm:
+            tiny_vae = (MODEL_RAM_CACHE[cache_key] or {}).get('taesd') or AutoencoderTiny.from_pretrained("madebyollin/taesd", cache_dir=CACHE_DIR, torch_dtype=usefp16[get_setting('use_float16', True)])
+            if MODEL_RAM_CACHE[cache_key]:
+                MODEL_RAM_CACHE[cache_key]['taesd'] = tiny_vae
+            report("AutoencoderTiny Vae loaded")
     #else:
     #    vae = AutoencoderKL.from_pretrained(
     #        "segmind/SSD-1B", 
     #        subfolder='vae',
     #        torch_dtype=usefp16[get_setting('use_float16', True)], cache_dir=CACHE_DIR)
-
-
-    report("VAE loaded")
+            
 
     device_name = get_setting('device', 'cuda')
     if not xl_model:
@@ -805,15 +867,17 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         requires_safety_checker = False
     elif text_model_type == "FrozenCLIPEmbedder":
         report("converting ldm clip")
-        text_model = convert_ldm_clip_checkpoint(checkpoint)
+        text_model = (MODEL_RAM_CACHE[cache_key] or {}).get('text_model') or convert_ldm_clip_checkpoint(checkpoint)
+        if MODEL_RAM_CACHE[cache_key]:
+            MODEL_RAM_CACHE[cache_key]['text_model'] = text_model
         del checkpoint
         report("converting clip done")
 
         local_files_only = False
         if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
             local_files_only = True
-
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+        tokenizer = MODEL_RAM_CACHE[cache_key].get('tokenizer') or CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+        MODEL_RAM_CACHE[cache_key]['tokenizer'] = tokenizer
 
         if  get_setting("nsfw_filter", True) is True:
             report("safety checker")
@@ -840,10 +904,12 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         if xl_model:
             pass
         else:
-            load_lora_list(lora_list, unet, text_model)
+            text_model.to('cpu')
             load_embeddings(text_model, tokenizer)
-            load_lora_list([(get_lora_location('lcm-lora-sdv1-5'), 1.0)], unet, text_model)
+            load_lora_list(lora_list + [(get_lora_location('lcm-lora-sdv1-5'), 1.0)], unet, text_model)
     elif not xl_model:
+        unet.to('cpu')
+        text_model.to('cpu')
         load_lora_list(lora_list, unet, text_model)
         load_embeddings(text_model, tokenizer)
 
@@ -857,7 +923,6 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         unet.to(device_name)
     
     report("model full loaded")
-
     if xl_model:
         return {
             'vae': vae,
@@ -868,7 +933,7 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             'unet': unet,
             'scheduler': scheduler,
             'add_watermarker': False,
-        }, False, xl_model
+        }, False, xl_model, tiny_vae
 
     return {
         'vae': vae,
@@ -879,6 +944,6 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
         'safety_checker': safety_checker,
         'feature_extractor': feature_extractor,
         'requires_safety_checker': requires_safety_checker
-    }, in_painting, xl_model
+    }, in_painting, xl_model, tiny_vae
 
 

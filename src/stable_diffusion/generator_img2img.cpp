@@ -10,8 +10,9 @@ namespace dexpert
         const char *inpaint_mode_names[inpaint_mode_count] = {
             "original",
             "fill",
-            "original", // wholepicture + original
-            "fill"      // wholepicture + fill
+            "original",  // wholepicture + original
+            "fill",      // wholepicture + fill
+            "img2img"    // use img2img + mask
             // "latent",
             // "nothing"
         };
@@ -38,7 +39,8 @@ namespace dexpert
         bool enable_codeformer,
         bool reload_model,
         float mask_blur_size,
-        inpaint_mode_t inpaint_mode) : GeneratorBase(seed_gen, variation),
+        inpaint_mode_t inpaint_mode,
+        bool use_lcm) : GeneratorBase(seed_gen, variation),
                                        prompt_(prompt),
                                        negative_(negative),
                                        model_(model),
@@ -57,7 +59,8 @@ namespace dexpert
                                        enable_codeformer_(enable_codeformer),
                                        reload_model_(reload_model),
                                        mask_blur_size_(mask_blur_size),
-                                       inpaint_mode_(inpaint_mode)
+                                       inpaint_mode_(inpaint_mode),
+                                       use_lcm_(use_lcm)
     {
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
@@ -114,7 +117,8 @@ namespace dexpert
             this->enable_codeformer_,
             false, // only the first one should reload the model
             this->mask_blur_size_,
-            this->inpaint_mode_));
+            this->inpaint_mode_,
+            this->use_lcm_));
         auto g = (GeneratorImg2Image *)d.get();
         if (img) {
             g->setImage(img);
@@ -159,6 +163,7 @@ namespace dexpert
         params.image = image_.get();
         params.inpaint_mode = inpaint_mode_names[inpaint_mode_];
         params.reload_model = reload_model_;
+        params.use_lcm = use_lcm_;
         reload_model_ = false;
 
         if (mask_)
