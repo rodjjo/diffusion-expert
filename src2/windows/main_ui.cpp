@@ -21,7 +21,10 @@ namespace dfe
             event_main_menu_file_open_layer,
             event_main_menu_file_close,
             event_main_menu_edit_settings,
+            event_main_menu_layers_duplicate,
+            event_main_menu_layers_remove_selected,
             event_layer_count_changed,
+            event_layer_selected,
             event_main_menu_exit
         };
     } // namespace
@@ -43,16 +46,19 @@ namespace dfe
             menu_->addItem(event_main_menu_file_close, "", "File/Close", "^x", 0, xpm::img_24x24_close);
             menu_->addItem(event_main_menu_exit, "", "File/Exit", "", 0, xpm::img_24x24_exit);
             menu_->addItem(event_main_menu_edit_settings, "", "Edit/Settings", "", 0, xpm::img_24x24_settings);
+            menu_->addItem(event_main_menu_layers_duplicate, "", "Layers/Duplicate", "^d", 0, xpm::img_24x24_copy);
+            menu_->addItem(event_main_menu_layers_remove_selected, "", "Layers/Remove", "", 0, xpm::img_24x24_remove);
+            
         } // menu
 
         { // image panels
             image_ = new ImagePanel(0, 0, 1, 1, "MainWindowImagePanel");
             layers_ = new Fl_Select_Browser(0, 0, 1, 1);
             layers_->callback(layer_cb, this);
-            removeLayer_.reset(new Button(xpm::image(xpm::img_24x24_remove_layer), [this] {
+            removeLayer_.reset(new Button(xpm::image(xpm::img_24x24_remove), [this] {
                 remove_selected_layer();
             }));
-            removeAllLayers_.reset(new Button(xpm::image(xpm::img_24x24_remove_all_layers), [this] {
+            removeAllLayers_.reset(new Button(xpm::image(xpm::img_24x24_erase), [this] {
                 clear_layers();
             }));
             removeLayer_->tooltip("Remove selected layer");
@@ -70,7 +76,7 @@ namespace dfe
         auto native_wnd = find_current_thread_window(wnd_->label());
         if (native_wnd) {
             /*
-            FLTK does not handle mouse wheel event weel.
+            FLTK does not handle mouse wheel event well.
             I'm hacking the window proc so.
             */
             image_->hack_window_proc(native_wnd);
@@ -110,6 +116,7 @@ namespace dfe
             int idx = layers_->value();
             if (idx > 0)  {
                 // do something 
+                image_->view_settings()->select(idx - 1);
             } 
             layers_->deselect();
             layers_->select(idx);
@@ -149,7 +156,7 @@ namespace dfe
         menuPanel_->size(w, menu_->h());
         menu_->position(0, 0);
         menu_->size(w, menuPanel_->h());
-        if (image_->view_settings()->layer_count() > 1) {
+        if (image_->view_settings()->layer_count() > 0) {
             removeAllLayers_->position(w - removeAllLayers_->w() - 1, menuPanel_->h() + 1);
             removeLayer_->position(removeAllLayers_->x() - removeLayer_->w() - 2,  removeAllLayers_->y());
             layers_->size(100, h - (menuPanel_->h() + removeAllLayers_->h()) - 2);
@@ -181,6 +188,10 @@ namespace dfe
         {
             if (Fl::event_key() == FL_Escape)
             {
+                return 1;
+            }
+            if (Fl::event_key() == FL_Delete) {
+                remove_selected_layer();
                 return 1;
             }
         }
@@ -220,9 +231,18 @@ namespace dfe
                 update_layer_list();
             }
             break;
+        case event_layer_selected:
+            if (sender == image_ && !in_layer_callback_) {
+                layers_->value(image_->view_settings()->selected_layer_index() + 1);
+            }
         case event_main_menu_edit_settings:
             break;
-        
+        case event_main_menu_layers_duplicate:
+            image_->view_settings()->duplicate_selected();
+            break;
+        case event_main_menu_layers_remove_selected:
+            remove_selected_layer();
+            break;
         case event_main_menu_exit:
             this->hide();
             break;
@@ -252,7 +272,7 @@ namespace dfe
 
     void MainWindow::remove_selected_layer() {
         if (ask("Do you want to remove the selected layer ?")) {
-            image_->view_settings()->remove_layer(layers_->value());
+            image_->view_settings()->remove_layer(layers_->value() - 1);
         }
     }
 

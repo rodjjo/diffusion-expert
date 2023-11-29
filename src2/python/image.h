@@ -39,6 +39,7 @@ class RawImage {
     void pasteAt(int x, int y, RawImage *mask, RawImage *image);
     void pasteAt(int x, int y, int w, int h, RawImage *image);
     void pasteInvertMask(RawImage *image);
+    void rectangle(int x, int y, int w, int h, uint8_t color[4]);
     image_ptr_t duplicate();
     image_ptr_t removeBackground(bool white);
     image_ptr_t removeAlpha();

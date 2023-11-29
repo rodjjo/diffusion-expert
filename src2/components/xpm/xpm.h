@@ -13,10 +13,11 @@ typedef enum {
     img_24x24_new = 0,
     img_24x24_open,
     img_24x24_open_layer,
-    img_24x24_remove_layer,
-    img_24x24_remove_all_layers,
+    img_24x24_remove,
+    img_24x24_erase,
     img_24x24_close,
     img_24x24_settings,
+    img_24x24_copy,
     img_24x24_exit,
     // keep no_image at the end
     no_image

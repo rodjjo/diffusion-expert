@@ -146,4 +146,18 @@ uintptr_t find_current_thread_window(const char *title, uintptr_t parent_hwnd) {
 }
 #endif
 
+
+bool rectRect(int r1x, int r1y, int r1w, int r1h, int r2x, int r2y, int r2w, int r2h) {
+
+  // are the sides of one rectangle touching the other?
+
+  if (r1x + r1w >= r2x &&    // r1 right edge past r2 left
+      r1x <= r2x + r2w &&    // r1 left edge past r2 right
+      r1y + r1h >= r2y &&    // r1 top edge past r2 bottom
+      r1y <= r2y + r2h) {    // r1 bottom edge past r2 top
+        return true;
+  }
+  return false;
+}
+
 } // namespace dfe

@@ -258,6 +258,18 @@ void RawImage::pasteAt(int x, int y, int w, int h, RawImage *image) {
     src.permute_axes("cxyz");
 }
 
+void RawImage::rectangle(int x, int y, int w, int h, uint8_t color[4]) {
+    int src_channels = format_channels[format_];
+    CImg<unsigned char> img(buffer_, src_channels, w_, h_, 1, true);
+    img.permute_axes("yzcx");
+    img.draw_line(x, y, x + w, y, color); // top line
+    img.draw_line(x, y + h, x + w, y + h, color); // bottom line
+    img.draw_line(x, y, x, y + h, color); // left line
+    img.draw_line(x + w, y, x + w, y + h, color); // right line
+    img.permute_axes("cxyz");
+    incVersion();   
+}
+
 void RawImage::pasteInvertMask(RawImage *image) {
     // the current image is a mask
     // we-re going to draw the image over the mask, but invert the pixels
