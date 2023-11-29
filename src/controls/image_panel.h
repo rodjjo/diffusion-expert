@@ -118,11 +118,13 @@ namespace dexpert
         void noSelection();
         void selectAll();
         void upScale(float scale, float weight);
+        image_ptr_t upScale(image_ptr_t image, float scale, float weight);
         void flip(bool vertical);
         void restoreSelectionFace(float weight);
         void removeSelectionBackground();
         void cropToSelection();
         void resizeSelection(int w, int h);
+        void resizeSelection(int x, int y, int x2, int y2);
         void close();
         void adjustPasteImageSize();
         bool clicked();

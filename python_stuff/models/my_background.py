@@ -1,13 +1,19 @@
 import gc
 import torch
-from rembg import remove
-from PIL import Image
+from rembg import remove, new_session
+from PIL import Image, ImageFilter
 
 from utils.images import pil_as_dict, pil_from_dict
 
 
 def process(img):
-    return remove(img)
+    return remove(
+        img,
+        session=new_session('u2net_human_seg'),
+        only_mask=False,
+        # alpha_matting=True,
+        # alpha_matting_erode_size=15
+    )
 
 
 def add_background(img, rgb_tuple):
@@ -27,7 +33,4 @@ def merge_images(img_list):
 def remove_background(image, args):
     removed = process(pil_from_dict(image))
     removed = add_background(removed, (255, 255, 255))
-    gc.collect()
-    torch.cuda.empty_cache()
     return pil_as_dict(removed)
-    

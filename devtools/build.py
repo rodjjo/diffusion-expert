@@ -158,7 +158,9 @@ def publish_binaries():
     source_dir = os.path.join(build_dir(), 'bin')
     files = [
         os.path.join(source_dir, 'diffusion-exp-win.exe'),
+        os.path.join(source_dir, 'diffusion-exp2-win.exe'),
         os.path.join(source_dir, 'diffusion-exp.exe'),
+        os.path.join(source_dir, 'diffusion-exp2.exe'),
     ]
     for f in files:
         shutil.copyfile(f, os.path.join(python_dir(), os.path.basename(f)))

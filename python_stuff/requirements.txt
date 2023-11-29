@@ -2,22 +2,25 @@
 # future @ git+https://github.com/rodjjo/python-future.git@57f747cc4bcffa805b47bb1e5df7550a53fe8ba9
 # filterpy @ git+https://github.com/rodjjo/filterpy.git@a34721e266c4c39f8abd5037ea83c2ed774d9606
 
-Pillow==9.3.0
+Pillow==10.0.0
 OmegaConf==2.3.0
 accelerate==0.19.0.
 numpy==1.23.5
 diffusers==0.23.0
-transformers==4.29.1
+transformers==4.30.0
 safetensors==0.3.1
 invisible-watermark==0.1.5
-GitPython==3.1.31
+GitPython==3.1.37
 pytorch_lightning==2.0.2
 torchdiffeq==0.2.3
 tdqm
 xformers==0.0.19
 opencv-contrib-python==4.7.0.72
 controlnet_aux==0.0.3
+# basicsr==1.4.2
+# basicsr @ git+https://github.com/XPixelGroup/BasicSR.git@033cd6896d898fdd3dcda32e3102a792efa1b8f4
 gfpgan==1.3.8
 realesrgan==0.3.0
 pynvml==11.5.0
 rembg==2.0.52
+# codeformer==0.0.8

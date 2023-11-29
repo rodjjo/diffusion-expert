@@ -1,15 +1,20 @@
 import traceback
-
 import os
-from images.diffusion_routines import run_pipeline
-from utils.settings import set_user_settings, get_setting
-from images.pre_process import pre_process_image
-from images.filesystem import save_image, open_image
-from models.my_background import remove_background
-from models.my_gfpgan import gfpgan_restore_faces, gfpgan_upscale
-from models.models import get_sd_model_urls, download_sd_model, get_embeddings
-from models.my_interrogate import inerrogate_clip
 
+try:
+    from images.diffusion_routines import run_pipeline
+    from utils.settings import set_user_settings, get_setting
+    from images.pre_process import pre_process_image
+    from images.filesystem import save_image, open_image
+    from models.my_background import remove_background
+    from models.my_gfpgan import gfpgan_restore_faces, gfpgan_upscale
+    from models.models import get_sd_model_urls, download_sd_model, get_embeddings
+    from models.my_interrogate import inerrogate_clip
+except Exception as e:
+    with open('exception.txt', 'w') as fp:
+        fp.write(str(e) + '\n')
+        fp.write(traceback.format_exc())
+    raise
 
 
 MODEL_EXTENSIONS = set(['.ckpt', '.safetensors'])

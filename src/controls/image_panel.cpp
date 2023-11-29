@@ -1093,22 +1093,32 @@ namespace dexpert
         scrollAgain();
     }
 
-    void ImagePanel::upScale(float scale, float weight) {
-        auto img = images_[image_type_image].get();
-        if (!img) {
-            return;
-        }
-
-        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img, scale, weight,
-            [this] (bool success, const char *message, std::list<image_ptr_t> image) {
+    image_ptr_t ImagePanel::upScale(image_ptr_t img, float scale, float weight) {
+        image_ptr_t result;
+        dexpert::py::get_py()->execute_callback(dexpert::py::upscale_image(img.get(), scale, weight,
+            [this, &result] (bool success, const char *message, std::list<image_ptr_t> image) {
                 if (!success) {
                     show_error(message);
                 } else if (image.size()) {
-                    images_[image_type_image] = *image.begin();
+                    result = *image.begin();
                 } else {
                     show_error("Unknown error, upscaler fail. No image was returned");
                 }
         }));
+
+        return result;
+    }
+
+    void ImagePanel::upScale(float scale, float weight) {
+        auto img = images_[image_type_image];
+        if (!img) {
+            return;
+        }
+        img = upScale(img, scale, weight);
+        if (!img) {
+            return;
+        }
+        images_[image_type_image] = img;
 
         for (int i = 0; i < image_type_count; i++) {
             if (i != image_type_image) {
@@ -1180,6 +1190,14 @@ namespace dexpert
         selection_start_.y = cy;
         selection_end_.x = selection_start_.x + w;
         selection_end_.y = selection_start_.y + h;
+        scrollAgain();
+    }
+
+    void ImagePanel::resizeSelection(int x, int y, int x2, int y2) {
+        selection_start_.x = x;
+        selection_start_.y = y;
+        selection_end_.x = x2;
+        selection_end_.y = y2;
         scrollAgain();
     }
 

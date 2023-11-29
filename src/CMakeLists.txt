@@ -25,6 +25,9 @@ if(WIN32)
 add_executable(diffusion-exp-win WIN32 ${SourcesEntry})
 endif(WIN32)
 
+target_include_directories(diffusion-exp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(diffusion-exp-win PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 target_link_libraries(
     diffusion-exp 
     stdc++ 
@@ -40,6 +43,9 @@ target_link_libraries(
     opengl32
     user32
     comctl32
+    gdiplus
+    ws2_32
+    glu32
 )
 
 set_target_properties(diffusion-exp

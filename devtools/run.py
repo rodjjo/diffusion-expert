@@ -19,8 +19,12 @@ def main():
         prefix = [
             'build/mingw64/bin/gdb.exe'
         ]
+    #subprocess.check_call(prefix + [
+    #    'dexpert/bin/diffusion-exp2.exe'
+    #])
+
     subprocess.check_call(prefix + [
-        'dexpert/bin/diffusion-exp.exe'
+        'dexpert/bin/diffusion-exp2.exe'
     ])
 
 

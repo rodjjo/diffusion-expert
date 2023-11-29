@@ -141,10 +141,14 @@ int PromptPanel::getBatchSize() {
     
     if (result < 1) {
         result = 1;
-    } 
-    if (result > 16) {
-        result = 16;
+    } else if (result > 8) {
+        result = 8;
+    } else {
+        return result;
     }
+    char buffer[25] = "";
+    sprintf(buffer, "%d", result);
+    batch_->value(buffer);
     return result;
 }
 

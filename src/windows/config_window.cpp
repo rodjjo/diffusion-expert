@@ -111,7 +111,7 @@ ConfigWindow::~ConfigWindow() {
 }
 
 void ConfigWindow::align_components() {
-    tabs_->resize(0, 0, window_->w(), window_->h() - 50);
+    ((Fl_Widget *) tabs_)->resize(0, 0, window_->w(), window_->h() - 50);
     page_sd_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     page_upscalers_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);
     page_dirs_->resize(tabs_->x(), tabs_->y() + 30, tabs_->w(), tabs_->h() - 22);

@@ -29,15 +29,16 @@ include_directories(DiffusionExpert
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/cimg"
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/nlohmann_json/include"
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/pybind11/include"
-                    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/fltk/include"
+                    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/include"
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/python3.10.11/include"
                     )
 
 link_directories(DiffusionExpert
-    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/fltk/lib"
+    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/lib"
     "${CMAKE_CURRENT_LIST_DIR}/dependencies/python3.10.11/libs"
 )
 
+add_subdirectory("src2")
 add_subdirectory("src")
 
 enable_testing()

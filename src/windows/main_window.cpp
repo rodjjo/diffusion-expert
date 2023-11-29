@@ -84,6 +84,10 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { editConfig(); }, "", "Edit/Settings", "", 0, xpm::edit_16x16);
     menu_->addItem([this] { editSelection(painting_img2img); }, "", "Selection/Image to image", "#i");
     menu_->addItem([this] { editSelection(painting_inpaint_masked); }, "", "Selection/Inpaint", "^i");
+    menu_->addItem([this] { editSelection(painting_img2img, 2.0); }, "", "Selection/Scale And Edit/Image to image (2x)");
+    menu_->addItem([this] { editSelection(painting_inpaint_masked, 2.0); }, "", "Selection/Scale And Edit/Inpaint (2x)");
+    menu_->addItem([this] { editSelection(painting_img2img, 0.5); }, "", "Selection/Scale And Edit/Image to image (0.5x)");
+    menu_->addItem([this] { editSelection(painting_inpaint_masked, 0.5); }, "", "Selection/Scale And Edit/Inpaint (0.5x)");
     menu_->addItem([this] { image_editor_->clearPasteImage(); }, "", "Selection/Discart changes");
     menu_->addItem([this] { image_editor_->cropToSelection(); }, "", "Selection/Crop to Selection");
     menu_->addItem([this] { resizeSelection(0); }, "", "Selection/Expand/Custom", "^e");
@@ -191,6 +195,27 @@ void MainWindow::resizeSelection(int width) {
     int h = y2 - y1;
     if (width > 0) {
         image_editor_->resizeSelection(width, width);
+        image_editor_->getSelection(&x1, &y1, &x2, &y2);
+        if (x1 < 0) {
+            x2 += (-x1);
+            x1 = 0;
+        }
+        if (y1 < 0) {
+            y2 += (-y1);
+            y1 = 0;
+        }
+        auto rz = image_editor_->getReferenceSize();
+        if (x2 > rz.x) {
+            auto diff = x2 - rz.x;
+            x2 -= diff;
+            x1 -= diff;
+        }
+        if (y2 > rz.y) {
+            auto diff = y2 - rz.y;
+            y2 -= diff;
+            y1 -= diff;
+        }
+        image_editor_->resizeSelection(x1, y1, x2, y2);
     } else if (getSizeFromDialog("Resize the selection area", &w, &h)) {
         image_editor_->resizeSelection(w, h);
     } 
@@ -248,11 +273,22 @@ void MainWindow::resizeCanvas() {
     }
 }
 
-void MainWindow::editSelection(painting_mode_t mode) {
+void MainWindow::editSelection(painting_mode_t mode, float scale) {
     auto selection = image_editor_->getSelectedImage(image_type_image);
     if (selection) {
+        int ow = selection->w(), oh = selection->h();
+        if (scale > 0.01) {
+            //if (scale <= 1.0) {
+                selection = selection->resizeImage(ow * scale, oh * scale);
+            //} else {
+                // selection = image_editor_->upScale(selection, scale, 0.1);
+            //}
+        }
         auto img = get_stable_diffusion_image(selection.get(), mode);
         if (img) {
+            if (scale > 0.01) {
+                img = img->resizeImage(ow, oh);
+            }
             image_editor_->setPasteImageAtSelection(image_type_image, img.get());
             image_editor_->pasteImage();
         }

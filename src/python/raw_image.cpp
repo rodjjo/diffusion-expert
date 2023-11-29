@@ -197,7 +197,9 @@ void RawImage::fillWithMask(int x, int y, RawImage *mask) {
     CImg<unsigned char> src(image->buffer(), format_channels[image->format()], image->w(), image->h(), 1, true);
     src.permute_axes("yzcx");   
     msk.permute_axes("yzcx");
-    msk.fill("if(i0==255&&i1==255&&i2==255,255,0)", true);
+    msk.fill("if(i0==i1&&i1==i2&&i2==255,255,0)", true);
+    CImg<uint8_t> kernel(30, 30);
+    msk.dilate(kernel);
     src.draw_fill(x, y, black_color_rgba);
     msk.permute_axes("cxyz");
     src.permute_axes("cxyz");

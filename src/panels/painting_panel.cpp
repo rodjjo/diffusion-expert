@@ -191,7 +191,7 @@ PaintingPanel::PaintingPanel(int x, int y, int w, int h,  PromptPanel *prompt, P
 
     denoise_->align(FL_ALIGN_TOP_LEFT);
     denoise_->tooltip("Image similarity %");
-    denoise_->value("20");
+    denoise_->value("75");
 
     for (int i = 0; i < painting_mode_max; ++i) {
         if (!only_control_net || i == 0 || i >= painting_scribble) {

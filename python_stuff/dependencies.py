@@ -49,6 +49,7 @@ def have_dependencies():
         'filterpy',
         'future',
         'rembg',
+        # 'codeformer',
     ]
     for l in lib_names:
         if not os.path.exists(os.path.join(lib_dir, l)):

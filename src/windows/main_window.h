@@ -43,7 +43,7 @@ class MainWindow : Fl_Menu_Window {
   void newImage(bool fromStableDiffusion);
   void openImage();
   void saveImage();
-  void editSelection(painting_mode_t mode);
+  void editSelection(painting_mode_t mode, float scale=0.0);
   void resizeLeft();
   void resizeRight();
   void resizeTop();
