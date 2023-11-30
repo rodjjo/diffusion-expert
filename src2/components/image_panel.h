@@ -34,6 +34,7 @@ namespace dfe
         void restore_size();
         void scale_size(bool up);
         std::shared_ptr<Layer> duplicate();
+        void replace_image(image_ptr_t new_image);
     private:
         void refresh(bool force=false);
 
@@ -100,6 +101,7 @@ namespace dfe
         void constraint_scroll(float zoom, int view_w, int view_h, int *sx, int *sy);
         void get_image_area(int *x, int *y, int *w, int *h);
         void duplicate_selected();
+        void remove_background_selected();
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);
         void scroll_again(float old_zoom);

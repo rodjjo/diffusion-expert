@@ -23,8 +23,10 @@ namespace dfe
             event_main_menu_edit_settings,
             event_main_menu_layers_duplicate,
             event_main_menu_layers_remove_selected,
+            event_main_menu_layers_remove_background,
             event_layer_count_changed,
             event_layer_selected,
+            event_layer_after_draw,
             event_main_menu_exit
         };
     } // namespace
@@ -40,6 +42,7 @@ namespace dfe
             menuPanel_->begin();
             menu_ = new MainMenu(this->w(), 20);
             menuPanel_->end();
+
             menu_->addItem(event_main_menu_file_new_art, "", "File/New Art", "^n", 0, xpm::img_24x24_new);
             menu_->addItem(event_main_menu_file_open, "", "File/Open", "^o", 0, xpm::img_24x24_open);
             menu_->addItem(event_main_menu_file_open_layer, "", "File/Open as Layer", "^l", 0, xpm::img_24x24_open_layer);
@@ -47,11 +50,14 @@ namespace dfe
             menu_->addItem(event_main_menu_exit, "", "File/Exit", "", 0, xpm::img_24x24_exit);
             menu_->addItem(event_main_menu_edit_settings, "", "Edit/Settings", "", 0, xpm::img_24x24_settings);
             menu_->addItem(event_main_menu_layers_duplicate, "", "Layers/Duplicate", "^d", 0, xpm::img_24x24_copy);
+            menu_->addItem(event_main_menu_layers_remove_background, "", "Layers/Remove background", "", 0, xpm::img_24x24_picture);
             menu_->addItem(event_main_menu_layers_remove_selected, "", "Layers/Remove", "", 0, xpm::img_24x24_remove);
             
         } // menu
 
         { // image panels
+            wnd_->begin();
+
             image_ = new ImagePanel(0, 0, 1, 1, "MainWindowImagePanel");
             layers_ = new Fl_Select_Browser(0, 0, 1, 1);
             layers_->callback(layer_cb, this);
@@ -65,6 +71,18 @@ namespace dfe
             removeAllLayers_->tooltip("Remove all the layers");
             removeLayer_->size(28, 28);
             removeAllLayers_->size(28, 28);
+        } 
+        
+        { // status bar
+            wnd_->begin();
+
+            bottomPanel_ = new Fl_Group(0, 0, 1, 1);
+            bottomPanel_->begin();
+            lblImageSize_ = new Fl_Box(0, 0, 1, 1);
+            lblZoomSize_ = new Fl_Box(0, 0, 1, 1);
+            lblLayerSize_ = new Fl_Box(0, 0, 1, 1);
+            lblSelectionSize_ = new Fl_Box(0, 0, 1, 1);
+            bottomPanel_->end();
         }
 
         wnd_->end();
@@ -154,14 +172,16 @@ namespace dfe
         int w = this->w();
         int h = this->h();
         menuPanel_->size(w, menu_->h());
+        bottomPanel_->size(w, menu_->h());
+        bottomPanel_->position(0, h - bottomPanel_->h());
         menu_->position(0, 0);
         menu_->size(w, menuPanel_->h());
         if (image_->view_settings()->layer_count() > 0) {
             removeAllLayers_->position(w - removeAllLayers_->w() - 1, menuPanel_->h() + 1);
             removeLayer_->position(removeAllLayers_->x() - removeLayer_->w() - 2,  removeAllLayers_->y());
-            layers_->size(100, h - (menuPanel_->h() + removeAllLayers_->h()) - 2);
+            layers_->size(100, h - (menuPanel_->h() + removeAllLayers_->h() + bottomPanel_->h()) - 2);
             layers_->position(w - 1 - layers_->w(), removeAllLayers_->h() + removeAllLayers_->y() + 1);
-            image_->size(w - 5 - layers_->w(), h - menuPanel_->h() - 2);
+            image_->size(w - 5 - layers_->w(), h - menuPanel_->h() - bottomPanel_->h() - 2);
             layers_->show();
             removeLayer_->show();
             removeAllLayers_->show();
@@ -169,9 +189,19 @@ namespace dfe
             layers_->hide();
             removeLayer_->hide();
             removeAllLayers_->hide();
-            image_->size(w - 2, h - menuPanel_->h() - 2);
+            image_->size(w - 2, h - menuPanel_->h() - bottomPanel_->h() - 2);
         }
         image_->position(1, menuPanel_->h() + 1);
+
+        lblImageSize_->size(100, bottomPanel_->h() - 2);
+        lblZoomSize_->size(170, bottomPanel_->h() - 2);
+        lblLayerSize_->size(300, bottomPanel_->h() - 2);
+        lblSelectionSize_->size(120, bottomPanel_->h() - 2);
+
+        lblImageSize_->position(bottomPanel_->x() + 1,  bottomPanel_->y() + 1);
+        lblZoomSize_->position(lblImageSize_->x() + 2 + lblImageSize_->w(),  lblImageSize_->y());
+        lblLayerSize_->position(lblZoomSize_->x() + 2 + lblZoomSize_->w(),  lblImageSize_->y());
+        lblSelectionSize_->position(lblLayerSize_->x() + 2 + lblLayerSize_->w(),  lblImageSize_->y());
     }
 
     void MainWindow::resize(int x, int y, int w, int h)
@@ -240,13 +270,51 @@ namespace dfe
         case event_main_menu_layers_duplicate:
             image_->view_settings()->duplicate_selected();
             break;
+        case event_main_menu_layers_remove_background:
+            image_->view_settings()->remove_background_selected();
+            break;
         case event_main_menu_layers_remove_selected:
             remove_selected_layer();
             break;
         case event_main_menu_exit:
             this->hide();
             break;
+        case event_layer_after_draw:
+            Fl::remove_timeout(MainWindow::update_status, this);
+            Fl::add_timeout(0.033, MainWindow::update_status, this);
+            break;
         }
+    }
+
+    void MainWindow::update_status(void *cbdata) {
+        static_cast<MainWindow *>(cbdata)->update_status();
+    }
+
+    void MainWindow::update_status() {
+        char buffer[128] = "";
+        
+        if ((int)image_->view_settings()->layer_count()) {
+            int x, y, w, h;
+            image_->view_settings()->get_image_area(&x, &y, &w, &h);
+            sprintf(buffer, " Size: %d x %d ", w, h);
+        } else {
+            sprintf(buffer, " Size: 0 x 0 ");
+        }
+        lblImageSize_->copy_label(buffer);
+        
+        sprintf(buffer, " Zoom: %d %% ", image_->view_settings()->getZoom());
+        lblZoomSize_->copy_label(buffer);
+
+        if (image_->view_settings()->selected_layer()) {
+            auto l = image_->view_settings()->selected_layer();
+            sprintf(buffer, " Layer: x: %d y: %d w: %d x h: %d count: %d", l->x(), l->y(), l->w(), l->h(), (int)image_->view_settings()->layer_count());
+        } else {
+            sprintf(buffer, " No layer selected (count: %d) ", (int)image_->view_settings()->layer_count());
+        }
+        lblLayerSize_->copy_label(buffer);
+
+        sprintf(buffer, "No Selection");
+        lblSelectionSize_->copy_label(buffer);
     }
 
     void MainWindow::choose_file_and_open(bool clear_layers) {

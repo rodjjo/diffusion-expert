@@ -13,6 +13,7 @@ typedef enum {
     progress_downloader,
     progress_generation,
     progress_upscaler,
+    progress_background,
     progress_preprocessor
 } progress_type;
 

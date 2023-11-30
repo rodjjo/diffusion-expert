@@ -21,9 +21,11 @@ typedef enum {
     event_main_menu_edit_settings,
     event_main_menu_layers_duplicate,
     event_main_menu_layers_remove_selected,
+    event_main_menu_layers_remove_background,
     event_main_menu_exit,
     event_layer_count_changed,
     event_layer_selected,
+    event_layer_after_draw,
 } event_id_t;
 
 typedef std::function<void(void *sender, event_id_t event, void *data)> event_handler_t;

@@ -18,6 +18,7 @@
 #include "components/xpm/data/24x24/remove.xpm"
 #include "components/xpm/data/24x24/erase.xpm"
 #include "components/xpm/data/24x24/copy.xpm"
+#include "components/xpm/data/24x24/picture.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -34,6 +35,7 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { img_24x24_remove, xpm_remove },
     { img_24x24_erase, xpm_erase},
     { img_24x24_copy, xpm_copy },
+    { img_24x24_picture, xpm_picture },
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

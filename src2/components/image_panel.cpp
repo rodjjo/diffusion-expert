@@ -132,6 +132,19 @@ namespace dfe
         return version_;
     }
 
+    void Layer::replace_image(image_ptr_t new_image) {
+        if (new_image && image_) {
+            int diff_x = image_->w() - new_image->w();
+            int diff_y = image_->h() - new_image->h();
+            x(x() + diff_x / 2);
+            y(y() + diff_y / 2);
+            w(new_image->w());
+            h(new_image->h());
+            image_ = new_image;
+            refresh();
+        }
+    }
+
     void Layer::restore_size() {
         if (image_) {
             w_ = image_->w();
@@ -190,8 +203,11 @@ namespace dfe
             }
             name_index_ += 1;
             layers_.push_back(l);
+            selected_ = l.get();
+
             refresh();
             publish_event(parent_, event_layer_count_changed, NULL);
+            publish_event(parent_, event_layer_selected, selected_);
             return l.get();
         }
         return NULL;
@@ -216,6 +232,29 @@ namespace dfe
     void ViewSettings::duplicate_selected() {
         if (selected_) {
             add_layer(selected_->duplicate());
+        }
+    }
+
+    void ViewSettings::remove_background_selected() {
+        if (selected_) {
+            py11::dict empty;
+            auto mask = py::remove_background(selected_->getImage(), empty);
+            if (mask) {
+                auto fg =  selected_->duplicate();
+                auto mask_copy = mask;
+                mask = mask->removeBackground(false);
+
+                // clear the foreground at the background image layer
+                auto white = py::newImage(selected_->getImage()->w(), selected_->getImage()->h(), true);
+                white->clear(255, 255, 255, 255);
+                selected_->getImage()->pasteAt(0, 0, mask.get(), white.get());
+                // clear the background at the foreground layer
+
+                auto fg_img = py::newImage(selected_->getImage()->w(), selected_->getImage()->h(), false);
+                fg_img = fg_img->pasteAtNoBackground(0, 0, mask_copy.get(), fg->getImage());
+                fg->replace_image(fg_img->resize_down_alpha());
+                add_layer(fg);
+            }
         }
     }
 
@@ -571,6 +610,7 @@ namespace dfe
                 return;
             }
             redraw();
+            publish_event(this, event_layer_after_draw, NULL);
         }
     }
 

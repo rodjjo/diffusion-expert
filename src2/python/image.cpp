@@ -138,6 +138,24 @@ image_ptr_t RawImage::removeBackground(bool white) {
     return r;
 }
 
+image_ptr_t RawImage::invert_mask() {
+    image_ptr_t r;
+    r.reset(new RawImage(NULL, w_, h_, img_rgba, false));
+    int src_channels = format_channels[format_];
+  
+    CImg<unsigned char> src(buffer_, src_channels, w_, h_, 1, true);
+    CImg<unsigned char> img(r->buffer_, 4, w_, h_, 1, true);
+    
+    src.permute_axes("yzcx");
+    img.permute_axes("yzcx");
+    img.draw_image(0, 0, src);
+    img.fill("if(i0>=255&&i1==255&&i2==255,0,255)", true);
+    img.permute_axes("cxyz");
+    src.permute_axes("cxyz");
+
+    return r;
+}
+
 image_ptr_t RawImage::removeAlpha() {
     image_ptr_t r;
 
@@ -237,7 +255,11 @@ void RawImage::pasteAt(int x, int y, RawImage *mask, RawImage *image) {
     src.permute_axes("yzcx");
     img.permute_axes("yzcx");
     msk.permute_axes("yzcx");
-    img.draw_image(x, y, 0, 0, src, msk, 1, 255);
+    if (mask->format() == img_rgba) {
+        img.draw_image(x, y, 0, 0, src, msk.get_channel(3), 1, 255);
+    } else {
+        img.draw_image(x, y, 0, 0, src, msk, 1, 255);
+    }
     msk.permute_axes("cxyz");
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
@@ -291,6 +313,71 @@ void RawImage::pasteInvertMask(RawImage *image) {
             ++p;
         }
     }
+}
+
+image_ptr_t RawImage::resize_down_alpha() {
+    /*
+        Resize the image to its minimal size considering the alpha channel.
+    */
+    if (format_ != img_rgba) {
+        return duplicate();
+    }
+
+    unsigned char *src = buffer_;
+    int min_y = h_;
+    int min_x = w_;
+    int max_x = 0;
+    int max_y = 0;
+    for (int y = 0; y < h_; y++) {
+        for (int x = 0; x < w_; x++) {
+            if (src[3] != 0) { // alpha != 0
+                if (min_x > x) {
+                    min_x = x;
+                }
+                if (min_y > y) {
+                    min_y = y;
+                }
+                if (max_x < x) {
+                    max_x = x;
+                }
+                if (max_y < y) {
+                    max_y = y;
+                }
+            }
+            src += 4;
+        }
+    }
+
+    if (max_x == 0 || max_y == 0) {
+        return duplicate();
+    }
+
+    int ww = max_x - min_x;
+    int hh = max_y - min_y;
+    image_ptr_t r;
+    r.reset(new RawImage(NULL, ww, hh, img_rgba, false));
+    unsigned char *source = buffer_;
+    unsigned char *target = r->buffer_;
+    int source_stride = w_ * 4;
+    int target_stride = ww * 4;
+    source += (source_stride * min_y);
+    for (int y = min_y; y < max_y; y++) {
+        memcpy(target, source, target_stride);
+        source += source_stride;
+        target += target_stride;
+    }
+    return r;
+}
+
+image_ptr_t RawImage::pasteAtNoBackground(int x, int y, RawImage *mask, RawImage *image) {
+    auto white = py::newImage(image->w(), image->h(), true);
+    white->clear(255, 255, 255, 255);
+    auto black = py::newImage(image->w(), image->h(), true);
+    black->clear(0, 0, 0, 255);
+    white->pasteAt(x, y, mask, black.get());
+    white = white->removeBackground(true);
+    white->pasteAt(x, y, mask, image);
+    return white;
 }
 
 void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {

@@ -36,6 +36,9 @@ protected:
     void alignComponents();
     
 private:
+    static void update_status(void *cbdata);
+    void update_status();
+
     static void layer_cb(Fl_Widget* widget, void *cbdata);
     void layer_cb(Fl_Widget* widget);
     void dfe_handle_event(void *sender, event_id_t id, void *data) override;
@@ -43,11 +46,17 @@ private:
     void remove_selected_layer();
     void clear_layers();
     void update_layer_list();
+
 private:
     int16_t wheel_correct_delta_ = 0;
     uint16_t correct_keys_;
-    Fl_Group *menuPanel_ = NULL;
     MainMenu *menu_ = NULL;
+    Fl_Group *menuPanel_ = NULL;
+    Fl_Group *bottomPanel_ = NULL;
+    Fl_Box *lblImageSize_ = NULL;
+    Fl_Box *lblZoomSize_ = NULL;
+    Fl_Box *lblLayerSize_ = NULL;
+    Fl_Box *lblSelectionSize_ = NULL;
     std::unique_ptr<Button> removeLayer_;
     std::unique_ptr<Button> removeAllLayers_;
     ImagePanel *image_;

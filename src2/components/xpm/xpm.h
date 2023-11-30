@@ -18,6 +18,7 @@ typedef enum {
     img_24x24_close,
     img_24x24_settings,
     img_24x24_copy,
+    img_24x24_picture,
     img_24x24_exit,
     // keep no_image at the end
     no_image

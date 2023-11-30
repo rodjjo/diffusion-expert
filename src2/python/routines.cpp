@@ -3,6 +3,7 @@
 #include <FL/fl_ask.H>
 
 #include "python/routines.h"
+#include "windows/progress_ui.h"
 
 namespace dfe
 {
@@ -44,6 +45,38 @@ image_ptr_t open_image(const char* path) {
 
     if (!result.get()) {
         fl_alert("Error opening the image: %s", error.c_str());
+    } 
+    return result;
+}
+
+image_ptr_t remove_background(RawImage* img, const py11::dict& params) {
+    image_ptr_t result;
+    std::string error;
+    
+    enable_progress_window(progress_background);
+
+    execute([&result, &error, img, params] (py11::module_ &module) {
+        try {
+            py11::dict src;
+            img->toPyDict(src);
+            auto r = module.attr("remove_background")(src, params);
+            py11::dict d = r.cast<py11::dict>();
+            error = parse_dict_error(d);
+            if (error.empty()) {
+                result = dfe::py::rawImageFromPyDict(d);
+                if (!result) {
+                    error = "Could not parse the dictionary";
+                }
+            }
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+    
+    hide_progress_window();
+
+    if (!result.get()) {
+        fl_alert("Error removing the background of the image: %s", error.c_str());
     } 
     return result;
 }
