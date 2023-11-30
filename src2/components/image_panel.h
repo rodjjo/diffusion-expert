@@ -106,6 +106,7 @@ namespace dfe
         void set_selected_area(int x, int y, int w, int h);
         bool has_selected_area();
         void clear_selected_area();
+        image_ptr_t merge_layers_to_image();
 
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);

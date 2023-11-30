@@ -486,6 +486,22 @@ namespace dfe
         return selected_area_ && !layers_.empty();
     }
 
+    image_ptr_t ViewSettings::merge_layers_to_image() {
+        image_ptr_t r;
+        if (!layer_count()) {
+            return r;
+        }
+        int x, y, w, h;
+        get_image_area(&x, &y, &w, &h);
+        r = py::newImage(w, h, false);
+        for (auto & l : layers_) {
+            if (l->getImage()) {
+                r->pasteAt(l->x(), l->y(), l->getImage());
+            }
+        }
+        return r;
+    }
+
     void ViewSettings::clear_selected_area() {
         selected_area_ = false;
     }
