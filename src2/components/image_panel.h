@@ -102,6 +102,11 @@ namespace dfe
         void get_image_area(int *x, int *y, int *w, int *h);
         void duplicate_selected();
         void remove_background_selected();
+        bool get_selected_area(int *x, int *y, int *w, int *h);
+        void set_selected_area(int x, int y, int w, int h);
+        bool has_selected_area();
+        void clear_selected_area();
+
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);
         void scroll_again(float old_zoom);
@@ -116,6 +121,11 @@ namespace dfe
         size_t name_index_ = 1;
         ImageCache cache_;
         uint16_t zoom_ = 100;
+        bool selected_area_ = false;
+        int selected_area_x_ = 0;
+        int selected_area_y_ = 0;
+        int selected_area_w_ = 0;
+        int selected_area_h_ = 0;
     };
 
     
@@ -149,6 +159,7 @@ namespace dfe
         fl_uintptr_t native_hwnd_;
 #endif
         void draw_layer(Layer *layer);
+        void draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill);
         static void imageRefresh(void *cbdata);
         void imageRefresh();
         void getDrawingCoord(float &x, float &y);

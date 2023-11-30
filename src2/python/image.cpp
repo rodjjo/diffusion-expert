@@ -280,7 +280,7 @@ void RawImage::pasteAt(int x, int y, int w, int h, RawImage *image) {
     src.permute_axes("cxyz");
 }
 
-void RawImage::rectangle(int x, int y, int w, int h, uint8_t color[4]) {
+void RawImage::rectangle(int x, int y, int w, int h, uint8_t color[4], float fill_opacity) {
     int src_channels = format_channels[format_];
     CImg<unsigned char> img(buffer_, src_channels, w_, h_, 1, true);
     img.permute_axes("yzcx");
@@ -288,6 +288,9 @@ void RawImage::rectangle(int x, int y, int w, int h, uint8_t color[4]) {
     img.draw_line(x, y + h, x + w, y + h, color); // bottom line
     img.draw_line(x, y, x, y + h, color); // left line
     img.draw_line(x + w, y, x + w, y + h, color); // right line
+    if (fill_opacity > 0.001) {
+        img.draw_rectangle(x, y, x + w, y + h, color, fill_opacity);
+    }
     img.permute_axes("cxyz");
     incVersion();   
 }

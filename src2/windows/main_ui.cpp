@@ -196,7 +196,7 @@ namespace dfe
         lblImageSize_->size(100, bottomPanel_->h() - 2);
         lblZoomSize_->size(170, bottomPanel_->h() - 2);
         lblLayerSize_->size(300, bottomPanel_->h() - 2);
-        lblSelectionSize_->size(120, bottomPanel_->h() - 2);
+        lblSelectionSize_->size(300, bottomPanel_->h() - 2);
 
         lblImageSize_->position(bottomPanel_->x() + 1,  bottomPanel_->y() + 1);
         lblZoomSize_->position(lblImageSize_->x() + 2 + lblImageSize_->w(),  lblImageSize_->y());
@@ -280,8 +280,10 @@ namespace dfe
             this->hide();
             break;
         case event_layer_after_draw:
-            Fl::remove_timeout(MainWindow::update_status, this);
-            Fl::add_timeout(0.033, MainWindow::update_status, this);
+            if (sender == image_) {
+                Fl::remove_timeout(MainWindow::update_status, this);
+                Fl::add_timeout(0.033, MainWindow::update_status, this);
+            }
             break;
         }
     }
@@ -291,7 +293,7 @@ namespace dfe
     }
 
     void MainWindow::update_status() {
-        char buffer[128] = "";
+        char buffer[256] = "";
         
         if ((int)image_->view_settings()->layer_count()) {
             int x, y, w, h;
@@ -312,8 +314,12 @@ namespace dfe
             sprintf(buffer, " No layer selected (count: %d) ", (int)image_->view_settings()->layer_count());
         }
         lblLayerSize_->copy_label(buffer);
-
-        sprintf(buffer, "No Selection");
+        int sx, sy, sw, sh;
+        if (image_->view_settings()->get_selected_area(&sx, &sy, &sw, &sh)) {
+            sprintf(buffer, "Selection: x: %d, y: %d, w: %d, h: %d", sx, sy, sw, sh);
+        } else {
+            sprintf(buffer, "No Selection");
+        }
         lblSelectionSize_->copy_label(buffer);
     }
 

@@ -459,6 +459,38 @@ namespace dfe
         }
     }
 
+    bool ViewSettings::get_selected_area(int *x, int *y, int *w, int *h) {
+        if (!has_selected_area()) {
+            return false;
+        }
+        *x = selected_area_x_;
+        *y = selected_area_y_;
+        *w = selected_area_w_;
+        *h = selected_area_h_;
+        return true;
+    }
+
+    void ViewSettings::set_selected_area(int x, int y, int w, int h) {
+        if (layers_.empty()) {
+            return;
+        }
+        selected_area_ = true;
+        selected_area_x_ = x;
+        selected_area_y_ = y;
+        selected_area_w_ = w;
+        selected_area_h_ = h;
+        refresh(true);
+    }
+
+    bool ViewSettings::has_selected_area() {
+        return selected_area_ && !layers_.empty();
+    }
+
+    void ViewSettings::clear_selected_area() {
+        selected_area_ = false;
+    }
+
+
     ImageCache::ImageCache() {
 
     }
@@ -736,17 +768,16 @@ namespace dfe
             for (size_t i = 0; i < view_settings_.layer_count(); i++) {
                 draw_layer(view_settings_.at(i));
             }
+
             int ix, iy, iw, ih;
             view_settings_.get_image_area(&ix, &iy, &iw, &ih);
-            ix += view_settings_.cache()->get_scroll_x();
-            iy += view_settings_.cache()->get_scroll_y();
-            float zoom = getZoom();
-            ix *= zoom;
-            iy *= zoom;
-            iw *= zoom;
-            ih *= zoom;
-            image_->rectangle(ix, iy, iw, ih, gray_color);
+            draw_rectangle(ix, iy, iw, ih, gray_color, false);
+            if (view_settings_.get_selected_area(&ix, &iy, &iw, &ih)) {
+                draw_rectangle(ix, iy, iw, ih, gray_color, true);
+            }
             view_settings_.cache()->gc();
+
+            
         }
 
         glRasterPos2f(-1, 1);
@@ -763,6 +794,17 @@ namespace dfe
         glPixelZoom(1.0f, 1.0f);
 
         //blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
+    }
+    
+    void ImagePanel::draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill) {
+        x += view_settings_.cache()->get_scroll_x();
+        y += view_settings_.cache()->get_scroll_y();
+        float zoom = getZoom();
+        x *= zoom;
+        y *= zoom;
+        w *= zoom;
+        h *= zoom;
+        image_->rectangle(x, y, w, h, gray_color, fill ? 0.1 : 0.0f);
     }
 
     void ImagePanel::draw_layer(Layer *layer) {
@@ -847,6 +889,23 @@ namespace dfe
 
         if (right_button && !mouse_down_control_ && !mouse_down_shift_) {
             view_settings_.mouse_drag(getZoom(), down_x, down_y, move_x, move_y);
+            return;
+        }
+
+        if (left_button && !right_button && !mouse_down_control_ && !mouse_down_alt_ && !mouse_down_shift_) {
+            int sw = down_x - move_x;
+            int sh = down_y - move_y;
+            if (sw < 0) sw = -sw;
+            if (sh < 0) sh = -sh;
+
+            if (move_x < down_x) {
+                down_x = move_x;
+            }
+            if (move_y < down_y) {
+                down_y = move_y;
+            }
+            view_settings_.set_selected_area(down_x / getZoom(), down_y / getZoom(), sw / getZoom(), sh / getZoom());
+            return;
         }
     }
 
