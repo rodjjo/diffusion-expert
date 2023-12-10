@@ -59,3 +59,4 @@ log.txt
 install_manifest.txt
 
 !dependencies/python3.10.11/libs/*.lib
+exception.txt

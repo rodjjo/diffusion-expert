@@ -16,3 +16,6 @@
 [submodule "filterpy"]
 	path = dependencies/filterpy
 	url = https://github.com/rodjjo/filterpy.git
+[submodule "comfyui"]
+	path = dependencies/comfyui
+	url = https://github.com/comfyanonymous/ComfyUI.git

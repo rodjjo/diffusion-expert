@@ -2,6 +2,12 @@
 
 #include <vector>
 #include <map>
+#include <memory>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <Fl/Fl_Gl_Window.H>
 
 #include "python/image.h"
@@ -107,7 +113,7 @@ namespace dfe
         bool has_selected_area();
         void clear_selected_area();
         image_ptr_t merge_layers_to_image();
-
+        void set_image(image_ptr_t value);
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);
         void scroll_again(float old_zoom);
@@ -117,7 +123,7 @@ namespace dfe
         std::vector<std::shared_ptr<Layer> > layers_;
         int drag_begin_x_ = 0;
         int drag_begin_y_ = 0;
-        Layer *selected_;
+        Layer *selected_ = NULL;
         ImagePanel *parent_;
         size_t name_index_ = 1;
         ImageCache cache_;
@@ -129,19 +135,35 @@ namespace dfe
         int selected_area_h_ = 0;
     };
 
-    
-        
+
     class ImagePanel : public Fl_Gl_Window
     {
     public:
-        ImagePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const char *unique_title);
+        ImagePanel(
+            uint32_t x, uint32_t y, 
+            uint32_t w, uint32_t h, 
+            const char *unique_title,
+            std::shared_ptr<ViewSettings> vs);
+        ImagePanel(
+            uint32_t x, uint32_t y, 
+            uint32_t w, uint32_t h, 
+            const char *unique_title);
         virtual ~ImagePanel();
         ViewSettings *view_settings();
         void resize(int x, int y, int w, int h) override;
-        void set_wheel_delta(int16_t delta);
-        void hack_window_proc(uintptr_t parent_hwnd);
         float getZoom();
-        
+
+    private:
+        void after_constructor();
+
+    protected:
+        virtual bool enable_selection() ;
+        virtual bool enable_scroll();
+        virtual bool enable_zoom();
+        virtual bool enable_drag();
+        virtual bool enable_resize();
+        virtual bool enable_mask_editor();
+
     protected:
         // mouse routines
         virtual void mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y, int from_x, int from_y);
@@ -171,9 +193,8 @@ namespace dfe
         void schedule_redraw(bool force=false);
 
     private:
-        int16_t wheel_delta_ = 0;
+        std::shared_ptr<ViewSettings> view_settings_;
         image_ptr_t image_;
-        ViewSettings view_settings_;
         image_ptr_t buffer_;
         bool should_redraw_ = true;
         bool force_redraw_ = false;

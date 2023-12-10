@@ -26,6 +26,7 @@ Source: "data\images\uninstall.ico"; DestDir: "{app}\bin"
 Source: "python_stuff\*.*"; DestDir: "{app}\python_stuff"; Flags: ignoreversion recursesubdirs
 Source: "dependencies\filterpy\*.*"; DestDir: "{app}\python_deps\filterpy"; Flags: ignoreversion recursesubdirs
 Source: "dependencies\python-future\*.*"; DestDir: "{app}\python_deps\python-future"; Flags: ignoreversion recursesubdirs
+Source: "dependencies\comfyui\*.*"; DestDir: "{app}\python_deps\comfyui"; Flags: ignoreversion recursesubdirs
 Source: "python_configs\*.*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs
 
 

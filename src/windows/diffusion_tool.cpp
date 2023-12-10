@@ -210,12 +210,9 @@ RawImage *DiffusionTool::getInputImage() {
 }
 
 image_ptr_t get_stable_diffusion_image(RawImage *image, painting_mode_t mode) {
-    DiffusionTool *window = NULL;
-    get_sd_state()->clearGenerators();
 
-    if (window == NULL) {
-        window = new DiffusionTool();
-    }
+    get_sd_state()->clearGenerators();
+    DiffusionTool *window = new DiffusionTool();
 
     window->setInitialImage(image, mode);
 

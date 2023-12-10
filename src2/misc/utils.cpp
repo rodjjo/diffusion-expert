@@ -20,6 +20,7 @@ namespace
     std::wstring executable_dir;
     std::wstring python_exe_path;
     std::wstring pysources_dir;
+    std::wstring comfyui_dir;
 } 
 
 const std::wstring& executableDir() {
@@ -56,6 +57,13 @@ const std::wstring& sourcesDirectory() {
         pysources_dir = executableDir() + L"/../diffusion_expert";
     }
     return pysources_dir;
+}
+
+const std::wstring& comfyuiDirectory() {
+    if (comfyui_dir.empty()) {
+        comfyui_dir = executableDir() + L"/../python_deps/comfyui";
+    }
+    return comfyui_dir;
 }
 
 std::string filepath_dir(const std::string & path) {
@@ -110,42 +118,6 @@ void blur_gl_contents(int w, int h, int mouse_x, int mouse_y) {
 
     glEnd();
 }
-
-#ifdef _WIN32
-
-typedef struct {
-    uintptr_t result;
-    char title_buffer[1024];
-    const char *title;
-} enumeration_param_t;
-
-BOOL enumerationProc(
-  _In_ HWND   hwnd,
-  _In_ LPARAM lParam
-) {
-    enumeration_param_t *r = (enumeration_param_t *)lParam;
-    r->title_buffer[sizeof(r->title_buffer) - 1] = '\0';
-    GetWindowTextA(hwnd, r->title_buffer, sizeof(r->title_buffer) - 1);
-    if (strcmp(r->title, r->title_buffer) == 0) {
-        r->result = (uintptr_t)hwnd;
-        return FALSE;
-    }
-    return TRUE;
-}
-
-uintptr_t find_current_thread_window(const char *title, uintptr_t parent_hwnd) {
-    enumeration_param_t result;
-    result.result = (uintptr_t) 0;
-    result.title = title;
-    if (parent_hwnd) {
-        EnumChildWindows((HWND)parent_hwnd, &enumerationProc, (LPARAM)&result);
-    } else {
-        EnumThreadWindows(GetCurrentThreadId(), &enumerationProc, (LPARAM)&result);
-    }
-    return result.result;
-}
-#endif
-
 
 bool rectRect(int r1x, int r1y, int r1w, int r1h, int r2x, int r2y, int r2w, int r2h) {
 

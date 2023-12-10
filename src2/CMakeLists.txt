@@ -6,6 +6,7 @@ file(GLOB Sources
     "${CMAKE_CURRENT_SOURCE_DIR}/messagebus/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/components/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/components/xpm/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/frames/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 file(GLOB SourcesEntry

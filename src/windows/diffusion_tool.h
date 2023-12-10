@@ -45,8 +45,8 @@ class DiffusionTool : public Fl_Window {
   static void gotoPromptPage(void *cbdata);
 
  private:
-    Fl_Group  *rightPanel_ = NULL;
-    Fl_Group  *toolsPanel_ = NULL;
+    Fl_Group *rightPanel_ = NULL;
+    Fl_Group *toolsPanel_ = NULL;
     Pages *pages_ = NULL;
 
     Fl_Select_Browser *page_browser_;

@@ -66,7 +66,7 @@ ConfigWindow::ConfigWindow() {
     window_->enableExitShortcuts();
 
     btnOk_->tooltip("Save the configuration");
-    btnCancel_->tooltip("Save the configuration");
+    btnCancel_->tooltip("Discart the changes");
     window_->position(Fl::w() / 2 - window_->w() / 2, Fl::h() / 2 - window_->h() / 2);
 
     schedulers_->align(FL_ALIGN_TOP_LEFT);

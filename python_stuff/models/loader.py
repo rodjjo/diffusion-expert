@@ -129,15 +129,15 @@ def convert_ldm_clip_checkpoint(checkpoint):
     local_files_only = False
     if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
         local_files_only = True
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
+    text_model = CLIPTextModel.from_pretrained('openai/clip-vit-large-patch14', cache_dir=CACHE_DIR)
 
     keys = list(checkpoint.keys())
 
     text_model_dict = {}
 
     for key in keys:
-        if key.startswith("cond_stage_model.transformer"):
-            text_model_dict[key[len("cond_stage_model.transformer.") :]] = checkpoint[key]
+        if key.startswith('cond_stage_model.transformer'):
+            text_model_dict[key[len('cond_stage_model.transformer.') :]] = checkpoint[key]
 
     text_model.load_state_dict(text_model_dict)
 

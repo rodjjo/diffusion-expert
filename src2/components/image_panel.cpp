@@ -21,6 +21,34 @@ namespace dfe
 
         uint8_t red_color[4] = {255, 0, 0, 255};
         uint8_t gray_color[4] = {128, 128, 128, 255};
+        
+        int g_mouse_delta = 0;
+
+#ifdef _WIN32
+    HHOOK _hook;
+    LRESULT MouseHook(
+        int    nCode,
+        WPARAM wParam,
+        LPARAM lParam
+    ) {
+        if (wParam == WM_MOUSEWHEEL) {
+            LPMOUSEHOOKSTRUCTEX minfo = (LPMOUSEHOOKSTRUCTEX) lParam;
+            g_mouse_delta = (short)HIWORD(minfo->mouseData);
+        }
+        return CallNextHookEx(_hook, nCode, wParam, lParam);
+    }
+#endif
+    bool hook_enabled = false;
+    void register_mouse_hook() {
+        if (hook_enabled) {
+            return;
+        }
+        hook_enabled = true;
+#ifdef _WIN32
+    _hook = SetWindowsHookExA(WH_MOUSE, MouseHook, NULL, GetCurrentThreadId());
+#endif
+        }
+
     }
 
     Layer::Layer(ViewSettings *parent, const char *path) : parent_(parent), image_(py::open_image(path)) {
@@ -393,6 +421,13 @@ namespace dfe
     }
 
     void ViewSettings::get_image_area(int *x, int *y, int *w, int *h) {
+        if (layers_.size() < 1) {
+            *x = 0;
+            *y = 0;
+            *w = 0;
+            *h = 0;
+            return;
+        }
         int max_x = -32000;
         int max_y = -32000;
         int min_x = 32000;
@@ -461,6 +496,10 @@ namespace dfe
 
     bool ViewSettings::get_selected_area(int *x, int *y, int *w, int *h) {
         if (!has_selected_area()) {
+            *x = 0;
+            *y = 0;
+            *w = 0;
+            *h = 0;
             return false;
         }
         *x = selected_area_x_;
@@ -504,6 +543,11 @@ namespace dfe
 
     void ViewSettings::clear_selected_area() {
         selected_area_ = false;
+    }
+
+    void ViewSettings::set_image(image_ptr_t value) {
+        clear_layers();
+        add_layer(value);
     }
 
 
@@ -599,49 +643,32 @@ namespace dfe
         }
     }
 
-    ImagePanel::ImagePanel(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const char *unique_title) : 
-        Fl_Gl_Window(x, y, w, h, unique_title), 
-        view_settings_(this) {
-
-        Fl::add_timeout(0.01, ImagePanel::imageRefresh, this);
+    ImagePanel::ImagePanel(
+        uint32_t x, uint32_t y, 
+        uint32_t w, uint32_t h, 
+        const char *unique_title
+    ) : Fl_Gl_Window(x, y, w, h, unique_title) {
+        view_settings_.reset(new ViewSettings(this));
+        after_constructor();
     }
 
-    void ImagePanel::hack_window_proc(uintptr_t parent_hwnd) {
-#ifdef _WIN32
-        /*
-        FLTK does not handle mouse wheel event weel.
-        I'm hacking the window proc so.
-        */
-        native_hwnd_ = find_current_thread_window(this->label(), parent_hwnd);
-        if (native_hwnd_) {
-            window_user_data[native_hwnd_] = this;
-            auto hwnd = (HWND)native_hwnd_;
-            original_wnd_proc_ = (WNDPROC)GetWindowLongPtrW(hwnd, GWLP_WNDPROC);
-            SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)&ImagePanel::dfe_window_proc);
-        }
-#endif
+    ImagePanel::ImagePanel(
+        uint32_t x, uint32_t y, 
+        uint32_t w, uint32_t h, 
+        const char *unique_title,
+        std::shared_ptr<ViewSettings> vs
+    ) : Fl_Gl_Window(x, y, w, h, unique_title), view_settings_(vs) {
+        after_constructor();
+    }
+
+    void ImagePanel::after_constructor() {
+        register_mouse_hook();
+        Fl::add_timeout(0.01, ImagePanel::imageRefresh, this);
     }
 
     ImagePanel::~ImagePanel() {
         Fl::remove_timeout(ImagePanel::imageRefresh, this);
-        #ifdef _WIN32
-        if (native_hwnd_) {
-            SetWindowLongPtrW((HWND)native_hwnd_, GWLP_WNDPROC, (LONG_PTR)original_wnd_proc_);
-            window_user_data.erase(native_hwnd_);
-        }
-        #endif
     }
-
-#ifdef _WIN32
-    // fltk does not handle mouse scroll event well.
-    LRESULT ImagePanel::dfe_window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-        ImagePanel *_this = (ImagePanel *) window_user_data[(fl_uintptr_t)hWnd];
-        if (msg == WM_MOUSEWHEEL) {
-            _this->set_wheel_delta(GET_WHEEL_DELTA_WPARAM(wParam));
-        }
-        return _this->original_wnd_proc_(hWnd, msg, wParam, lParam);
-    }
-#endif
     
     void ImagePanel::imageRefresh(void *cbdata) {
         ((ImagePanel *) cbdata)->imageRefresh();
@@ -663,26 +690,26 @@ namespace dfe
     }
 
     ViewSettings *ImagePanel::view_settings() {
-        return &view_settings_;
-    }
-
-    void ImagePanel::set_wheel_delta(int16_t delta) {
-        wheel_delta_ = delta;
+        return view_settings_.get();
     }
 
     int ImagePanel::handle(int event)
     {
         switch (event) {
             case FL_MOUSEWHEEL: {
-                int16_t z = wheel_delta_ > 0 ? -10 : 10;
-                if (wheel_delta_ != 0) {
+                int16_t z = g_mouse_delta > 0 ? -10 : 10;
+                if (g_mouse_delta != 0) {
                     bool control_pressed = Fl::event_command() != 0;
                     bool shift_pressed = Fl::event_shift() != 0;
                     bool alt_pressed = Fl::event_alt() != 0;
                     if (!control_pressed && !shift_pressed && !alt_pressed) {
-                        view_settings_.setZoom(view_settings_.getZoom() + z);
+                        if (enable_zoom()) {
+                            view_settings_->setZoom(view_settings_->getZoom() + z);
+                        }
                     } else if (!control_pressed && shift_pressed && !alt_pressed) {
-                        view_settings_.mouse_scale(z > 0);
+                        if (enable_resize()) {
+                            view_settings_->mouse_scale(z > 0);
+                        }
                     }
                 }
             }
@@ -716,8 +743,8 @@ namespace dfe
                     mouse_down_alt_ = Fl::event_alt() != 0;
                     mouse_down_x_ = Fl::event_x();
                     mouse_down_y_ = Fl::event_y();
-                    scroll_px_ = view_settings_.cache()->get_scroll_x();
-                    scroll_py_ = view_settings_.cache()->get_scroll_y();
+                    scroll_px_ = view_settings_->cache()->get_scroll_x();
+                    scroll_py_ = view_settings_->cache()->get_scroll_y();
                     move_last_x_ = mouse_down_x_;
                     move_last_y_ = mouse_down_y_;
                     mouse_down_left_ = mouse_down_left;
@@ -773,25 +800,25 @@ namespace dfe
         }
         
         bool modified = force_redraw_;
-        for (size_t i = 0; i < view_settings_.layer_count() && !modified; i++) {
-            modified = view_settings_.cache()->is_modified(view_settings_.at(i));
+        for (size_t i = 0; i < view_settings_->layer_count() && !modified; i++) {
+            modified = view_settings_->cache()->is_modified(view_settings_->at(i));
         }
 
         if (modified) {
             force_redraw_ = false;
             image_->clear(255, 255, 255, 255);
-            view_settings_.cache()->clear_hits();
-            for (size_t i = 0; i < view_settings_.layer_count(); i++) {
-                draw_layer(view_settings_.at(i));
+            view_settings_->cache()->clear_hits();
+            for (size_t i = 0; i < view_settings_->layer_count(); i++) {
+                draw_layer(view_settings_->at(i));
             }
 
             int ix, iy, iw, ih;
-            view_settings_.get_image_area(&ix, &iy, &iw, &ih);
+            view_settings_->get_image_area(&ix, &iy, &iw, &ih);
             draw_rectangle(ix, iy, iw, ih, gray_color, false);
-            if (view_settings_.get_selected_area(&ix, &iy, &iw, &ih)) {
+            if (view_settings_->get_selected_area(&ix, &iy, &iw, &ih)) {
                 draw_rectangle(ix, iy, iw, ih, gray_color, true);
             }
-            view_settings_.cache()->gc();
+            view_settings_->cache()->gc();
 
             
         }
@@ -813,8 +840,8 @@ namespace dfe
     }
     
     void ImagePanel::draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill) {
-        x += view_settings_.cache()->get_scroll_x();
-        y += view_settings_.cache()->get_scroll_y();
+        x += view_settings_->cache()->get_scroll_x();
+        y += view_settings_->cache()->get_scroll_y();
         float zoom = getZoom();
         x *= zoom;
         y *= zoom;
@@ -825,12 +852,12 @@ namespace dfe
 
     void ImagePanel::draw_layer(Layer *layer) {
         float zoom = getZoom();
-        if (!view_settings_.cache()->is_layer_visible(zoom, layer, 0, 0, image_->w(), image_->h())) {
+        if (!view_settings_->cache()->is_layer_visible(zoom, layer, 0, 0, image_->w(), image_->h())) {
             return;
         }
-        auto img = view_settings_.cache()->get_cached(zoom, layer);
+        auto img = view_settings_->cache()->get_cached(zoom, layer);
         int x, y, w, h;
-        view_settings_.cache()->get_bounding_box(zoom, layer, &x, &y, &w, &h);
+        view_settings_->cache()->get_bounding_box(zoom, layer, &x, &y, &w, &h);
         image_->pasteAt(x, y, img);
         if (layer->selected()) {
             image_->rectangle(x, y, w, h, red_color);
@@ -840,11 +867,11 @@ namespace dfe
     void ImagePanel::getDrawingCoord(float &x, float &y) {
         x = -1;
         y = 1;
-        if (view_settings_.layer_count() < 1) {
+        if (view_settings_->layer_count() < 1) {
             return;
         }
 
-        auto ref = view_settings_.at(0)->getImage(); 
+        auto ref = view_settings_->at(0)->getImage(); 
         if (!ref) {
             return;
         }
@@ -869,8 +896,8 @@ namespace dfe
         force_redraw_ = force_redraw_ || force;
         should_redraw_ = true;
         if (force_redraw_) {
-            for (size_t i = 0; i < view_settings_.layer_count(); i++) {
-                view_settings_.at(i)->set_modified();
+            for (size_t i = 0; i < view_settings_->layer_count(); i++) {
+                view_settings_->at(i)->set_modified();
             }
         }
     }
@@ -881,7 +908,7 @@ namespace dfe
     };
 
     float ImagePanel::getZoom() {
-        return view_settings_.getZoom() * 0.01;
+        return view_settings_->getZoom() * 0.01;
     }
     
     void ImagePanel::mouse_drag(int dx, int dy, int x, int y) {
@@ -889,22 +916,26 @@ namespace dfe
         dy = (y - dy) / getZoom();
         auto sx = scroll_px_ + dx;
         auto sy = scroll_py_ + dy;
-        view_settings_.constraint_scroll(getZoom(), image_->w(), image_->h(), &sx, &sy);
-        view_settings_.cache()->set_scroll(sx,  sy);
+        view_settings_->constraint_scroll(getZoom(), image_->w(), image_->h(), &sx, &sy);
+        view_settings_->cache()->set_scroll(sx,  sy);
         schedule_redraw(true);
     }
 
     void ImagePanel::mouse_move(bool left_button, bool right_button, int down_x, int down_y, int move_x, int move_y, int from_x, int from_y) {
         if (mouse_down_control_ && left_button) {
             // control was pressed during mouse down, so lets change the scroll 
-            mouse_drag(down_x, down_y, move_x, move_y);
+            if (enable_scroll()) {
+                mouse_drag(down_x, down_y, move_x, move_y);
+            }
             down_x = move_x;
             down_y = move_y;
             return;
         }
 
         if (right_button && !mouse_down_control_ && !mouse_down_shift_) {
-            view_settings_.mouse_drag(getZoom(), down_x, down_y, move_x, move_y);
+            if (enable_drag()) {
+                view_settings_->mouse_drag(getZoom(), down_x, down_y, move_x, move_y);
+            }
             return;
         }
 
@@ -920,7 +951,9 @@ namespace dfe
             if (move_y < down_y) {
                 down_y = move_y;
             }
-            view_settings_.set_selected_area(down_x / getZoom(), down_y / getZoom(), sw / getZoom(), sh / getZoom());
+            if (enable_selection()) {
+                view_settings_->set_selected_area(down_x / getZoom(), down_y / getZoom(), sw / getZoom(), sh / getZoom());
+            }
             return;
         }
     }
@@ -928,12 +961,14 @@ namespace dfe
     void ImagePanel::mouse_down(bool left_button, bool right_button, int down_x, int down_y) {
         if (!mouse_down_control_ && (left_button || right_button)) {
             // select the layer at the mouse coordinates
-            auto index = view_settings_.layer_at_mouse_coord(getZoom(), down_x, down_y);
-            view_settings_.select(index);
+            auto index = view_settings_->layer_at_mouse_coord(getZoom(), down_x, down_y);
+            view_settings_->select(index);
         }
 
         if (right_button && !mouse_down_control_ && !mouse_down_shift_) {
-            view_settings_.mouse_drag_begin();
+            if (enable_drag()) {
+                view_settings_->mouse_drag_begin();
+            }
         }
     }
 
@@ -941,6 +976,30 @@ namespace dfe
         if (right_button && !mouse_down_control_) {
             
         }
+    }
+
+    bool ImagePanel::enable_selection() {
+        return true;
+    }
+
+    bool ImagePanel::enable_scroll() {
+        return true;
+    }
+
+    bool ImagePanel::enable_zoom() {
+        return true;
+    }
+
+    bool ImagePanel::enable_drag() {
+        return true;
+    }
+
+    bool ImagePanel::enable_resize() {
+        return true;
+    }
+
+    bool ImagePanel::enable_mask_editor() {
+        return false;
     }
 
 } // namespace dfe

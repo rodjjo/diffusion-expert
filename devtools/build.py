@@ -20,6 +20,7 @@ def build_dir_fltk(btype):
     os.makedirs(result, exist_ok=True)
     return result
 
+
 def temp_dir():
     result = os.path.join(root_dir(), 'temp')
     os.makedirs(result, exist_ok=True)
@@ -29,8 +30,10 @@ def temp_dir():
 def mingw_bin_dir():
     return os.path.join(build_dir(), 'mingw64', 'bin')
 
+
 def deeps_dir():
     return os.path.join(root_dir(), 'dependencies')
+
 
 def fltk_dir():
     return os.path.join(deeps_dir(), 'fltk')
@@ -52,8 +55,10 @@ def python_dir():
         os.makedirs(result, exist_ok=True)
     return result
 
+
 def python_binary():
     return os.path.join(python_dir(), 'python310.dll')
+
 
 def download_python():
     url = 'https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip'
@@ -75,6 +80,7 @@ def ensure_have_tool(name, url, args):
     except:
         pass
 
+
 def ensure_have_7zip():
     ensure_have_tool('7-Zip', 'https://www.7-zip.org/', ['7z.exe'])
 
@@ -92,11 +98,13 @@ def apply_patches():
     except Exception as e:
         print(str(e))
 
+
 def get_build_type(args):
     if '--debug' in args:
         return 'Debug'
     else:
         return 'Release'
+
 
 def cmake_args(args):
     mingw_dir = mingw_bin_dir()

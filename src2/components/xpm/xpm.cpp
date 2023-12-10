@@ -11,6 +11,9 @@
 
 #include "components/xpm/data/24x24/new.xpm"
 #include "components/xpm/data/24x24/door.xpm"
+#include "components/xpm/data/24x24/folder.xpm"
+#include "components/xpm/data/24x24/wallet.xpm"
+#include "components/xpm/data/24x24/pinion.xpm"
 #include "components/xpm/data/24x24/exit.xpm"
 #include "components/xpm/data/24x24/component.xpm"
 #include "components/xpm/data/24x24/close.xpm"
@@ -19,6 +22,14 @@
 #include "components/xpm/data/24x24/erase.xpm"
 #include "components/xpm/data/24x24/copy.xpm"
 #include "components/xpm/data/24x24/picture.xpm"
+#include "components/xpm/data/24x24/ok.xpm"
+#include "components/xpm/data/24x24/abort.xpm"
+#include "components/xpm/data/24x24/bee.xpm"
+#include "components/xpm/data/24x24/magic_wand.xpm"
+#include "components/xpm/data/24x24/back.xpm"
+#include "components/xpm/data/24x24/forward.xpm"
+#include "components/xpm/data/24x24/heart.xpm"
+#include "components/xpm/data/24x24/medium_rating.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -31,11 +42,23 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { img_24x24_open_layer, xpm_component},
     { img_24x24_close, xpm_close},
     { img_24x24_open, xpm_door },
+    { img_24x24_folder, xpm_folder },
+    { img_24x24_wallet, xpm_wallet },
+    { img_24x24_pinion, xpm_pinion },
     { img_24x24_settings, xpm_computer },
+    { img_24x24_bee, xpm_bee },
     { img_24x24_remove, xpm_remove },
     { img_24x24_erase, xpm_erase},
     { img_24x24_copy, xpm_copy },
     { img_24x24_picture, xpm_picture },
+    { img_24x24_ok, xpm_ok },
+    { img_24x24_abort, xpm_abort },
+    { img_24x24_magic_wand, xpm_magic_wand},
+    { img_24x24_back, xpm_back },
+    { img_24x24_forward, xpm_forward },
+    { img_24x24_heart, xpm_heart },
+    { img_24x24_medium_rating, xpm_medium_rating }
+
 };
 
 std::shared_ptr<Fl_RGB_Image> image(xpm_t xpm_id, Fl_Color bg) {

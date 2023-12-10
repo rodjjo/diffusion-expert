@@ -6,6 +6,8 @@
 #include "misc/config.h"
 #include "misc/utils.h"
 
+#include "windows/settings_ui.h"
+#include "windows/diffusion_ui.h"
 #include "windows/main_ui.h"
 
 
@@ -24,6 +26,7 @@ namespace dfe
             event_main_menu_layers_duplicate,
             event_main_menu_layers_remove_selected,
             event_main_menu_layers_remove_background,
+            event_main_menu_selection_generate,            
             event_layer_count_changed,
             event_layer_selected,
             event_layer_after_draw,
@@ -52,6 +55,8 @@ namespace dfe
             menu_->addItem(event_main_menu_layers_duplicate, "", "Layers/Duplicate", "^d", 0, xpm::img_24x24_copy);
             menu_->addItem(event_main_menu_layers_remove_background, "", "Layers/Remove background", "", 0, xpm::img_24x24_picture);
             menu_->addItem(event_main_menu_layers_remove_selected, "", "Layers/Remove", "", 0, xpm::img_24x24_remove);
+            menu_->addItem(event_main_menu_selection_generate, "", "Selection/Generate Image", "", 0, xpm::img_24x24_bee);
+            
             
         } // menu
 
@@ -89,17 +94,6 @@ namespace dfe
         wnd_->position(Fl::w() / 2 - wnd_->w() / 2, Fl::h() / 2 - wnd_->h() / 2);
         wnd_->size_range(860, 480);
         wnd_->show();
-
-#ifdef _WIN32
-        auto native_wnd = find_current_thread_window(wnd_->label());
-        if (native_wnd) {
-            /*
-            FLTK does not handle mouse wheel event well.
-            I'm hacking the window proc so.
-            */
-            image_->hack_window_proc(native_wnd);
-        }
-#endif
         alignComponents();
     }
 
@@ -133,7 +127,6 @@ namespace dfe
             in_layer_callback_ = true;
             int idx = layers_->value();
             if (idx > 0)  {
-                // do something 
                 image_->view_settings()->select(idx - 1);
             } 
             layers_->deselect();
@@ -246,6 +239,10 @@ namespace dfe
         case event_main_menu_clicked:
             break;
         case event_main_menu_file_new_art:
+            generate_image();
+            break;
+        case event_main_menu_selection_generate:
+            generate_image(image_->view_settings());
             break;
         case event_main_menu_file_open:
             choose_file_and_open(true);
@@ -265,7 +262,9 @@ namespace dfe
             if (sender == image_ && !in_layer_callback_) {
                 layers_->value(image_->view_settings()->selected_layer_index() + 1);
             }
+            break;
         case event_main_menu_edit_settings:
+            edit_settings();
             break;
         case event_main_menu_layers_duplicate:
             image_->view_settings()->duplicate_selected();
@@ -296,7 +295,7 @@ namespace dfe
         char buffer[256] = "";
         
         if ((int)image_->view_settings()->layer_count()) {
-            int x, y, w, h;
+            int x = 0, y = 0, w = 0, h = 0;
             image_->view_settings()->get_image_area(&x, &y, &w, &h);
             sprintf(buffer, " Size: %d x %d ", w, h);
         } else {

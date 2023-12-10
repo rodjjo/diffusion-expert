@@ -101,6 +101,7 @@ namespace dfe
                 sys.attr("_base_executable") = pythonExecutablePath();
                 py11::sequence sp = sys.attr("path").cast<py11::sequence>();
                 sp.attr("append")(sourcesDirectory().c_str());
+                sp.attr("append")(comfyuiDirectory().c_str());
                 py11::module_ dxpert(dexpert_module());
                 py11::module_ main = py11::module_::import("diffusion_expert");
                 main.attr("__file__") = sourcesDirectory() + L"diffusion_expert.py";
