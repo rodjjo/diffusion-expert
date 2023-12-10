@@ -3,11 +3,10 @@ from dfe.models.loader import load_state_dict, load_unet, load_vae, load_tokeniz
 from dfe.images.routines import pil_as_dict
 from dfe.misc.config import get_model_path
 
+from dexpert import progress, progress_canceled, progress_text
+
 from diffusers import StableDiffusionPipeline
 import torch
-# {'positive_prompt': '', 'negative_prompt': '', 'mode': 'txt2img', 'model': 'addictivefuture_v1.safetensors', 
-# 'inpaint_model': 'beautifulArt_v70.inpainting.safetensors', 'cfg': 7.5, 'seed': -1, 'width': 512, 'height': 512, 'steps': 25, 
-# 'batch_size': 1, 'image': {}, 'mask': {}, 'controlnets': []}
 
 INPAINT_KEY = {
     True: "inpaint",
@@ -44,6 +43,8 @@ class LoadedModel:
         self.config = config
         self.unet_config = unet_config
 
+class CancelException(Exception):
+    pass
 
 def cached_load_unet(
     model: str, 
@@ -53,6 +54,7 @@ def cached_load_unet(
     use_float16: bool,
     keep_in_memory: bool
 ) -> LoadedModel:
+    progress_text("Loading the model")
     cache = MODEL_CACHE[INPAINT_KEY[inpaint]]
     if cache.get('model_file', '') != model or cache.get('use_fp16', True) != use_float16:
         cache.clear()
@@ -65,6 +67,7 @@ def cached_load_unet(
 
     unet = cache.get('unet')
     if unet:
+        progress_text("Using cached model... not reloading from disk...")
         return LoadedModel(
             unet=unet,
             vae=MODEL_CACHE['vae']['model'],
@@ -76,9 +79,12 @@ def cached_load_unet(
         )
     state_dict = cache.get('state_dict')
     if state_dict is None:
+        progress_text("Loading the model from disk...")
         state_dict = load_state_dict(model)
         if keep_in_memory:
             cache['state_dict'] = state_dict
+    else:
+        progress_text("Using preloaded state of the model...")
 
     MODEL_CACHE['text_model'] = state_dict.text_model
     MODEL_CACHE['config'] = state_dict.config
@@ -88,7 +94,13 @@ def cached_load_unet(
         MODEL_CACHE['vae'] = {}
         MODEL_CACHE['vae']['type'] = state_dict.kind
 
-    vae = MODEL_CACHE.get('vae', {}).get('model') or load_vae(state_dict, use_float16)
+    vae = MODEL_CACHE.get('vae', {}).get('model') 
+    if not vae:
+        progress_text("Loading vae from disk...")
+        vae = load_vae(state_dict, use_float16)
+    else:
+        progress_text("Using preloaded vae...")
+        
     MODEL_CACHE['vae']['model'] = vae
 
     if MODEL_CACHE.get('tokenizer', {}).get('type') != state_dict.kind:
@@ -102,11 +114,16 @@ def cached_load_unet(
         if MODEL_CACHE.get('tiny_vae', {}).get('type') != state_dict.kind:
             MODEL_CACHE['tiny_vae'] = {}
             MODEL_CACHE['tiny_vae']['type'] = state_dict.kind
-        MODEL_CACHE['tiny_vae']['model'] = load_tiny_vae(state_dict, use_float16)
-
+        if MODEL_CACHE['tiny_vae'].get('model') is None:
+            progress_text("Loading tiny vae from disk...")
+            MODEL_CACHE['tiny_vae']['model'] = load_tiny_vae(state_dict, use_float16)
+        else:
+            progress_text("Using preloaded tiny vae...")
+    
+    progress_text("Loading unet from state dict...")
     unet = load_unet(state_dict, use_float16)
     cache['unet'] = unet
-
+    progress_text("Model loaded with success...")
     return LoadedModel(
             unet=cache['unet'],
             vae=MODEL_CACHE['vae']['model'],
@@ -119,11 +136,13 @@ def cached_load_unet(
 
 
 def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel):
+    progress_text("Creating scheduler...")
     scheduler = load_scheduler(scheduler_name, config=model.config)
     safety_checker = None
     feature_extractor = None
     requires_safety_checker = False
     if mode == 'txt2img' or True:
+        progress_text("Creating text to image pipeline...")
         model.unet.to('cuda')
         pipe = StableDiffusionPipeline(
             vae=model.vae,
@@ -142,6 +161,11 @@ def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel):
     return pipe
 
 def execute_pipeline(pipeline, prompt, negative, cfg, steps, seed, width, height, batch_size):
+    def pipeline_callback(step, timestep, latents):
+        progress(step, steps)
+        if progress_canceled():
+            raise CancelException()
+    progress_text("Generating the image...")
     with torch.inference_mode(), torch.autocast('cuda'):
         result = pipeline(
             prompt, 
@@ -150,7 +174,9 @@ def execute_pipeline(pipeline, prompt, negative, cfg, steps, seed, width, height
             guidance_scale=cfg, 
             num_inference_steps=steps,
             width=width,
-            height=height
+            height=height,
+            callback=pipeline_callback,
+            callback_steps=1
         )
         return result.images
 
@@ -177,6 +203,7 @@ def generate_internal(
     filter_nsftw: bool,
     use_float16: bool
 ) -> List[dict]:
+    progress_text(f"Generating image, mode: {mode} ...")
     inpaint = mode != 'txt2img'
     loaded_model = cached_load_unet(
         inpaint_model if inpaint else model, 
@@ -187,20 +214,25 @@ def generate_internal(
         keep_in_memory
     )
     pipeline = create_pipeline(mode, scheduler_name, loaded_model)
-    result = execute_pipeline(
-        pipeline=pipeline,
-        seed=seed, 
-        width=width, 
-        height=height,
-        prompt=positive_prompt,
-        negative=negative_prompt,
-        cfg=cfg,
-        steps=steps,
-        batch_size=batch_size
-    )
-    return [
-        pil_as_dict(r) for r in result
-    ]
+    try:
+        result = execute_pipeline(
+            pipeline=pipeline,
+            seed=seed, 
+            width=width, 
+            height=height,
+            prompt=positive_prompt,
+            negative=negative_prompt,
+            cfg=cfg,
+            steps=steps,
+            batch_size=batch_size
+        )
+        return [
+            pil_as_dict(r) for r in result
+        ]
+    except CancelException:
+        return [
+            {"error": "Canceled by the user"}
+        ]
 
 
 def generate(params: dict) -> dict:
@@ -227,4 +259,3 @@ def generate(params: dict) -> dict:
         filter_nsftw=params.get("filter_nsftw", False),
         use_float16=params.get("use_float16", False)
     )
-    return [rgb_image_512x512()]

@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Select_Browser.H>
 
@@ -32,7 +33,7 @@ typedef enum {
     page_type_count 
 } page_type_t;
     
-class DiffusionWindow: public Fl_Window, public SubscriberThis {
+class DiffusionWindow: public Fl_Double_Window, public SubscriberThis {
 public:
     DiffusionWindow();
     DiffusionWindow(ViewSettings *view_settings);

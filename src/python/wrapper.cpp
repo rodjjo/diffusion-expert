@@ -38,7 +38,7 @@ PYBIND11_EMBEDDED_MODULE(dexpert, m) {
         printf("%s\n", text);
         dexpert::set_progress_title(text);
     });
-
+    
     m.def("progress_canceled", []() {
         if (dexpert::should_cancel_progress())
             return true;

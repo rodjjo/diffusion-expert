@@ -15,9 +15,16 @@ namespace dfe
 
                 m.def("progress_title", [](const char *text)
                 {
-                    printf("%s\n");
+                    printf("%s\n", text);
                     dfe::set_progress_title(text);
+                });                
+                
+                m.def("progress_text", [](const char *text)
+                {
+                    printf("%s\n", text);
+                    dfe::set_progress_text(text);
                 });
+                
 
                 m.def("progress_canceled", []() {
                     return dfe::should_cancel();

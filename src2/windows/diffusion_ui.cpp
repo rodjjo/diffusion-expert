@@ -42,14 +42,14 @@ namespace dfe
         };
     }
 
-    DiffusionWindow::DiffusionWindow() : Fl_Window(
+    DiffusionWindow::DiffusionWindow() : Fl_Double_Window(
         Fl::w() / 2 - 860 / 2, Fl::h() / 2 - 640 / 2,
         860, 640, "Image generator"
     ), view_settings_(NULL), SubscriberThis(diffusion_tool_events)  {
         after_constructor();
     }
 
-    DiffusionWindow::DiffusionWindow(ViewSettings *view_settings) : Fl_Window(
+    DiffusionWindow::DiffusionWindow(ViewSettings *view_settings) : Fl_Double_Window(
         Fl::w() / 2 - 860 / 2, Fl::h() / 2 - 640 / 2,
         860, 640, "Image generator"
     ), view_settings_(view_settings), SubscriberThis(diffusion_tool_events) {

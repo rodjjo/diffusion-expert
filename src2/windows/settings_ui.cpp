@@ -114,7 +114,7 @@ void SettingsWindow::alignComponents() {
     filter_nsfw_->resize(left, top, 200, height);
     use_float16_->resize(left + filter_nsfw_->w() + 5, top, 200, height);
     private_mode_->resize(use_float16_->x() + use_float16_->w() + 5, top, 200, height);
-    keep_models_->resize(private_mode_->x() + private_mode_->w() + 5, top, 200, height);
+    keep_models_->resize(left, private_mode_->y() + private_mode_->h() + 5, 200, height);
 }
 
 void edit_settings() {

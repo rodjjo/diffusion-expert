@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
 
 #include "windows/progress_ui.h"
 
@@ -19,13 +20,46 @@ namespace {
     size_t progress_max = 100;
     size_t progress_version = 0;
     std::shared_ptr<ProgressWindow> window;
+
+    class PreventCloseWindow: public Fl_Double_Window {
+        public:
+            PreventCloseWindow(int ww, int hh, const char* title ) : Fl_Double_Window(ww, hh, title) {
+            };
+        protected:
+          int handle(int event) override {
+            switch (event) {
+                case FL_KEYDOWN:
+                case FL_KEYUP: {
+                    if (Fl::event_key() == FL_Escape) {
+                        return  1;
+                    }
+                    if (Fl::event_key() == (FL_F + 4) && (Fl::event_state() & FL_ALT) != 0) {
+                        return  1; // Do not allow ALT + F4
+                    }
+                }
+                break;
+            }
+            return Fl_Window::handle(event);
+        }
+    };
 }
 
 ProgressWindow::ProgressWindow(progress_type ptype) {
     ptype_ = ptype;
-    window_ = new Fl_Window(900, 300, "Progress");
+    window_ = new PreventCloseWindow(ptype == progress_dependencies ? 900 : 550, 100, "Progress");
     if (ptype == progress_dependencies) {
         console_ = new Console(1, 1, window_->w() - 2, window_->h() - 2);
+    } else {
+        text_ = new Fl_Box(1, 1, window_->w() - 2, 20, "Wait...");
+        progress_ = new Fl_Progress(1, text_->y() + 5 + text_->h(), window_->w() - 2, 20);
+        btnCancel_.reset(new Button(
+            [this] {
+                canceled = true;
+                this->btnCancel_->enabled(false);
+            }
+        ));
+        btnCancel_->size(60, 30);
+        btnCancel_->position(window_->w() / 2 - btnCancel_->w() / 2, progress_->y() + progress_->h() + 5);
     }
     window_->end();
     window_->position(Fl::w() / 2 - window_->w() / 2, Fl::h() / 2 - window_->h() / 2);
@@ -65,15 +99,47 @@ void ProgressWindow::set_title(const char *title) {
 }
 
 void ProgressWindow::set_progress(size_t value, size_t max) {
-
+    if (progress_) {
+        if (progress_->maximum() != max) {
+            progress_->maximum(max);
+        }
+        if (progress_->value() != value) {
+            progress_->value(value);
+        }
+    }
 }
 
 void ProgressWindow::set_text(const char *text) {
+    if (text_) {
+        text_->copy_label(text);
+    }
+}
 
+void init_progress_title(progress_type ptype) {
+    switch (ptype)
+    {
+    case progress_background:
+        set_progress_title("Removing the background, please wait...");
+        break;
+    case progress_dependencies:
+        set_progress_title("Installing dependencies, please wait...");
+        break;
+    case progress_downloader:
+        set_progress_title("Downloading file, please wait...");
+        break;
+    case progress_generation:
+        set_progress_title("Generating the image, please wait...");
+        break;
+    case progress_preprocessor:
+        set_progress_title("Pre-processing the image, please wait...");
+        break;
+    default:
+        break;
+    }
 }
 
 void show_progress_window(progress_type ptype,  checker_cb_t cancel_cb) {
-    set_progress_title("Installing dependencies, please wait...");
+    init_progress_title(ptype);
     ProgressWindow wnd(ptype);
     progress_window_enabled = true;
     while (!cancel_cb()) {
@@ -84,6 +150,7 @@ void show_progress_window(progress_type ptype,  checker_cb_t cancel_cb) {
 
 void show_progress_window() {
     if (progress_window_enabled && !window) {
+        init_progress_title(current_type);
         window.reset(new ProgressWindow(current_type));
     }
 }
