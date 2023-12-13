@@ -34,6 +34,7 @@ ControlnetFrame::ControlnetFrame(Fl_Group *parent, ImagePanel *img) {
     parent_ = parent;
     img_ = img;
     mode_ = new Fl_Choice(0, 0, 1, 1, "Controlnet mode");
+    mode_->callback(combobox_cb, this);
     btnOpenMask_.reset(new Button(xpm::image(xpm::img_24x24_folder), [this] () {
 
     }));
@@ -54,8 +55,8 @@ ControlnetFrame::ControlnetFrame(Fl_Group *parent, ImagePanel *img) {
     mode_->value(0);
 
     alignComponents();
+    combobox_cb(mode_);
 }
-
 
 void ControlnetFrame::alignComponents() {
     int left = parent_->x();
@@ -74,6 +75,35 @@ void ControlnetFrame::alignComponents() {
 
 ControlnetFrame::~ControlnetFrame() {
     
+}
+
+void ControlnetFrame::combobox_cb(Fl_Widget* widget, void *cbdata) {
+    static_cast<ControlnetFrame *>(cbdata)->combobox_cb(widget);
+}
+
+void ControlnetFrame::combobox_cb(Fl_Widget* widget) {
+    if (inside_cb_)  {
+        return;
+    }
+    inside_cb_ = true;
+    if (enabled()) {
+        btnOpenMask_->show();
+        btnSaveMask_->show();
+        btnPreprocess_->show();
+        if (parent_->visible_r()) {
+            img_->show();
+        }
+    } else {
+        btnOpenMask_->hide();
+        btnSaveMask_->hide();
+        btnPreprocess_->hide();
+        img_->hide();
+    }
+    inside_cb_ = false;
+}
+
+bool ControlnetFrame::enabled() {
+    return mode_->value() > 0;
 }
 
 } // namespace dfe

@@ -4,10 +4,6 @@
 #include <map>
 #include <memory>
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
 #include <Fl/Fl_Gl_Window.H>
 
 #include "python/image.h"
@@ -37,6 +33,8 @@ namespace dfe
         int version();
         void set_modified();
         bool selected();
+        bool visible();
+        void visible(bool value);
         void restore_size();
         void scale_size(bool up);
         std::shared_ptr<Layer> duplicate();
@@ -54,6 +52,7 @@ namespace dfe
         int y_ = 0;
         int w_ = 1;
         int h_ = 1;
+        bool visible_ = true;
     };
 
     class CachedLayer {
@@ -114,6 +113,9 @@ namespace dfe
         void clear_selected_area();
         image_ptr_t merge_layers_to_image();
         void set_image(image_ptr_t value);
+        void set_mask();
+        void brush_size(int value);
+        int brush_size();
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);
         void scroll_again(float old_zoom);
@@ -123,6 +125,7 @@ namespace dfe
         std::vector<std::shared_ptr<Layer> > layers_;
         int drag_begin_x_ = 0;
         int drag_begin_y_ = 0;
+        int brush_size_ = 16;
         Layer *selected_ = NULL;
         ImagePanel *parent_;
         size_t name_index_ = 1;
@@ -176,13 +179,9 @@ namespace dfe
         void draw_overlay() override;
 
     private:
-#ifdef _WIN32
-        static LRESULT dfe_window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-        WNDPROC original_wnd_proc_;
-        fl_uintptr_t native_hwnd_;
-#endif
         void draw_layer(Layer *layer);
         void draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill);
+        void draw_brush();
         static void imageRefresh(void *cbdata);
         void imageRefresh();
         void getDrawingCoord(float &x, float &y);

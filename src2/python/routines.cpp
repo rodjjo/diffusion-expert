@@ -144,7 +144,7 @@ void store_config(const py11::dict& config) {
 }
 
 
-std::vector<std::pair<bool, std::string> >  list_models() {
+std::vector<std::pair<bool, std::string> > list_models() {
     std::vector<std::pair<bool, std::string> > result;
     std::string error;
     execute([&result, &error] (py11::module_ &module) {
@@ -160,6 +160,30 @@ std::vector<std::pair<bool, std::string> >  list_models() {
                             py11::cast<std::string>(d["name"])
                         )
                     );
+                }
+            }
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+    if (!error.empty()) {
+        fl_alert("Error loading the config: %s", error.c_str());
+    } 
+    return result;
+}
+
+
+std::vector<std::string> list_schedulers() {
+    std::vector<std::string> result;
+    std::string error;
+    execute([&result, &error] (py11::module_ &module) {
+        try {
+            auto r = module.attr("list_schedulers")();
+            auto temp = r.cast<py11::list>();
+            for (auto & i : temp) {
+                auto d = py11::cast<py11::dict>(i);
+                if (d.contains("name")) {
+                    result.push_back(py11::cast<std::string>(d["name"]));
                 }
             }
         } catch(std::exception e) {

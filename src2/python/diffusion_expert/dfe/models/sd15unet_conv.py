@@ -1,29 +1,15 @@
 import os
 
-from transformers import CLIPTextModel
-
-from dfe.models.paths import CACHE_DIR
-
-
+from dfe.misc.config import CACHE_DIR
 
 
 def convert_ldm_clip_checkpoint(checkpoint):
-    local_files_only = False
-    if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
-        local_files_only = True
-    text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
-
     keys = list(checkpoint.keys())
-
     text_model_dict = {}
-
     for key in keys:
         if key.startswith("cond_stage_model.transformer"):
             text_model_dict[key[len("cond_stage_model.transformer.") :]] = checkpoint[key]
-
-    text_model.load_state_dict(text_model_dict)
-
-    return text_model
+    return text_model_dict
 
 
 def create_unet_diffusers_config(original_config):
@@ -182,7 +168,7 @@ def convertsd15_checkpoint(checkpoint, config):
             unet_state_dict[key.replace(unet_key, "")] = checkpoint.pop(key)
 
     new_checkpoint = {}
-
+    
     new_checkpoint["time_embedding.linear_1.weight"] = unet_state_dict["time_embed.0.weight"]
     new_checkpoint["time_embedding.linear_1.bias"] = unet_state_dict["time_embed.0.bias"]
     new_checkpoint["time_embedding.linear_2.weight"] = unet_state_dict["time_embed.2.weight"]

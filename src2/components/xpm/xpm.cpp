@@ -30,6 +30,7 @@
 #include "components/xpm/data/24x24/forward.xpm"
 #include "components/xpm/data/24x24/heart.xpm"
 #include "components/xpm/data/24x24/medium_rating.xpm"
+#include "components/xpm/data/24x24/new_document.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -39,6 +40,7 @@ namespace xpm {
 std::map<xpm_t, const char * const*> xpm_db = {
     { img_24x24_exit, xpm_exit },
     { img_24x24_new, xpm_new },
+    { img_24x24_new_document, xpm_new_document },
     { img_24x24_open_layer, xpm_component},
     { img_24x24_close, xpm_close},
     { img_24x24_open, xpm_door },

@@ -12,7 +12,6 @@ namespace dfe
     {
         typedef std::function<void(py11::module_ &module)> callback_t;
         typedef std::function<void(bool completed)>  execute_status_cb_t;
-
         void execute(callback_t cb);
         std::string runPython(execute_status_cb_t status_cb);
         bool ready();

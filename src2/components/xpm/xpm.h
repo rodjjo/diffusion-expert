@@ -11,6 +11,7 @@ namespace xpm {
 
 typedef enum {
     img_24x24_new = 0,
+    img_24x24_new_document,
     img_24x24_open,
     img_24x24_folder,
     img_24x24_wallet,

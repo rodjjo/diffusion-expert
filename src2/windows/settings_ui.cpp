@@ -62,6 +62,7 @@ void SettingsWindow::save_settings() {
     cfg->filter_nsfw(filter_nsfw_->value() == 1);
     cfg->use_float16(use_float16_->value() == 1);
     cfg->private_mode(private_mode_->value() == 1);
+    cfg->keep_in_memory(keep_models_->value() == 1);
     cfg->save();
 }
 
@@ -74,6 +75,7 @@ void SettingsWindow::load_settings() {
     filter_nsfw_->value((int) cfg->filter_nsfw());
     use_float16_->value((int) cfg->use_float16());
     private_mode_->value((int) cfg->private_mode());
+    keep_models_->value((int) cfg->keep_in_memory());
 }
 
 int SettingsWindow::handle(int event) {

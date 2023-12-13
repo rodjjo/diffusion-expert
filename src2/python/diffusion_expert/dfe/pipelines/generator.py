@@ -1,5 +1,14 @@
 from typing import List
-from dfe.models.loader import load_state_dict, load_unet, load_vae, load_tokenizer, load_tiny_vae, load_scheduler
+from dfe.models.loader import (
+    load_state_dict, 
+    load_unet, 
+    load_vae, 
+    load_tokenizer, 
+    load_tiny_vae, 
+    load_scheduler, 
+    load_text_model,
+    load_lora_weights
+)
 from dfe.images.routines import pil_as_dict
 from dfe.misc.config import get_model_path
 
@@ -50,6 +59,7 @@ def cached_load_unet(
     model: str, 
     inpaint: bool, 
     lora_list: List[dict], 
+    use_lcm_lora: bool,
     use_tiny_vae: bool,
     use_float16: bool,
     keep_in_memory: bool
@@ -61,9 +71,10 @@ def cached_load_unet(
         cache['model_file'] = model
         cache['use_fp16'] = use_float16
 
-    if cache.get('lora_list', []) != lora_list:
+    if cache.get('lora_list', []) != lora_list or cache.get('use_lcm_lora') != use_lcm_lora:
         cache['unet'] = None
         cache['lora_list'] = lora_list
+        cache['use_lcm_lora'] = use_lcm_lora
 
     unet = cache.get('unet')
     if unet:
@@ -86,7 +97,6 @@ def cached_load_unet(
     else:
         progress_text("Using preloaded state of the model...")
 
-    MODEL_CACHE['text_model'] = state_dict.text_model
     MODEL_CACHE['config'] = state_dict.config
     MODEL_CACHE['unet_config'] = state_dict.unet_config
 
@@ -122,8 +132,16 @@ def cached_load_unet(
     
     progress_text("Loading unet from state dict...")
     unet = load_unet(state_dict, use_float16)
+    MODEL_CACHE['text_model'] = load_text_model(state_dict.text_model)
     cache['unet'] = unet
-    progress_text("Model loaded with success...")
+    progress_text("Model loaded with success, applying loras...")
+    # load lora list here
+
+    if use_lcm_lora:
+        progress_text("Using lcm lora (speed it up :))...")        
+        load_lora_weights(unet, MODEL_CACHE['text_model'] , 'lcm-lora-sdv1-5', 1.0)
+
+    progress_text("Loras applied with success...")        
     return LoadedModel(
             unet=cache['unet'],
             vae=MODEL_CACHE['vae']['model'],
@@ -209,6 +227,7 @@ def generate_internal(
         inpaint_model if inpaint else model, 
         inpaint,
         lora_list,
+        use_lcm_lora,
         use_tiny_vae, 
         use_float16,
         keep_in_memory

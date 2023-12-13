@@ -30,7 +30,10 @@ typedef enum {
     event_generator_next_image,
     event_generator_previous_image,
     event_generator_accept_image,
-    event_generator_accept_partial_image
+    event_generator_accept_partial_image,
+    event_image_frame_new_mask,
+    event_image_frame_open_mask,
+    event_image_frame_mode_selected,
 } event_id_t;
 
 typedef std::function<void(void *sender, event_id_t event, void *data)> event_handler_t;

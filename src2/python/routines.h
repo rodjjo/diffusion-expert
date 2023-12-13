@@ -22,7 +22,8 @@ void store_config(const py11::dict& config);
 image_ptr_t remove_background(RawImage* img, const py11::dict& params);
 std::vector<std::pair<bool, std::string> > list_models();
 std::list<image_ptr_t> generate_image(py11::dict parameters);
-    
+std::vector<std::string> list_schedulers();
+
 } // namespace py
 } // namespace dfe
 

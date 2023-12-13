@@ -19,9 +19,9 @@ public:
     int handle(int event);
     void save_settings();
     void load_settings();
+
 private:
     void alignComponents();
-    
 
 private:
     Fl_Tabs *tabs_;

@@ -1,6 +1,8 @@
 
 #include "misc/utils.h"
 #include "misc/gen_parameters.h"
+#include "misc/dialogs.h"
+#include "misc/config.h"
 #include "components/xpm/xpm.h"
 #include "python/routines.h"
 
@@ -13,7 +15,10 @@ namespace dfe
             event_generator_next_image,
             event_generator_previous_image,
             event_generator_accept_image,
-            event_generator_accept_partial_image
+            event_generator_accept_partial_image,
+            event_image_frame_new_mask,
+            event_image_frame_open_mask,
+            event_image_frame_mode_selected
         };
 
         class NonEditableImagePanel : public ImagePanel {
@@ -38,6 +43,20 @@ namespace dfe
                 bool enable_resize() override {
                     // do not let the user to change the size of the image
                     return false;
+                }
+        };
+
+        class MaskEditableImagePanel : public NonEditableImagePanel {
+            public:
+                MaskEditableImagePanel(
+                    uint32_t x, uint32_t y, 
+                    uint32_t w, uint32_t h, 
+                    const char *unique_title) : NonEditableImagePanel(
+                        x, y, w, h, unique_title
+                    ) {};
+
+                bool enable_mask_editor() override {
+                    return true;
                 }
         };
     }
@@ -91,7 +110,7 @@ namespace dfe
                 "Generate"
             };
             selector_ = new Fl_Select_Browser(0, 0, 1, 1);
-            for (int i = (page_type_t)0; i < page_type_count; i++) {
+            for (int i = 0; i < page_type_count; i++) {
                 selector_->add(page_names[i]);
             }
             selector_->callback(page_cb, this);
@@ -110,7 +129,11 @@ namespace dfe
             pages_[where]->begin();
             if (i != page_type_prompt) {
                 titles_[where] = buffer;
-                images_[where] = new NonEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());
+                if (where == page_type_image) {
+                    images_[where] = new MaskEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());
+                } else {
+                    images_[where] = new NonEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());
+                }
                 if (i == page_type_image) {
                     image_frame_.reset(new ImageFrame(pages_[where],  images_[where]));
                 } else if (i == page_type_results) {
@@ -136,8 +159,24 @@ namespace dfe
 
     }
 
+    int DiffusionWindow::handle(int event){
+            switch (event) {
+                case FL_KEYDOWN:
+                case FL_KEYUP: {
+                    if (Fl::event_key() == FL_Escape) {
+                        return  1;
+                    }
+                    if (Fl::event_key() == (FL_F + 4) && (Fl::event_state() & FL_ALT) != 0) {
+                        return  1; // Do not allow ALT + F4
+                    }
+                }
+                break;
+            }
+            return Fl_Window::handle(event);
+        }
+
     void DiffusionWindow::resize(int x, int y, int w, int h) {
-        Fl_Window::resize(x, y, w, h);
+        Fl_Double_Window::resize(x, y, w, h);
         alignComponents();
     }
 
@@ -204,12 +243,22 @@ namespace dfe
             where = static_cast<page_type_t>(i);
             pages_[where]->hide();
         }
-        int idx = selector_->value();
-        if (idx > 0)  {
-            where = static_cast<page_type_t>(idx - 1);
+        int idx = selector_->value() - 1;
+        if (idx >= 0)  {
+            where = static_cast<page_type_t>(idx);
             pages_[where]->show();
             if (images_[where] && !images_[where]->shown()) {
-                images_[where]->show();
+                if (idx == page_type_image) {
+                    if (image_frame_->enabled()) {
+                        images_[where]->show();    
+                    }
+                } else if (idx < page_type_controlnet1 || idx > page_type_controlnet4) {
+                    images_[where]->show();
+                } else {
+                    if (control_frames_[where]->enabled()) {
+                        images_[where]->show();
+                    }
+                }
             }
             if (where == page_type_image) {
                 btnOk_->show();
@@ -223,19 +272,86 @@ namespace dfe
         if (sender == result_frame_.get()) {
             switch (event) {
                 case event_generator_next_image:
-
                 break;
 
                 case event_generator_previous_image:
                 break;
 
                 case event_generator_accept_image:
+                    if (images_[page_type_results] && images_[page_type_image]) {
+                        if (images_[page_type_results]->view_settings()->layer_count() > 0) {
+                            auto img = images_[page_type_results]->view_settings()->at(0)->getImage()->duplicate();
+                            if (images_[page_type_image]->view_settings()->layer_count() > 0) {
+                                images_[page_type_image]->view_settings()->at(0)->replace_image(
+                                    img
+                                );
+                            } else {
+                                images_[page_type_image]->view_settings()->add_layer(
+                                    img
+                                );
+                            }
+                            image_frame_->enable_mode();
+                        }
+                    }
                 break;
 
                 case event_generator_accept_partial_image:
                 break;
             };
+        } else if (sender == image_frame_.get()) {
+            switch (event) {
+                case event_image_frame_new_mask:
+                    if (images_[page_type_image]->view_settings()->layer_count() < 1) {
+                        show_error("Open or generate an image first!");
+                    } else {
+                        if (ask("Do you want to clear current mask?")) {
+                            images_[page_type_image]->view_settings()->set_mask();
+                        }
+                    }
+                break;
+
+                case event_image_frame_open_mask:
+                    if (images_[page_type_image]->view_settings()->layer_count() < 1) {
+                        show_error("Open or generate an image first!");
+                    } else {
+                        auto r = choose_and_open_image("inpaint_mask");
+                        if (images_[page_type_image]->view_settings()->layer_count() < 2) {
+                            images_[page_type_image]->view_settings()->add_layer(r);
+                        } else {
+                            images_[page_type_image]->view_settings()->at(1)->replace_image(r);
+                        }
+                    }
+                break;
+
+                case event_image_frame_mode_selected:
+                    images_[page_type_image]->view_settings()->brush_size(image_frame_->get_brush_size());
+                    if (image_frame_->get_mode() == img2img_disabled || images_[page_type_image]->view_settings()->layer_count() < 1) {
+                        return;
+                    } else if (image_frame_->get_mode() == img2img_img2img) {
+                        if (images_[page_type_image]->view_settings()->layer_count() > 1) {
+                            images_[page_type_image]->view_settings()->at(1)->visible(false);
+                        }
+                    } else {
+                        if (images_[page_type_image]->view_settings()->layer_count() < 2) {
+                            images_[page_type_image]->view_settings()->set_mask();
+                        }
+                        images_[page_type_image]->view_settings()->at(1)->visible(true);
+                    }
+
+                break;
+            }
         }
+    }
+
+    image_ptr_t DiffusionWindow::choose_and_open_image(const char * scope) {
+        std::string current_dir = get_config()->last_open_directory(scope);
+        std::string result = choose_image_to_open_fl(&current_dir);
+        if (!result.empty()) {
+            auto dir = filepath_dir(result);
+            get_config()->last_open_directory(scope, dir.c_str());
+            return py::open_image(result.c_str());
+        }
+        return image_ptr_t();
     }
 
     void DiffusionWindow::generate() {
@@ -249,7 +365,7 @@ namespace dfe
         params.inpaint_model = prompt_frame_->get_inpaint_model();
         params.cfg = prompt_frame_->get_cfg();
         params.mode = "txt2img";
-        params.scheduler_name = "EulerAncestralDiscreteScheduler";
+        params.scheduler_name =  prompt_frame_->get_scheduler();
         params.width = prompt_frame_->get_width();
         params.height = prompt_frame_->get_height();
         params.use_lcm_lora = prompt_frame_->use_lcm_lora();
@@ -275,6 +391,7 @@ namespace dfe
         return r;
     }
 
+
     image_ptr_t generate_image() {
         return generate_image_(NULL);
     }
@@ -282,5 +399,7 @@ namespace dfe
     image_ptr_t generate_image(ViewSettings* view_settings) {
         return generate_image_(view_settings);
     }
+
+    
 
 } // namespace dfe

@@ -11,6 +11,7 @@
 #endif
 
 #include "misc/utils.h"
+#include "misc/config.h"
 
 
 namespace dfe
@@ -75,7 +76,7 @@ std::string filepath_dir(const std::string & path) {
 }
 
 void blur_gl_contents(int w, int h, int mouse_x, int mouse_y) {
-    if (false) { // todo(RODRIGO): disable blur from config
+    if (!get_config()->private_mode()) { 
         return;
     }
 

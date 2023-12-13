@@ -4,6 +4,7 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 
+#include "components/xpm/xpm.h"
 #include "windows/progress_ui.h"
 
 namespace dfe
@@ -53,6 +54,7 @@ ProgressWindow::ProgressWindow(progress_type ptype) {
         text_ = new Fl_Box(1, 1, window_->w() - 2, 20, "Wait...");
         progress_ = new Fl_Progress(1, text_->y() + 5 + text_->h(), window_->w() - 2, 20);
         btnCancel_.reset(new Button(
+            xpm::image(xpm::img_24x24_abort),
             [this] {
                 canceled = true;
                 this->btnCancel_->enabled(false);
@@ -136,6 +138,8 @@ void init_progress_title(progress_type ptype) {
     default:
         break;
     }
+    progress_max = 100;
+    progress_value = 0;
 }
 
 void show_progress_window(progress_type ptype,  checker_cb_t cancel_cb) {

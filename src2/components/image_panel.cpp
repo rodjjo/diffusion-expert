@@ -112,6 +112,15 @@ namespace dfe
         return parent_->selected_layer() == this && parent_->layer_count() > 1;
     }
 
+    bool Layer::visible() {
+        return visible_;
+    }
+
+    void Layer::visible(bool value) {
+        visible_ = value;
+        parent_->refresh(true);
+    }
+
     const char *Layer::name() {
         return name_.c_str();
     }
@@ -454,6 +463,14 @@ namespace dfe
         *h = max_y - min_y;
     }
 
+    void ViewSettings::brush_size(int value) {
+        brush_size_ = value;
+    }
+
+    int ViewSettings::brush_size() {
+        return brush_size_;
+    }
+
     void ViewSettings::constraint_scroll(float zoom, int view_w, int view_h, int *sx, int *sy) {
         if (zoom == 0) {
             return;
@@ -549,7 +566,20 @@ namespace dfe
         clear_layers();
         add_layer(value);
     }
-
+    
+    void ViewSettings::set_mask() {
+        if (layers_.size() > 2) {
+            return;
+        }
+        auto first_image = layers_[0]->getImage();
+        auto img = py::newImage(first_image->w(), first_image->h(), true);
+        if (layers_.size() < 2) {
+            add_layer(img);
+        } else {
+            layers_[1]->replace_image(img);
+        }
+        refresh(true);
+    }
 
     ImageCache::ImageCache() {
 
@@ -809,6 +839,9 @@ namespace dfe
             image_->clear(255, 255, 255, 255);
             view_settings_->cache()->clear_hits();
             for (size_t i = 0; i < view_settings_->layer_count(); i++) {
+                if (!view_settings_->at(i)->visible()) {
+                    continue;
+                }
                 draw_layer(view_settings_->at(i));
             }
 
@@ -819,8 +852,6 @@ namespace dfe
                 draw_rectangle(ix, iy, iw, ih, gray_color, true);
             }
             view_settings_->cache()->gc();
-
-            
         }
 
         glRasterPos2f(-1, 1);
@@ -836,7 +867,8 @@ namespace dfe
         glRasterPos2f(0.0f, 0.0f);
         glPixelZoom(1.0f, 1.0f);
 
-        //blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
+        draw_brush();
+        blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
     }
     
     void ImagePanel::draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill) {
@@ -862,6 +894,39 @@ namespace dfe
         if (layer->selected()) {
             image_->rectangle(x, y, w, h, red_color);
         }
+    }
+
+    void ImagePanel::draw_brush() {
+        if (!enable_mask_editor() || view_settings_->layer_count() < 2 || !view_settings_->at(1)->visible()) {
+            return;
+        }
+        float sx = 2.0 / this->w();
+        float sy = 2.0 / this->h();
+        glBegin(GL_LINE_LOOP);
+        float theta;
+        float x;
+        float y;
+        float wx;
+        float wy;
+        float cx = move_last_x_;
+        float cy = move_last_y_;
+        bool black = true;
+        for (int ii = 0; ii < 36; ++ii)   {
+            if (black) {
+                black = false;
+                glColor3f(0, 0, 0);
+            } else {
+                black = true;
+                glColor3f(1, 1, 1);
+            }
+            theta = (2.0f * 3.1415926f) * float(ii) / float(36);
+            x = (view_settings_->brush_size() * getZoom()) * cosf(theta);
+            y = (view_settings_->brush_size() * getZoom()) * sinf(theta);
+            wx = ((x + cx) * sx) - 1;
+            wy = 1 - ((y + cy) * sy);
+            glVertex2f(wx, wy);
+        }
+        glEnd();
     }
 
     void ImagePanel::getDrawingCoord(float &x, float &y) {
@@ -932,14 +997,35 @@ namespace dfe
             return;
         }
 
-        if (right_button && !mouse_down_control_ && !mouse_down_shift_) {
-            if (enable_drag()) {
-                view_settings_->mouse_drag(getZoom(), down_x, down_y, move_x, move_y);
+        if (enable_mask_editor() && view_settings_->layer_count() > 1 && view_settings_->at(1)->visible()) {
+            schedule_redraw(false);
+        }
+
+        bool ctl_buttons = mouse_down_control_ || mouse_down_alt_ || mouse_down_shift_;
+        if (enable_mask_editor() && !ctl_buttons) {
+            if (view_settings_->layer_count() < 2 || view_settings_->brush_size() < 1 || !view_settings_->at(1)->visible()) {
+                return;
             }
+            auto img = view_settings_->at(1)->getImage();
+            move_x = (move_x) / getZoom() - view_settings_->cache()->get_scroll_x();
+            move_y = (move_y) / getZoom() - view_settings_->cache()->get_scroll_y();
+            if (left_button) {
+                img->drawCircle(move_x, move_y, view_settings_->brush_size(), false);
+            } else if (right_button) {
+                img->drawCircle(move_x, move_y, view_settings_->brush_size(), true);
+            }
+            schedule_redraw(true);
             return;
         }
 
-        if (left_button && !right_button && !mouse_down_control_ && !mouse_down_alt_ && !mouse_down_shift_) {
+        if (right_button && !mouse_down_control_ && !mouse_down_shift_) {
+            if (enable_drag()) {
+                view_settings_->mouse_drag(getZoom(), down_x, down_y, move_x, move_y);
+                return;
+            }
+        }
+
+        if (left_button && !right_button && !ctl_buttons) {
             int sw = down_x - move_x;
             int sh = down_y - move_y;
             if (sw < 0) sw = -sw;

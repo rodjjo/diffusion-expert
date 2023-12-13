@@ -12,6 +12,16 @@
 namespace dfe
 {
 
+typedef enum {
+    resize_not_resize,
+    resize_fit_512x512,
+    resize_fit_768x768,
+    resize_fit_1024x1024,
+    resize_fit_1280x1280,
+    //  keep resize_mode_count at the end
+    resize_mode_count
+} resize_modes_t;
+
 class PromptFrame {
 public:
     PromptFrame(Fl_Group *parent);
@@ -22,6 +32,7 @@ public:
     std::string negative_prompt();
     std::string get_model();
     std::string get_inpaint_model();
+    std::string get_scheduler();
     int get_seed();
     int get_batch_size();
     int get_steps();
@@ -33,6 +44,9 @@ public:
 
     bool validate();
     void refresh_models();
+protected:
+    static void widget_cb(Fl_Widget* widget, void *cbdata);
+    void widget_cb(Fl_Widget* widget);
 private:
     Fl_Group             *parent_;
     Fl_Multiline_Input   *positive_input_;
@@ -45,6 +59,8 @@ private:
     Fl_Int_Input         *height_input_;
     Fl_Choice            *models_input_;
     Fl_Choice            *modelsInpaint_input_;
+    Fl_Choice            *schedulers_;
+    Fl_Choice            *resizeModes_;
     Fl_Check_Button      *use_lcm_lora_;
     Fl_Check_Button      *use_tiny_vae_;
 };

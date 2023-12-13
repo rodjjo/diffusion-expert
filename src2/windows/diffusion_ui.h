@@ -42,6 +42,7 @@ public:
 protected:
     void resize(int x, int y, int w, int h) override;
     void dfe_handle_event(void *sender, event_id_t event, void *data) override;
+    int handle(int event) override;
 
 private:
     void after_constructor();
@@ -50,7 +51,8 @@ private:
     void page_cb(Fl_Widget* widget);
     void show_current_page();
     void generate();
-    
+    image_ptr_t choose_and_open_image(const char * scope);
+
 private:
     bool selecting_page_ = false;
     ViewSettings *view_settings_;

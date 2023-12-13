@@ -31,7 +31,15 @@ public:
     ControlnetFrame(Fl_Group *parent, ImagePanel *img);
     ~ControlnetFrame();
 
+    bool enabled();
     void alignComponents();
+protected:
+    static void combobox_cb(Fl_Widget* widget, void *cbdata);
+    void combobox_cb(Fl_Widget* widget);
+
+private:
+    bool inside_cb_ = false;
+
 private:
     Fl_Group *parent_;
     ImagePanel *img_;
