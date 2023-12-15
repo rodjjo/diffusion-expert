@@ -35,6 +35,7 @@ namespace dfe
         d["width"] = width;
         d["height"] = height;
         d["steps"] = steps;
+        d["strength"] = strength;
         d["batch_size"] = batch_size;
         d["use_lcm_lora"] = use_lcm_lora;
         d["use_tiny_vae"] = use_tiny_vae;

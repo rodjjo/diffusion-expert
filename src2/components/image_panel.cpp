@@ -2,6 +2,7 @@
 #include <FL/Fl.H>
 #include <FL/gl.h>
 
+#include "misc/config.h"
 #include "misc/utils.h"
 #include "python/routines.h"
 #include "messagebus/messagebus.h"
@@ -241,8 +242,7 @@ namespace dfe
             name_index_ += 1;
             layers_.push_back(l);
             selected_ = l.get();
-
-            refresh();
+            refresh(true);
             publish_event(parent_, event_layer_count_changed, NULL);
             publish_event(parent_, event_layer_selected, selected_);
             return l.get();
@@ -565,6 +565,7 @@ namespace dfe
     void ViewSettings::set_image(image_ptr_t value) {
         clear_layers();
         add_layer(value);
+        refresh(true);
     }
     
     void ViewSettings::set_mask() {
@@ -868,7 +869,7 @@ namespace dfe
         glPixelZoom(1.0f, 1.0f);
 
         draw_brush();
-        blur_gl_contents(this->w(), this->h(), current_x_, current_y_);
+        blur_gl_contents(this->w(), this->h(), move_last_x_, move_last_y_);
     }
     
     void ImagePanel::draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill) {
@@ -997,7 +998,7 @@ namespace dfe
             return;
         }
 
-        if (enable_mask_editor() && view_settings_->layer_count() > 1 && view_settings_->at(1)->visible()) {
+        if (enable_mask_editor() && view_settings_->layer_count() > 1 && view_settings_->at(1)->visible() || get_config()->private_mode()) {
             schedule_redraw(false);
         }
 

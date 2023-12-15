@@ -37,6 +37,7 @@ class GeneratorParameters {
     std::string inpaint_model;
     std::string scheduler_name;
     float cfg = 7.1;
+    float strength = 0.75;
     int seed = -1;
     int width = 512;
     int height = 512;

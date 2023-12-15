@@ -1,4 +1,5 @@
 from typing import List
+from random import randint
 from dfe.models.loader import (
     load_state_dict, 
     load_unet, 
@@ -9,12 +10,15 @@ from dfe.models.loader import (
     load_text_model,
     load_lora_weights
 )
-from dfe.images.routines import pil_as_dict
+from dfe.images.routines import pil_as_dict, pil_from_dict
+from dfe.pipelines.latents import create_latents_noise
 from dfe.misc.config import get_model_path
 
 from dexpert import progress, progress_canceled, progress_text
 
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
+from diffusers.models.attention_processor import AttnProcessor2_0
+
 import torch
 
 INPAINT_KEY = {
@@ -23,10 +27,14 @@ INPAINT_KEY = {
 }
 
 MODEL_CACHE = {
-    INPAINT_KEY[True] : {},
-    INPAINT_KEY[False] : {},
-    'vae': {},
-    'tiny_vae': {},
+    INPAINT_KEY[True] : {
+         'vae': {},
+         'tiny_vae': {},
+    },
+    INPAINT_KEY[False] : {
+        'vae': {},
+        'tiny_vae': {},
+    }
 }
 
 PIPELINE_CACHE = {
@@ -81,12 +89,12 @@ def cached_load_unet(
         progress_text("Using cached model... not reloading from disk...")
         return LoadedModel(
             unet=unet,
-            vae=MODEL_CACHE['vae']['model'],
-            tiny_vae=MODEL_CACHE.get('tiny_vae', {}).get('model'),
-            text_model=MODEL_CACHE['text_model'],
-            tokenizer=MODEL_CACHE['tokenizer']['model'],
-            config=MODEL_CACHE['config'],
-            unet_config=MODEL_CACHE['unet_config'],
+            vae=cache['vae']['model'],
+            tiny_vae=cache.get('tiny_vae', {}).get('model'),
+            text_model=cache['text_model'],
+            tokenizer=cache['tokenizer']['model'],
+            config=cache['config'],
+            unet_config=cache['unet_config'],
         )
     state_dict = cache.get('state_dict')
     if state_dict is None:
@@ -97,59 +105,60 @@ def cached_load_unet(
     else:
         progress_text("Using preloaded state of the model...")
 
-    MODEL_CACHE['config'] = state_dict.config
-    MODEL_CACHE['unet_config'] = state_dict.unet_config
+    cache['config'] = state_dict.config
+    cache['unet_config'] = state_dict.unet_config
 
-    if MODEL_CACHE.get('vae', {}).get('type') != state_dict.kind:
-        MODEL_CACHE['vae'] = {}
-        MODEL_CACHE['vae']['type'] = state_dict.kind
+    if cache.get('vae', {}).get('type') != state_dict.kind:
+        cache['vae'] = {}
+        cache['vae']['type'] = state_dict.kind
 
-    vae = MODEL_CACHE.get('vae', {}).get('model') 
+    vae = cache.get('vae', {}).get('model') 
     if not vae:
         progress_text("Loading vae from disk...")
         vae = load_vae(state_dict, use_float16)
     else:
         progress_text("Using preloaded vae...")
         
-    MODEL_CACHE['vae']['model'] = vae
+    cache['vae']['model'] = vae
 
-    if MODEL_CACHE.get('tokenizer', {}).get('type') != state_dict.kind:
-        MODEL_CACHE['tokenizer'] = {}
-        MODEL_CACHE['tokenizer']['type'] = state_dict.kind
+    if cache.get('tokenizer', {}).get('type') != state_dict.kind:
+        cache['tokenizer'] = {}
+        cache['tokenizer']['type'] = state_dict.kind
 
-    tokenizer = MODEL_CACHE.get('tokenizer', {}).get('model') or load_tokenizer(state_dict)
-    MODEL_CACHE['tokenizer']['model'] = tokenizer
+    tokenizer = cache.get('tokenizer', {}).get('model') or load_tokenizer(state_dict)
+    cache['tokenizer']['model'] = tokenizer
 
     if use_tiny_vae:
-        if MODEL_CACHE.get('tiny_vae', {}).get('type') != state_dict.kind:
-            MODEL_CACHE['tiny_vae'] = {}
-            MODEL_CACHE['tiny_vae']['type'] = state_dict.kind
-        if MODEL_CACHE['tiny_vae'].get('model') is None:
+        if cache.get('tiny_vae', {}).get('type') != state_dict.kind:
+            cache['tiny_vae'] = {}
+            cache['tiny_vae']['type'] = state_dict.kind
+        if cache['tiny_vae'].get('model') is None:
             progress_text("Loading tiny vae from disk...")
-            MODEL_CACHE['tiny_vae']['model'] = load_tiny_vae(state_dict, use_float16)
+            cache['tiny_vae']['model'] = load_tiny_vae(state_dict, use_float16)
         else:
             progress_text("Using preloaded tiny vae...")
     
     progress_text("Loading unet from state dict...")
     unet = load_unet(state_dict, use_float16)
-    MODEL_CACHE['text_model'] = load_text_model(state_dict.text_model)
+    unet.set_attn_processor(AttnProcessor2_0())
+    cache['text_model'] = load_text_model(state_dict.text_model)
     cache['unet'] = unet
     progress_text("Model loaded with success, applying loras...")
     # load lora list here
 
     if use_lcm_lora:
         progress_text("Using lcm lora (speed it up :))...")        
-        load_lora_weights(unet, MODEL_CACHE['text_model'] , 'lcm-lora-sdv1-5', 1.0)
+        load_lora_weights(unet, cache['text_model'] , 'lcm-lora-sdv1-5', 1.0)
 
     progress_text("Loras applied with success...")        
     return LoadedModel(
             unet=cache['unet'],
-            vae=MODEL_CACHE['vae']['model'],
-            tiny_vae=MODEL_CACHE.get('tiny_vae', {}).get('model'),
-            text_model=MODEL_CACHE['text_model'],
-            tokenizer=MODEL_CACHE['tokenizer']['model'],
-            config=MODEL_CACHE['config'],
-            unet_config=MODEL_CACHE['unet_config']
+            vae=cache['vae']['model'],
+            tiny_vae=cache.get('tiny_vae', {}).get('model'),
+            text_model=cache['text_model'],
+            tokenizer=cache['tokenizer']['model'],
+            config=cache['config'],
+            unet_config=cache['unet_config']
         )
 
 
@@ -159,31 +168,80 @@ def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel):
     safety_checker = None
     feature_extractor = None
     requires_safety_checker = False
-    if mode == 'txt2img' or True:
+    common_args = dict(
+        vae=model.vae,
+        text_encoder=model.text_model,
+        tokenizer=model.tokenizer,
+        unet=model.unet,
+        scheduler=scheduler,
+        safety_checker=safety_checker,
+        feature_extractor=feature_extractor,
+        requires_safety_checker=requires_safety_checker
+    )
+    if mode == 'txt2img':
         progress_text("Creating text to image pipeline...")
         model.unet.to('cuda')
         pipe = StableDiffusionPipeline(
-            vae=model.vae,
-            text_encoder=model.text_model,
-            tokenizer=model.tokenizer,
-            unet=model.unet,
-            scheduler=scheduler,
-            safety_checker=safety_checker,
-            feature_extractor=feature_extractor,
-            requires_safety_checker=requires_safety_checker
+            **common_args
         )
+    elif mode == 'img2img':
+        progress_text("Creating image to image pipeline...")
+        pipe = StableDiffusionImg2ImgPipeline(
+            **common_args
+        )
+    else:
+        progress_text("Creating inpainting pipeline...")
+        pipe = StableDiffusionInpaintPipeline(
+            **common_args
+        )
+
     if model.tiny_vae:
         pipe.vae = model.tiny_vae
+
     pipe.to('cuda')
+    pipe.enable_attention_slicing()
+    pipe.enable_xformers_memory_efficient_attention()
 
     return pipe
 
-def execute_pipeline(pipeline, prompt, negative, cfg, steps, seed, width, height, batch_size):
+def execute_pipeline(
+    pipeline, 
+    prompt, 
+    negative, 
+    cfg, 
+    steps, 
+    seed, 
+    width, 
+    height, 
+    batch_size,
+    input_image,
+    strength,
+    mask
+):
     def pipeline_callback(step, timestep, latents):
         progress(step, steps)
         if progress_canceled():
             raise CancelException()
     progress_text("Generating the image...")
+    additional_args = {}
+    if batch_size > 1:
+            additional_args['batch_size'] = batch_size
+            additional_args['num_images_per_prompt'] = batch_size
+    if input_image:
+        additional_args.update({
+            'image': pil_from_dict(input_image),
+            'strength': strength,
+        })
+    if mask:
+        print("Placing the mask image")
+        additional_args.update({
+            'mask_image': pil_from_dict(input_image)
+        })
+
+    shape = (4, height // 8, width // 8 )
+    additional_args["latents"] = create_latents_noise(shape, seed, subseed=None, subseed_strength=0)
+    additional_args["latents"].to('cuda')
+
     with torch.inference_mode(), torch.autocast('cuda'):
         result = pipeline(
             prompt, 
@@ -194,7 +252,8 @@ def execute_pipeline(pipeline, prompt, negative, cfg, steps, seed, width, height
             width=width,
             height=height,
             callback=pipeline_callback,
-            callback_steps=1
+            callback_steps=1,
+            **additional_args
         )
         return result.images
 
@@ -213,6 +272,7 @@ def generate_internal(
     batch_size: int,
     image: dict,
     mask: dict,
+    strength: float,
     controlnets: List[dict],
     lora_list: List[dict],
     use_lcm_lora: bool,
@@ -221,10 +281,13 @@ def generate_internal(
     filter_nsftw: bool,
     use_float16: bool
 ) -> List[dict]:
-    progress_text(f"Generating image, mode: {mode} ...")
-    inpaint = mode != 'txt2img'
+    if seed == -1:
+        seed = randint(0, 2147483647)
+    inpaint = mode == 'inpaint'
+    model2use = inpaint_model if inpaint else model
+    progress_text(f"Generating image, mode: {mode} model: {model2use} ...")
     loaded_model = cached_load_unet(
-        inpaint_model if inpaint else model, 
+        model2use, 
         inpaint,
         lora_list,
         use_lcm_lora,
@@ -243,7 +306,10 @@ def generate_internal(
             negative=negative_prompt,
             cfg=cfg,
             steps=steps,
-            batch_size=batch_size
+            batch_size=batch_size,
+            input_image=None if mode == 'txt2img' else image,
+            strength=strength,
+            mask=None if mode != 'inpaint' else  mask
         )
         return [
             pil_as_dict(r) for r in result
@@ -269,6 +335,7 @@ def generate(params: dict) -> dict:
         steps=params.get("steps", 25),
         batch_size=params.get("batch_size", 1),
         image=params.get("image", {}),
+        strength=params.get("strength", 0.75),
         mask=params.get("mask", {}),
         controlnets=params.get("controlnets", []),
         lora_list=params.get("lora_list", []),

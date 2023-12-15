@@ -272,9 +272,17 @@ namespace dfe
         if (sender == result_frame_.get()) {
             switch (event) {
                 case event_generator_next_image:
+                    if (result_index_ + 1 < results_.size()) {
+                        result_index_ += 1;
+                        show_current_result();
+                    }
                 break;
 
                 case event_generator_previous_image:
+                    if (result_index_ > 0) {
+                        result_index_ -= 1;
+                        show_current_result();
+                    }
                 break;
 
                 case event_generator_accept_image:
@@ -355,6 +363,19 @@ namespace dfe
     }
 
     void DiffusionWindow::generate() {
+        if (image_frame_->get_mode() != img2img_disabled) {
+            if (images_[page_type_image]->view_settings()->layer_count() < 1) {
+                show_error("Base Image is enabled. A image is necessary to proceed !");
+                return;
+            }
+            if (image_frame_->get_mode() != img2img_img2img) {
+                if (images_[page_type_image]->view_settings()->layer_count() < 2) {
+                    show_error("Base Image in inpainting mode. A mask is necessary to proceed !");
+                    return;
+                }
+            }
+        }
+        
         GeneratorParameters params;
         params.positive_prompt = prompt_frame_->positive_prompt();
         params.negative_prompt = prompt_frame_->negative_prompt();
@@ -364,16 +385,80 @@ namespace dfe
         params.model = prompt_frame_->get_model();
         params.inpaint_model = prompt_frame_->get_inpaint_model();
         params.cfg = prompt_frame_->get_cfg();
-        params.mode = "txt2img";
+        params.mode = get_mode();
         params.scheduler_name =  prompt_frame_->get_scheduler();
         params.width = prompt_frame_->get_width();
         params.height = prompt_frame_->get_height();
         params.use_lcm_lora = prompt_frame_->use_lcm_lora();
         params.use_tiny_vae = prompt_frame_->use_tiny_vae();
+        params.strength = image_frame_->get_strength();
+
+        int original_width = params.width;
+        int original_height = params.height;
+        if (image_frame_->get_mode() != img2img_disabled) {
+            params.image = images_[page_type_image]->view_settings()->at(0)->getImage()->duplicate();
+            original_width = params.image->w();
+            original_height = params.image->h();
+            params.image = params.image->ensureMultipleOf8();
+            params.width = params.image->w();
+            params.height = params.image->h();
+
+            if (image_frame_->get_mode() == img2img_inpaint_masked) {
+                params.mask = images_[page_type_image]->view_settings()->at(1)->getImage()->duplicate();
+            } else if (image_frame_->get_mode() == img2img_inpaint_not_masked) {
+                params.mask = images_[page_type_image]->view_settings()->at(1)->getImage()->removeAlpha();
+            }
+            
+            if (params.mask) {
+                params.mask = params.mask->ensureMultipleOf8();
+                params.mask = params.mask->removeAlpha()->blur(4.0); // blur the mask boundaries
+            }
+        }
+
         auto result = py::generate_image(params.toDict());
         if (!result.empty()) {
-            images_[page_type_results]->view_settings()->set_image(*result.begin());
+            if (image_frame_->get_mode() == img2img_inpaint_masked || 
+                image_frame_->get_mode() == img2img_inpaint_not_masked) {
+                for (auto & img : result) {
+                    auto dup = params.image->duplicate();
+                    dup->pasteAt(0, 0, params.mask.get(), img.get());
+                    dup = dup->getCrop(0, 0, original_width, original_height);
+                    img.swap(dup);
+                }
+            }
+            size_t index = results_.size();
+            for (auto & img : result) {
+                results_.push_back(img);            
+            }
+            if (results_.size() > 16) {
+                results_.erase(results_.begin(), results_.begin() + (results_.size() - 17));
+            }
+            if (index >= results_.size()) {
+                index = results_.size() - 1;
+            }
+            result_index_ = index;
+            show_current_result();
         }
+    }
+
+    void DiffusionWindow::show_current_result() {
+        if (result_index_ < results_.size()) {
+            images_[page_type_results]->view_settings()->set_image(results_[result_index_]);
+            char buffer[100];
+            sprintf(buffer, "%d of %d", (int)result_index_ + 1, (int)results_.size());
+            result_frame_->set_page_text(buffer);
+
+        }
+    }
+
+    const char *DiffusionWindow::get_mode() {
+        if (image_frame_->get_mode() == img2img_disabled) {
+            return "txt2img";
+        }
+        if (image_frame_->get_mode() == img2img_img2img) {
+            return "img2img";
+        }
+        return "inpaint";
     }
 
     image_ptr_t generate_image_(ViewSettings* view_settings) {

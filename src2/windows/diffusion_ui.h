@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <string>
 #include <memory>
 #include <map>
@@ -38,7 +39,7 @@ public:
     DiffusionWindow();
     DiffusionWindow(ViewSettings *view_settings);
     ~DiffusionWindow();
-    
+
 protected:
     void resize(int x, int y, int w, int h) override;
     void dfe_handle_event(void *sender, event_id_t event, void *data) override;
@@ -52,13 +53,16 @@ private:
     void show_current_page();
     void generate();
     image_ptr_t choose_and_open_image(const char * scope);
-
+    const char *get_mode();
+    void show_current_result();
 private:
     bool selecting_page_ = false;
     ViewSettings *view_settings_;
     Fl_Group *bottom_panel_;
     Fl_Group *right_panel_;
     Fl_Select_Browser *selector_;
+    size_t result_index_ = 0;
+    std::vector<image_ptr_t> results_;
     std::unique_ptr<ImageFrame> image_frame_;
     std::unique_ptr<PromptFrame> prompt_frame_;
     std::unique_ptr<ResultFrame> result_frame_;

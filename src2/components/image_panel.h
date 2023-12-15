@@ -210,8 +210,6 @@ namespace dfe
         int mouse_down_y_ = 0;
         int move_last_x_ = 0;
         int move_last_y_ = 0;
-        int current_x_ = 0;
-        int current_y_ = 0;
         int scroll_px_ = 0;
         int scroll_py_ = 0;
     };

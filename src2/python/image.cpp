@@ -363,7 +363,7 @@ image_ptr_t RawImage::resize_down_alpha() {
     unsigned char *target = r->buffer_;
     int source_stride = w_ * 4;
     int target_stride = ww * 4;
-    source += (source_stride * min_y);
+    source += (source_stride * min_y) + min_x * 4;
     for (int y = min_y; y < max_y; y++) {
         memcpy(target, source, target_stride);
         source += source_stride;

@@ -9,6 +9,7 @@ namespace dfe
 ResultFrame::ResultFrame(Fl_Group *parent, ImagePanel *img) {
     parent_ = parent;
     img_ = img;
+    page_ = new Fl_Box(0, 0, 1, 1, "0 of 0");
     btn_previous_.reset(new Button(
         xpm::image(xpm::img_24x24_back),
         [this] () {
@@ -48,7 +49,9 @@ void ResultFrame::alignComponents() {
     int top = parent_->y();
     int w = img_->x() - parent_->x();
     int h = parent_->h();
-    btn_previous_->position(left + 5, top + 5);
+    page_->position(left + 5, top + 5);
+    page_->size(w - 10, 30);
+    btn_previous_->position(left + 5, page_->y() + page_->h() + 5);
     btn_previous_->size((w - 15) / 2, 30);
     btn_next_->position(btn_previous_->x() + btn_previous_->w() + 5, btn_previous_->y());
     btn_next_->size(btn_previous_->w(), 30);
@@ -57,5 +60,10 @@ void ResultFrame::alignComponents() {
     btn_accept_partially_->position(btn_accept_->x(), btn_accept_->y() + btn_accept_->h() + 5);
     btn_accept_partially_->size(w - 10, 30);
 }
+
+void ResultFrame::set_page_text(const char *value) {
+    page_->copy_label(value);
+}
+
     
 } // namespace dfe

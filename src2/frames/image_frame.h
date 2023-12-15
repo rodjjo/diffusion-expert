@@ -3,6 +3,7 @@
 #include <memory>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Choice.H>
+#include <FL/Fl_Float_Input.H>
 
 #include "components/button.h"
 #include "components/image_panel.h"
@@ -60,6 +61,7 @@ public:
     int get_brush_size();
     inpaint_mode_t get_inpaint_mode();
     void enable_mode();
+    float get_strength();
 
 private:
     void combobox_selected();
@@ -77,6 +79,7 @@ private:
     Fl_Choice *choice_mode_;
     Fl_Choice *choice_brush_size_;
     Fl_Choice *choice_inpaint_mode_;
+    Fl_Float_Input *strength_input_;
     std::unique_ptr<Button> btnNewMask_;
     std::unique_ptr<Button> btnOpenMask_;
 
