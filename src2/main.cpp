@@ -14,6 +14,7 @@
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
+    // Disable upscaling, if we enabled it OpenGL coordinates will be messed up on environment with high resolutions and scaling enabled
     SetProcessDpiAwareness(PROCESS_DPI_UNAWARE);
 #endif
     int result = 0;
