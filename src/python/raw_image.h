@@ -4,6 +4,7 @@
 #ifndef SRC_PYTHON_RAW_IMAGE_H_
 #define SRC_PYTHON_RAW_IMAGE_H_
 
+#include <stdint.h>
 #include <list>
 #include <memory>
 #include <Python.h>

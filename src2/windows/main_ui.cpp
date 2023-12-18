@@ -323,11 +323,9 @@ namespace dfe
     }
 
     void MainWindow::choose_file_and_open(bool clear_layers) {
-        std::string current_dir = get_config()->last_open_directory("main_window_picture");
-        std::string result = choose_image_to_open_fl(&current_dir);
+        std::string result = choose_image_to_open_fl("main_window_picture");
         if (!result.empty()) {
             auto dir = filepath_dir(result);
-            get_config()->last_open_directory("main_window_picture", dir.c_str());
             if (clear_layers) {
                 image_->view_settings()->clear_layers();
             }

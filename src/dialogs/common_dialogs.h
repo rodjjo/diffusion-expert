@@ -4,6 +4,7 @@
 #ifndef SRC_DIALOGS_COMMON_DIALOGS_H_
 #define SRC_DIALOGS_COMMON_DIALOGS_H_
 
+#include <stdint.h>
 #include <string>
 
 namespace dexpert {

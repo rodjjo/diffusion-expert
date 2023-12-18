@@ -25,6 +25,7 @@ private:
     std::unique_ptr<Button> btn_next_;
     std::unique_ptr<Button> btn_accept_;
     std::unique_ptr<Button> btn_accept_partially_;
+    std::unique_ptr<Button> btn_save_;
 };
 
     

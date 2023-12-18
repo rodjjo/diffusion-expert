@@ -49,6 +49,24 @@ image_ptr_t open_image(const char* path) {
     return result;
 }
 
+void save_image(const char* path, image_ptr_t image) {
+    std::string error;
+
+    execute([image, &error, path] (py11::module_ &module) {
+        try {
+            py11::dict d;
+            image->toPyDict(d);
+            auto r = module.attr("save_image")(path, d);
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+
+    if (!error.empty()) {
+        fl_alert("Error saving the image: %s", error.c_str());
+    } 
+}
+
 image_ptr_t remove_background(RawImage* img, const py11::dict& params) {
     image_ptr_t result;
     std::string error;

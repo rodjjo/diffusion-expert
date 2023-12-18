@@ -2,6 +2,7 @@
 
 #include <list>
 #include <memory>
+#include <stdint.h>
 #include <Python.h>
 #include <pybind11/embed.h> 
 

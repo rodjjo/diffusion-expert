@@ -9,6 +9,7 @@
 #include <Windows.h>
 #endif 
 
+#include "misc/config.h"
 #include "misc/dialogs.h"
 
 namespace dfe
@@ -61,24 +62,28 @@ std::string executeChooser(Fl_File_Chooser *fc) {
     return std::string();
 }
 
-std::string choose_image_to_open_fl(std::string* current_dir) {
-    if (!path_exists(current_dir->c_str())) {
-        *current_dir = "";
+std::string choose_image_to_open_fl(const std::string& scope) {
+    std::string current_dir = get_config()->last_open_directory(scope.c_str());
+
+    if (!path_exists(current_dir.c_str())) {
+        current_dir = "";
     }
-    Fl_File_Chooser dialog(current_dir->c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE, "Open image");
+    Fl_File_Chooser dialog(current_dir.c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE, "Open image");
     std::string result = executeChooser(&dialog);
     if (!result.empty()) {
         size_t latest = result.find_last_of("/\\");
-        *current_dir = result.substr(0, latest);
+        current_dir = result.substr(0, latest);
+        get_config()->last_open_directory(scope.c_str(), current_dir.c_str());
     }
     return result;
 }
 
-std::string choose_image_to_save_fl(std::string* current_dir) {
-    if (!path_exists(current_dir->c_str())) {
-        *current_dir = "";
+std::string choose_image_to_save_fl(const std::string& scope) {
+    std::string current_dir = get_config()->last_save_directory(scope.c_str());
+    if (!path_exists(current_dir.c_str())) {
+        current_dir = "";
     }
-    Fl_File_Chooser dialog(current_dir->c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
+    Fl_File_Chooser dialog(current_dir.c_str(), kIMAGE_FILES_FILTER_FL, Fl_File_Chooser::SINGLE | Fl_File_Chooser::CREATE, "Save image");
     std::string result = executeChooser(&dialog);
     
     if (!result.empty() && path_exists(result.c_str())) {
@@ -86,7 +91,8 @@ std::string choose_image_to_save_fl(std::string* current_dir) {
             result.clear();
         } else {
             size_t latest = result.find_last_of("/\\");
-            *current_dir = result.substr(0, latest);
+            current_dir = result.substr(0, latest);
+            get_config()->last_save_directory(scope.c_str(), current_dir.c_str());
         }
     }
 

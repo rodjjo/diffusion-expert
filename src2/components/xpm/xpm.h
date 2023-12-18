@@ -15,6 +15,7 @@ typedef enum {
     img_24x24_open,
     img_24x24_folder,
     img_24x24_wallet,
+    img_24x24_flash_drive,
     img_24x24_pinion,
     img_24x24_open_layer,
     img_24x24_remove,

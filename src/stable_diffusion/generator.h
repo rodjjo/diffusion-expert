@@ -4,6 +4,7 @@
 #ifndef SRC_STABLE_DIFFUSION_GENERATOR_H_
 #define SRC_STABLE_DIFFUSION_GENERATOR_H_
 
+#include <stdint.h>
 #include <functional>
 #include <list>
 #include <vector>

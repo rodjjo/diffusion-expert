@@ -26,7 +26,7 @@ Click on the video bellow:
 
 ## Build and run 
 
-Before start make sure you have 7zip, cmake, python 3.10 and Conan 1.59.0 installed.  
+Before start make sure you have 7zip, cmake, python 3.10 installed.  
 The build.py script will download the toolset and all the dependencies.
 
 Building the project

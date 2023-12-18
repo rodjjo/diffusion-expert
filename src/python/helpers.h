@@ -4,6 +4,7 @@
 #ifndef SRC_PYTHON_HELPERS_H_
 #define SRC_PYTHON_HELPERS_H_
 
+#include <stdint.h>
 #include <list>
 #include <string>
 #include <memory>

@@ -1,6 +1,6 @@
 #include <GL/gl.h>
-#include <FL/Fl.H>
 #include <FL/gl.h>
+#include <FL/Fl.H>
 
 #include "misc/config.h"
 #include "misc/utils.h"
@@ -816,9 +816,10 @@ namespace dfe
     void ImagePanel::draw() {
         if (!valid())
         {
-            valid(1);
             glLoadIdentity();
             glViewport(0, 0, this->w(), this->h());
+            glLoadIdentity();
+            valid(1);
         }
 
         glEnable(GL_BLEND);

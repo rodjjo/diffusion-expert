@@ -16,6 +16,7 @@ namespace dfe
             event_generator_previous_image,
             event_generator_accept_image,
             event_generator_accept_partial_image,
+            event_generator_save_current_image,
             event_image_frame_new_mask,
             event_image_frame_open_mask,
             event_image_frame_mode_selected
@@ -305,6 +306,13 @@ namespace dfe
 
                 case event_generator_accept_partial_image:
                 break;
+
+                case event_generator_save_current_image:
+                    if (images_[page_type_results] && images_[page_type_results]->view_settings()->layer_count() > 0) {
+                        auto img = images_[page_type_results]->view_settings()->at(0)->getImage()->duplicate();
+                        choose_and_save_image("generator_results", img);
+                    }
+                break;
             };
         } else if (sender == image_frame_.get()) {
             switch (event) {
@@ -352,14 +360,20 @@ namespace dfe
     }
 
     image_ptr_t DiffusionWindow::choose_and_open_image(const char * scope) {
-        std::string current_dir = get_config()->last_open_directory(scope);
-        std::string result = choose_image_to_open_fl(&current_dir);
+        std::string result = choose_image_to_open_fl(scope);
         if (!result.empty()) {
             auto dir = filepath_dir(result);
-            get_config()->last_open_directory(scope, dir.c_str());
             return py::open_image(result.c_str());
         }
         return image_ptr_t();
+    }
+
+    void DiffusionWindow::choose_and_save_image(const char * scope, image_ptr_t image) {
+        std::string result = choose_image_to_save_fl(scope);
+        if (!result.empty()) {
+            auto dir = filepath_dir(result);
+            py::save_image(result.c_str(), image);
+        }
     }
 
     void DiffusionWindow::generate() {

@@ -4,6 +4,7 @@
 #ifndef SRC_STABLE_DIFFUSION_CONTROLNET_H_
 #define SRC_STABLE_DIFFUSION_CONTROLNET_H_
 
+#include <stdint.h>
 #include <string>
 #include "src/python/raw_image.h"
 

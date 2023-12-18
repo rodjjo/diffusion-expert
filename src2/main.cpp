@@ -5,9 +5,17 @@
 #include "windows/progress_ui.h"
 #include "windows/main_ui.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <shellscalingapi.h>
+#endif
+
 
 int main(int argc, char **argv)
 {
+#ifdef _WIN32
+    SetProcessDpiAwareness(PROCESS_DPI_UNAWARE);
+#endif
     int result = 0;
     std::string python_error;
     /*

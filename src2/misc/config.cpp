@@ -108,7 +108,7 @@ namespace dfe
     }
 
     std::string Config::last_save_directory(const char *scope) {
-        auto it = last_open_dirs.find(scope);
+        auto it = last_save_dirs.find(scope);
         if (last_save_dirs.end() != it) {
             return it->second;
         }

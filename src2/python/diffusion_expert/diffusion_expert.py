@@ -31,7 +31,7 @@ def open_image(*args, **kwargs):
 
 @capture_exception
 def save_image(*args, **kwargs):
-    from dfe.images.routines import open_image as save_image_original      
+    from dfe.images.routines import save_image as save_image_original      
     return save_image_original(*args, **kwargs)
 
 

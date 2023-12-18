@@ -1,10 +1,11 @@
 #pragma once
 
-#include <pybind11/embed.h> 
+#include <stdint.h>
 #include <list>
 #include <vector>
 #include <string>
 #include <functional>
+#include <pybind11/embed.h> 
 
 #include "python/code.h"
 #include "python/image.h"
@@ -17,6 +18,7 @@ namespace py
 {
 
 image_ptr_t open_image(const char* path);
+void save_image(const char* path, image_ptr_t image);
 py11::dict load_config();
 void store_config(const py11::dict& config);
 image_ptr_t remove_background(RawImage* img, const py11::dict& params);

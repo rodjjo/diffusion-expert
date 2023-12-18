@@ -43,6 +43,7 @@ target_link_libraries(
     gdiplus
     ws2_32
     glu32
+    Shcore
 )
 
 set_target_properties(diffusion-exp2
