@@ -1,3 +1,4 @@
+import re
 from typing import List
 from random import randint
 from dfe.models.loader import (
@@ -8,7 +9,9 @@ from dfe.models.loader import (
     load_tiny_vae, 
     load_scheduler, 
     load_text_model,
-    load_lora_weights
+    load_lora_weights,
+    load_embeddings,
+    parse_prompt_loras
 )
 from dfe.images.routines import pil_as_dict, pil_from_dict
 from dfe.pipelines.latents import create_latents_noise
@@ -62,6 +65,7 @@ class LoadedModel:
 
 class CancelException(Exception):
     pass
+
 
 def cached_load_unet(
     model: str, 
@@ -143,8 +147,14 @@ def cached_load_unet(
     unet.set_attn_processor(AttnProcessor2_0())
     cache['text_model'] = load_text_model(state_dict.text_model)
     cache['unet'] = unet
+
+    load_embeddings(cache['text_model'], tokenizer)
+
     progress_text("Model loaded with success, applying loras...")
     # load lora list here
+    for l in lora_list:
+        progress_text(f"Loading lora: {l[0]} weight: {l[1]:9.3f}")        
+        load_lora_weights(unet, cache['text_model'] ,  l[0], l[1])
 
     if use_lcm_lora:
         progress_text("Using lcm lora (speed it up :))...")        
@@ -282,7 +292,7 @@ def generate_internal(
 ) -> List[dict]:
     if seed == -1:
         seed = randint(0, 2147483647)
-    lora_list = [] # TODO: replace me
+    positive_prompt, lora_list = parse_prompt_loras(positive_prompt)
     inpaint = mode == 'inpaint'
     model2use = inpaint_model if inpaint else model
     progress_text(f"Generating image, mode: {mode} model: {model2use} ...")

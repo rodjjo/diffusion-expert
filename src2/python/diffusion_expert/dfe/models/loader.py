@@ -1,4 +1,5 @@
 import os
+import re
 import safetensors
 import torch
 from omegaconf import OmegaConf
@@ -19,7 +20,8 @@ from diffusers import (
 )
 
 from transformers import CLIPTokenizer, CLIPTextModel
-from dfe.misc.config import CONFIG_DIR, VAES_DIR, CACHE_DIR, get_lora_location
+from dexpert import progress_text
+from dfe.misc.config import CONFIG_DIR, VAES_DIR, CACHE_DIR, get_lora_location, get_textual_inversion_paths, get_lora_location
 from dfe.models.sd15unet_conv import convertsd15_checkpoint, convert_ldm_clip_checkpoint, create_unet_diffusers_config
 
 
@@ -161,6 +163,48 @@ def load_vae(info: StateDictInfo, use_float16: bool):
         )
         return vae
     return None
+
+
+def load_embeddings(text_encoder, tokenizer):
+    tokens = []
+    embeddings = []
+    dtype = text_encoder.get_input_embeddings().weight.dtype
+    for tip in get_textual_inversion_paths():
+        if tip[0]:
+            state_dict = safetensors.torch.load_file(tip[1], device="cpu") 
+        else:
+            state_dict = torch.load(tip[1], map_location="cpu")
+        progress_text(f"Loading embedding {tip[1]} ...")
+        if len(state_dict) == 1:
+            # diffusers
+            token, embedding = next(iter(state_dict.items()))
+        elif "string_to_param" in state_dict:
+            # A1111
+            token = state_dict["name"]
+            embedding = state_dict["string_to_param"]["*"]
+        else:
+            continue
+
+        # cast to dtype of text_encoder
+        embedding.to(dtype)
+
+        is_multi_vector = len(embedding.shape) > 1 and embedding.shape[0] > 1
+
+        if is_multi_vector:
+            tokens += [token] + [f"{token}_{i}" for i in range(1, embedding.shape[0])]
+            embeddings += [e for e in embedding]  # noqa: C416
+        else:
+            tokens += [token]
+            embeddings += [embedding[0]] if len(embedding.shape) > 1 else [embedding]
+
+    # add tokens and get ids
+    tokenizer.add_tokens(tokens)
+    token_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    # resize token embeddings and set new embeddings
+    text_encoder.resize_token_embeddings(len(tokenizer))
+    for token_id, embedding in zip(token_ids, embeddings):
+        text_encoder.get_input_embeddings().weight.data[token_id] = embedding
 
 
 def load_tokenizer(info: StateDictInfo):
@@ -306,3 +350,31 @@ def load_lora_weights(unet, text_encoder, lora_name, lora_weight):
         else:
             curr_layer.weight.data += lora_weight * alpha * torch.mm(weight_up, weight_down)
 
+
+
+def parse_prompt_loras(prompt: str):
+    lora_re = re.compile('<lora:[^:]+:[^>]+>')
+    lora_list = re.findall(lora_re, prompt)
+    lora_items = []
+    weight_sum = 0
+    for lora in lora_list:
+        lora = lora.replace('<', '').replace('>', '')
+        p = lora.split(':')
+        if len(p) != 3:
+            continue
+        p = [p[1], p[2]]
+        try:
+            weight = float(p[1])
+        except Exception:
+            continue
+        filepath = get_lora_location(p[0])
+        if not filepath:
+            continue
+        weight_sum = weight_sum + weight
+        lora_items.append([filepath, weight])
+    if weight_sum:
+        weight_sum = 1.0 / weight_sum
+        for i in range(len(lora_items)):
+            lora_items[i][1] = lora_items[i][1] * weight_sum
+    lora_items.sort(key=lambda x: x[0])    
+    return re.sub(lora_re, '', prompt), lora_items

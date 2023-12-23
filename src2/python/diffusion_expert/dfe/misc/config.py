@@ -82,7 +82,6 @@ def get_embedding_dir():
     return config.get('directories', {}).get('add_emb_dir')
 
 
-
 def get_model_path(model: str):
     model_path = os.path.join(MODELS_DIR, model)
     if not os.path.exists(model_path):
@@ -93,6 +92,8 @@ def get_model_path(model: str):
 
 
 def get_lora_location(lora: str) -> str:
+    if lora.lower().endswith('.safetensors') or lora.lower().endswith('.ckpt'):
+        return lora
     for d in (LORA_DIR, get_lora_model_dir()):
         for e in ('.safetensors', '.ckpt'):
             filepath = os.path.join(d, f'{lora}{e}')
