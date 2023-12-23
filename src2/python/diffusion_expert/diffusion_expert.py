@@ -64,6 +64,12 @@ def list_controlnet(*args, **kwargs):
     from dfe.models.model_list import list_controlnets as list_controlnets_original
     return list_controlnets_original(*args, **kwargs)
 
+@capture_exception
+def list_embeddings(*args, **kwargs):
+    from dfe.models.model_list import list_embeddings as list_embeddings_original
+    return list_embeddings_original(*args, **kwargs)
+    
+
 
 def main():
     pass

@@ -214,5 +214,22 @@ std::vector<std::string> list_schedulers() {
     return result;
 }
 
+py11::list list_embeddings(bool lora) {
+    py11::list result;
+    std::string error;
+    execute([&result, &error, lora] (py11::module_ &module) {
+        try {
+            auto r = module.attr("list_embeddings")(lora);
+            result = r.cast<py11::list>();
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+    if (!error.empty()) {
+        fl_alert("Error loading the config: %s", error.c_str());
+    } 
+    return result;
+}
+
 }
 } // namespace dfe

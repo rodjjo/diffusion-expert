@@ -77,6 +77,11 @@ def get_lora_model_dir():
     config = current_config()
     return config.get('directories', {}).get('add_lora_dir')
 
+def get_embedding_dir():
+    config = current_config()
+    return config.get('directories', {}).get('add_emb_dir')
+
+
 
 def get_model_path(model: str):
     model_path = os.path.join(MODELS_DIR, model)
@@ -86,6 +91,7 @@ def get_model_path(model: str):
             model_path = os.path.join(get_additional_model_dir(), model)
     return model_path
 
+
 def get_lora_location(lora: str) -> str:
     for d in (LORA_DIR, get_lora_model_dir()):
         for e in ('.safetensors', '.ckpt'):
@@ -93,6 +99,34 @@ def get_lora_location(lora: str) -> str:
             if os.path.exists(filepath):
                 return filepath
     return None
+
+
+def get_textual_inversion_paths():
+    files = [os.path.join(EMBEDDING_DIR, f) for f in os.listdir(EMBEDDING_DIR)]
+    add_dir = get_embedding_dir()
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
+    result = []
+    for f in files:
+        lp = f.lower()
+        if lp.endswith('.bin') or lp.endswith('.pt'):
+            result.append((False, f))
+        elif lp.endswith('.safetensors'):
+            result.append((True, f))
+    return result
+
+
+def get_lora_paths():
+    files = [os.path.join(LORA_DIR, f) for f in os.listdir(LORA_DIR)]
+    add_dir = get_lora_model_dir()
+    if add_dir:
+        files += [os.path.join(add_dir, f) for f in os.listdir(add_dir)]
+    result = []
+    for f in files:
+        lp = f.lower()
+        if lp.endswith('.ckpt') or lp.endswith('.safetensors'): # rename .pt to bin before loading it
+            result.append(f)
+    return result
 
 
 create_dirs()

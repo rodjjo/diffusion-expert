@@ -15,9 +15,11 @@ namespace {
         "Scale down to fit in 1280x1280"
     };
 }
-    
 
-PromptFrame::PromptFrame(Fl_Group *parent) {
+PromptFrame::PromptFrame(Fl_Group *parent) : SubscriberThis({
+    event_prompt_lora_selected_,
+    event_prompt_textual_selected_
+})  {
     parent_ = parent;
 
     positive_input_ = new Fl_Multiline_Input(0, 0, 1, 1, "Positive prompt");
@@ -34,6 +36,16 @@ PromptFrame::PromptFrame(Fl_Group *parent) {
     modelsInpaint_input_ = new Fl_Choice(0, 0, 1, 1, "Inpaint Model");
     use_lcm_lora_ = new Fl_Check_Button(0, 0, 1, 1, "Use LCM lora");
     use_tiny_vae_ = new Fl_Check_Button(0, 0, 1, 1, "Use Tiny AutoEncoder");
+
+    lora_gp_ = new Fl_Group(0, 0, 1, 1);
+    loras_.reset(new EmbeddingFrame(true, lora_gp_));
+    lora_gp_->end();
+    emb_gp_ = new Fl_Group(0, 0, 1, 1);
+    embeddings_.reset(new EmbeddingFrame(false, emb_gp_));
+    emb_gp_->end();
+    
+    lora_gp_->box(FL_DOWN_BOX);
+    emb_gp_->box(FL_DOWN_BOX);
 
     positive_input_->align(FL_ALIGN_TOP_LEFT);
     negative_input_->align(FL_ALIGN_TOP_LEFT);
@@ -127,7 +139,14 @@ void PromptFrame::alignComponents() {
     use_lcm_lora_->resize(sx + 5, modelsInpaint_input_->y() + modelsInpaint_input_->h() + 5, 160, 20);
     use_tiny_vae_->resize(use_lcm_lora_->x() + use_lcm_lora_->w() + 5, use_lcm_lora_->y(), use_lcm_lora_->w(), use_lcm_lora_->h());
     schedulers_->resize(sx + 5, use_tiny_vae_->y() + use_tiny_vae_->h() + 20, models_input_->w(), models_input_->h());
-    resizeModes_->resize( schedulers_->x() +  schedulers_->w() + 5, schedulers_->y(), models_input_->w(), models_input_->h());
+    resizeModes_->resize(schedulers_->x() +  schedulers_->w() + 5, schedulers_->y(), models_input_->w(), models_input_->h());
+
+    int embedding_pos_y = resizeModes_->y() + resizeModes_->h() + 15;
+    lora_gp_->resize(sx + 5, embedding_pos_y, (pw - 15) / 2, ph - embedding_pos_y - 5);
+    emb_gp_->resize(lora_gp_->x() + lora_gp_->w() + 5, embedding_pos_y, lora_gp_->w(), lora_gp_->h());
+
+    loras_->alignComponents();
+    embeddings_->alignComponents();
 }
 
 
@@ -239,6 +258,52 @@ void PromptFrame::refresh_models() {
         schedulers_->add(s.c_str());
     }
     schedulers_->value(0);
+
+    embeddings_->refresh_models();
+    loras_->refresh_models();
 }
+
+void PromptFrame::dfe_handle_event(void *sender, event_id_t event, void *data) {
+    switch (event)
+    {
+    case event_prompt_lora_selected_:
+        insert_current_lora();
+        break;
+    
+    case event_prompt_textual_selected_:
+        insert_current_textual();
+        break;
+    }
+}
+
+
+void PromptFrame::insert_current_textual() {
+    std::string text = positive_input_->value();
+    auto current_concept = embeddings_->getSelected();
+    if (current_concept.name.empty()) {
+        return;
+    }
+    if (text.find(current_concept.name) == text.npos) {
+        text += " ";
+        text += current_concept.name;
+    }
+    positive_input_->value(text.c_str());
+}
+
+void PromptFrame::insert_current_lora() {
+    std::string text = positive_input_->value();
+    auto current_concept = loras_->getSelected();
+    if (current_concept.name.empty()) {
+        return;
+    }
+    current_concept.name = std::string("<lora:") + current_concept.name;
+    if (text.find(current_concept.name) == text.npos) {
+        text += " ";
+        text += current_concept.name + ":1.0>";
+    }
+    positive_input_->value(text.c_str());
+}
+
+
 
 } // namespace dfe

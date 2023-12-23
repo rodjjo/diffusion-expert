@@ -31,6 +31,7 @@ typedef enum {
     img_24x24_magic_wand,
     img_24x24_back,
     img_24x24_forward,
+    img_24x24_green_pin,
     img_24x24_heart,
     img_24x24_medium_rating,
     // keep no_image at the end

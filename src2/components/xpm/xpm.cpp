@@ -32,6 +32,7 @@
 #include "components/xpm/data/24x24/medium_rating.xpm"
 #include "components/xpm/data/24x24/new_document.xpm"
 #include "components/xpm/data/24x24/flash_drive.xpm"
+#include "components/xpm/data/24x24/green_pin.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -49,6 +50,7 @@ std::map<xpm_t, const char * const*> xpm_db = {
     { img_24x24_wallet, xpm_wallet },
     { img_24x24_flash_drive, xpm_flash_drive },
     { img_24x24_pinion, xpm_pinion },
+    { img_24x24_green_pin, xpm_green_pin },
     { img_24x24_settings, xpm_computer },
     { img_24x24_bee, xpm_bee },
     { img_24x24_remove, xpm_remove },

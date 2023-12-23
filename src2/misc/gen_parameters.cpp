@@ -15,13 +15,6 @@ namespace dfe
         return d;
     }
 
-    py11::dict LoraParameters::toDict() {
-        py11::dict d;
-        d["model"] = model;
-        d["weight"] = weight;
-        return d;
-    }
-
     py11::dict GeneratorParameters::toDict() {
         py11::dict d;
         d["positive_prompt"] = positive_prompt;
@@ -64,15 +57,6 @@ namespace dfe
             d["controlnets"] = ctrls;
         } else {
             d["controlnets"] = py11::list(0);
-        }
-        if (!lora_list.empty()) {
-            py11::list loras(0);
-            for (auto &l : lora_list) {
-                loras.append(l.toDict());
-            }
-            d["lora_list"] = loras;
-        } else {
-            d["lora_list"] = py11::list(0);
         }
         return d;
     }

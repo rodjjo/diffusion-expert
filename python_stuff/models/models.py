@@ -17,7 +17,7 @@ from diffusers import (
 
 from diffusers.models.attention_processor import AttnProcessor2_0
 
-import safetensors
+from safetensors.torch import load_file as load_safetensors
 
 import torch
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
@@ -248,7 +248,7 @@ def get_embeddings():
     result = []
     for f in files:
         if f[0]:
-            data = safetensors.torch.load_file(f[1], device="cpu")
+            data = load_safetensors(f[1], device="cpu")
         else:
             data = torch.load(f[1], map_location="cpu")
         if 'string_to_param' in data:

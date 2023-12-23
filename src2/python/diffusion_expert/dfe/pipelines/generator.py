@@ -274,7 +274,6 @@ def generate_internal(
     mask: dict,
     strength: float,
     controlnets: List[dict],
-    lora_list: List[dict],
     use_lcm_lora: bool,
     use_tiny_vae: bool,
     keep_in_memory: bool,
@@ -283,6 +282,7 @@ def generate_internal(
 ) -> List[dict]:
     if seed == -1:
         seed = randint(0, 2147483647)
+    lora_list = [] # TODO: replace me
     inpaint = mode == 'inpaint'
     model2use = inpaint_model if inpaint else model
     progress_text(f"Generating image, mode: {mode} model: {model2use} ...")
@@ -338,7 +338,6 @@ def generate(params: dict) -> dict:
         strength=params.get("strength", 0.75),
         mask=params.get("mask", {}),
         controlnets=params.get("controlnets", []),
-        lora_list=params.get("lora_list", []),
         use_lcm_lora=params.get("use_lcm_lora", False),
         use_tiny_vae=params.get("use_tiny_vae", False),
         keep_in_memory=params.get("keep_in_memory", False),

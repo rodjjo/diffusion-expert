@@ -35,6 +35,8 @@ typedef enum {
     event_image_frame_new_mask,
     event_image_frame_open_mask,
     event_image_frame_mode_selected,
+    event_prompt_lora_selected_,
+    event_prompt_textual_selected_
 } event_id_t;
 
 typedef std::function<void(void *sender, event_id_t event, void *data)> event_handler_t;

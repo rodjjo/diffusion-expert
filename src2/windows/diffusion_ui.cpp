@@ -22,44 +22,7 @@ namespace dfe
             event_image_frame_mode_selected
         };
 
-        class NonEditableImagePanel : public ImagePanel {
-            public:
-                NonEditableImagePanel(
-                    uint32_t x, uint32_t y, 
-                    uint32_t w, uint32_t h, 
-                    const char *unique_title) : ImagePanel(
-                        x, y, w, h, unique_title
-                    ) {};
-
-                bool enable_selection() override {
-                    // do not let the user to select a region
-                    return false;
-                }
-
-                bool enable_drag() override {
-                    // do not let the user to drag the image
-                    return false;
-                }
-
-                bool enable_resize() override {
-                    // do not let the user to change the size of the image
-                    return false;
-                }
-        };
-
-        class MaskEditableImagePanel : public NonEditableImagePanel {
-            public:
-                MaskEditableImagePanel(
-                    uint32_t x, uint32_t y, 
-                    uint32_t w, uint32_t h, 
-                    const char *unique_title) : NonEditableImagePanel(
-                        x, y, w, h, unique_title
-                    ) {};
-
-                bool enable_mask_editor() override {
-                    return true;
-                }
-        };
+       
     }
 
     DiffusionWindow::DiffusionWindow() : Fl_Double_Window(

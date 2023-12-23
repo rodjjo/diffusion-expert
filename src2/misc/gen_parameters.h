@@ -20,13 +20,6 @@ public:
     py11::dict toDict();
 };
 
-class LoraParameters {
-public:
-    std::string model;
-    float weight = 1.0;
-
-    py11::dict toDict();
-};
 
 class GeneratorParameters {
  public:
@@ -48,7 +41,6 @@ class GeneratorParameters {
     image_ptr_t image;
     image_ptr_t mask;
     std::vector<ControlnetParameters> controlnets;
-    std::vector<LoraParameters> lora_list;
     py11::dict toDict();
 };
     
