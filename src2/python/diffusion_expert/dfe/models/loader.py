@@ -124,6 +124,7 @@ def load_state_dict(path: str):
     
     return StateDictInfo(checkpoint, kind, inpaint, config, text_model, unet_config)
 
+
 def load_text_model(text_model_dict: dict) -> CLIPTextModel:
     local_files_only = False
     if os.path.exists(os.path.join(CACHE_DIR, 'models--openai--clip-vit-large-patch14', 'snapshots')):
@@ -131,6 +132,7 @@ def load_text_model(text_model_dict: dict) -> CLIPTextModel:
     text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR, local_files_only=local_files_only)
     text_model.load_state_dict(text_model_dict)
     return text_model
+
 
 def load_unet(info: StateDictInfo, use_float16: bool):
     state = info.state
@@ -223,7 +225,8 @@ def load_tiny_vae(info: StateDictInfo, use_float16: bool):
             "madebyollin/taesdxl", 
             cache_dir=CACHE_DIR, 
             torch_dtype=usefp16[use_float16])
-    
+
+
 def load_scheduler(name: str, config: object):
     num_train_timesteps = config.model.params.timesteps
     beta_start = config.model.params.linear_start

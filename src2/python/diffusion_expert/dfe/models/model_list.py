@@ -100,18 +100,16 @@ def list_loras():
             'filename': os.path.basename(f),
             'path': f
         })
-    for r in result:
-        picture_path = f'{r["path"]}.jpg'
-        if os.path.exists(picture_path):
-            r['image'] = picture_path
     result.sort(key=lambda x: x['name'].lower())
     return result
+
 
 def make_unique(concept_list: list):
     items = {
         v['name']: v for v in concept_list
     }
     return items.values()
+
 
 def list_embeddings(lora: bool):
     if lora:

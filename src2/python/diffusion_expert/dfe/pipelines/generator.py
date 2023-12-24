@@ -247,10 +247,16 @@ def execute_pipeline(
         additional_args.update({
             'mask_image': pil_from_dict(input_image)
         })
+    
+    if batch_size == 1:
+        shape = (4, height // 8, width // 8 )
+        additional_args["latents"] = create_latents_noise(shape, seed, subseed=None, subseed_strength=0)
+        additional_args["latents"].to('cuda')
 
-    shape = (4, height // 8, width // 8 )
-    additional_args["latents"] = create_latents_noise(shape, seed, subseed=None, subseed_strength=0)
-    additional_args["latents"].to('cuda')
+    additional_args['generator'] = [
+        torch.Generator(device='cuda').manual_seed(seed + i)
+        for i in range(batch_size)
+    ]
 
     with torch.inference_mode(), torch.autocast('cuda'):
         result = pipeline(
