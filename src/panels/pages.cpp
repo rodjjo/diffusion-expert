@@ -234,9 +234,9 @@ void Pages::textToImage() {
 
         if (maskRaw) {
             if (inpaintMasked) {
-                mask = maskRaw->removeAlpha();
-            } else {
                 mask = maskRaw->duplicate();
+            } else {
+                mask = maskRaw->removeAlpha();
             }
         }
         g.reset(new GeneratorImg2Image(

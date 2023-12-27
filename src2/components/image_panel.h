@@ -70,7 +70,7 @@ namespace dfe
             void gc();
             void get_bounding_box(float zoom, Layer *layer, int *x, int *y, int *w, int *h);
             bool is_layer_visible(float zoom, Layer *layer, int scroll_x, int scroll_y, int view_w, int view_h);
-            RawImage *get_cached(float zoom, Layer *layer);
+            RawImage *get_cached(float zoom, Layer *layer, Layer *invert_layer=NULL);
             bool is_modified(Layer *layer);
             void set_scroll(int x, int y);
             int get_scroll_x();
@@ -179,7 +179,7 @@ namespace dfe
         void draw_overlay() override;
 
     private:
-        void draw_layer(Layer *layer);
+        void draw_layer(Layer *layer, bool mask=false);
         void draw_rectangle(int x, int y, int w, int h, uint8_t color[4], bool fill);
         void draw_brush();
         static void imageRefresh(void *cbdata);

@@ -52,7 +52,6 @@ ImageFrame::ImageFrame(Fl_Group *parent, ImagePanel *img) {
 
     btnNewMask_.reset(new Button(xpm::image(xpm::img_24x24_new_document),
         [this] () {
-            printf("clicked new mask\n");
             publish_event(this, event_image_frame_new_mask, NULL);
         }
     ));

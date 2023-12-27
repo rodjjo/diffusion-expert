@@ -76,7 +76,7 @@ def cached_load_unet(
     use_float16: bool,
     keep_in_memory: bool
 ) -> LoadedModel:
-    progress_text("Loading the model")
+    progress_text("Loading the model, looking into the cache...")
     cache = MODEL_CACHE[INPAINT_KEY[inpaint]]
     if cache.get('model_file', '') != model or cache.get('use_fp16', True) != use_float16:
         cache.clear()
@@ -238,15 +238,11 @@ def execute_pipeline(
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
     if input_image:
-        additional_args.update({
-            'image': pil_from_dict(input_image),
-            'strength': strength,
-        })
+        additional_args['image'] = pil_from_dict(input_image)
+        if not mask:
+            additional_args['strength'] = strength
     if mask:
-        print("Placing the mask image")
-        additional_args.update({
-            'mask_image': pil_from_dict(input_image)
-        })
+        additional_args['mask_image'] = pil_from_dict(mask)
     
     if batch_size == 1:
         shape = (4, height // 8, width // 8 )
@@ -261,7 +257,6 @@ def execute_pipeline(
     with torch.inference_mode(), torch.autocast('cuda'):
         result = pipeline(
             prompt, 
-            seed=seed,
             negative_prompt=negative, 
             guidance_scale=cfg, 
             num_inference_steps=steps,

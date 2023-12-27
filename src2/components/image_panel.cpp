@@ -219,7 +219,7 @@ namespace dfe
             refresh(true);
         }
     }
-    
+
     ViewSettings::ViewSettings(ImagePanel *parent): parent_(parent), cache_() {
 
     }
@@ -619,7 +619,7 @@ namespace dfe
         return rectRect(x, y, w, h, 0, 0, view_w, view_h);
     }
 
-    RawImage *ImageCache::get_cached(float zoom, Layer *layer) {
+    RawImage *ImageCache::get_cached(float zoom, Layer *layer, Layer *invert_layer) {
         int _unused;
         int sw, sh;
         get_bounding_box(zoom, layer, &_unused, &_unused, &sw, &sh);
@@ -639,7 +639,13 @@ namespace dfe
                 CachedLayer cl;
                 cl.version = layer->version();
                 cl.hit = true;
-                cl.cache = layer->getImage()->resizeImage(sw, sh);
+                if (invert_layer) {
+                    auto tmp = invert_layer->getImage()->resizeImage(sw, sh);
+                    cl.cache = layer->getImage()->resizeImage(sw, sh);
+                    cl.cache->pasteInvertMask(tmp.get());
+                } else {
+                    cl.cache = layer->getImage()->resizeImage(sw, sh);
+                }
                 items_[layer] = cl;
                 result  = cl.cache.get();
             }
@@ -844,7 +850,7 @@ namespace dfe
                 if (!view_settings_->at(i)->visible()) {
                     continue;
                 }
-                draw_layer(view_settings_->at(i));
+                draw_layer(view_settings_->at(i), i == 1 && enable_mask_editor());
             }
 
             int ix, iy, iw, ih;
@@ -884,12 +890,13 @@ namespace dfe
         image_->rectangle(x, y, w, h, gray_color, fill ? 0.1 : 0.0f);
     }
 
-    void ImagePanel::draw_layer(Layer *layer) {
+    void ImagePanel::draw_layer(Layer *layer, bool mask) {
         float zoom = getZoom();
         if (!view_settings_->cache()->is_layer_visible(zoom, layer, 0, 0, image_->w(), image_->h())) {
             return;
         }
-        auto img = view_settings_->cache()->get_cached(zoom, layer);
+        Layer *inv_layer = mask ? view_settings_->at(0) : NULL;
+        auto img = view_settings_->cache()->get_cached(zoom, layer, inv_layer);
         int x, y, w, h;
         view_settings_->cache()->get_bounding_box(zoom, layer, &x, &y, &w, &h);
         image_->pasteAt(x, y, img);

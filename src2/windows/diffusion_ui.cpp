@@ -372,6 +372,8 @@ namespace dfe
 
         int original_width = params.width;
         int original_height = params.height;
+        image_ptr_t original_mask;
+
         if (image_frame_->get_mode() != img2img_disabled) {
             params.image = images_[page_type_image]->view_settings()->at(0)->getImage()->duplicate();
             original_width = params.image->w();
@@ -381,14 +383,15 @@ namespace dfe
             params.height = params.image->h();
 
             if (image_frame_->get_mode() == img2img_inpaint_masked) {
-                params.mask = images_[page_type_image]->view_settings()->at(1)->getImage()->duplicate();
-            } else if (image_frame_->get_mode() == img2img_inpaint_not_masked) {
                 params.mask = images_[page_type_image]->view_settings()->at(1)->getImage()->removeAlpha();
+            } else if (image_frame_->get_mode() == img2img_inpaint_not_masked) {
+                params.mask = images_[page_type_image]->view_settings()->at(1)->getImage()->duplicate();
             }
             
             if (params.mask) {
+                original_mask = params.mask->duplicate();
                 params.mask = params.mask->ensureMultipleOf8();
-                params.mask = params.mask->removeAlpha()->blur(4.0); // blur the mask boundaries
+                params.mask = params.mask->blur(4.0); // blur the mask boundaries
             }
         }
 
@@ -397,10 +400,10 @@ namespace dfe
             if (image_frame_->get_mode() == img2img_inpaint_masked || 
                 image_frame_->get_mode() == img2img_inpaint_not_masked) {
                 for (auto & img : result) {
-                    auto dup = params.image->duplicate();
-                    dup->pasteAt(0, 0, params.mask.get(), img.get());
-                    dup = dup->getCrop(0, 0, original_width, original_height);
-                    img.swap(dup);
+                    params.mask = original_mask->removeAlpha()->blur(4.0)->resizeCanvas(img->w(), img->h());
+                    img->pasteAt(0, 0, params.mask.get(), params.image.get());
+                    img = img->getCrop(0, 0, original_width, original_height);
+                    img.swap(img);
                 }
             }
             size_t index = results_.size();

@@ -34,12 +34,12 @@ def list_models():
 
 def list_schedulers():
     return [
-        {'name': 'LCMScheduler'},
         {'name': 'EulerAncestralDiscreteScheduler'},
         {'name': 'DDIMScheduler'},
         {'name': 'PNDMScheduler'},
         {'name': 'UniPCMultistepScheduler'},
         {'name': 'LMSDiscreteScheduler'},
+        {'name': 'LCMScheduler'},
     ]
 
 
