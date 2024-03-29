@@ -1,4 +1,4 @@
-import re
+import os
 from typing import List
 from random import randint
 from dfe.models.loader import (
@@ -15,12 +15,15 @@ from dfe.models.loader import (
 )
 from dfe.images.routines import pil_as_dict, pil_from_dict
 from dfe.pipelines.latents import create_latents_noise
-from dfe.misc.config import get_model_path
+from dfe.misc.config import get_model_path, CACHE_DIR
 
 from dexpert import progress, progress_canceled, progress_text
 
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, ControlNetModel, StableDiffusionControlNetPipeline
 from diffusers.models.attention_processor import AttnProcessor2_0
+
+from dfe.pipelines.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
+from dfe.pipelines.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
 
 import torch
 
@@ -43,6 +46,15 @@ MODEL_CACHE = {
 PIPELINE_CACHE = {
     INPAINT_KEY[True] : {},
     INPAINT_KEY[False] : {},
+}
+
+CONTROLNET_CACHE = {
+
+}
+
+usefp16 = {
+    True: torch.float16,
+    False: torch.float32
 }
 
 class LoadedModel:
@@ -172,7 +184,52 @@ def cached_load_unet(
         )
 
 
-def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel):
+def create_controlnet_models(controlnets, use_float16):
+    global CONTROLNET_CACHE
+    cache_key = [c['mode'] for c in controlnets]
+    if CONTROLNET_CACHE.get('modes') == cache_key:
+        return CONTROLNET_CACHE['controlnets']
+    CONTROLNET_CACHE = {}
+    model_list = []
+    model_repos = {
+            'canny': 'lllyasviel/sd-controlnet-canny',
+            'pose': 'lllyasviel/sd-controlnet-openpose',
+            'scribble': 'lllyasviel/sd-controlnet-scribble',
+            'deepth': 'lllyasviel/sd-controlnet-depth',
+            'segmentation': 'lllyasviel/sd-controlnet-seg',
+            'lineart': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+            'mangaline': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+    }
+
+    if controlnets:
+        progress_text("Loading controlnet models")
+
+    for c in controlnets:
+        if not model_repos.get(c['mode']):
+            continue
+        if c['mode'] == 'segmentation':
+            mode_str = f"models--lllyasviel--sd-controlnet-seg"
+        elif c['mode'] == 'lineart':
+            mode_str = f"models--lllyasviel--control_v11p_sd15s2_lineart_anime"
+        else:
+            mode_str = f"models--lllyasviel--sd-controlnet-{c['mode']}"
+        local_files_only = os.path.exists(os.path.join(CACHE_DIR, mode_str, 'snapshots'))
+        model_list.append(ControlNetModel.from_pretrained(
+            model_repos[c['mode']], torch_dtype=usefp16[use_float16], cache_dir=CACHE_DIR, local_files_only=local_files_only
+        ))
+
+    if model_list:
+        progress_text("Controlnet models loaded")
+
+    if len(model_list) == 1:
+        model_list = model_list[0]
+
+    CONTROLNET_CACHE['modes'] = cache_key
+    CONTROLNET_CACHE['controlnets'] = model_list
+    return model_list
+
+
+def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel, controlnets, use_float16):
     progress_text("Creating scheduler...")
     scheduler = load_scheduler(scheduler_name, config=model.config)
     safety_checker = None
@@ -188,22 +245,29 @@ def create_pipeline(mode: str, scheduler_name: str, model: LoadedModel):
         feature_extractor=feature_extractor,
         requires_safety_checker=requires_safety_checker
     )
+    model.unet.to('cuda')
+    control_models = create_controlnet_models(controlnets, use_float16)
+    if control_models:
+        common_args['controlnet'] = control_models
+
     if mode == 'txt2img':
         progress_text("Creating text to image pipeline...")
-        model.unet.to('cuda')
-        pipe = StableDiffusionPipeline(
-            **common_args
-        )
+        if control_models:
+            pipe = StableDiffusionControlNetPipeline(**common_args)
+        else:
+            pipe = StableDiffusionPipeline(**common_args)
     elif mode == 'img2img':
         progress_text("Creating image to image pipeline...")
-        pipe = StableDiffusionImg2ImgPipeline(
-            **common_args
-        )
+        if control_models:
+            pipe = StableDiffusionControlNetImg2ImgPipeline(**common_args)
+        else:
+            pipe = StableDiffusionImg2ImgPipeline(**common_args)
     else:
         progress_text("Creating inpainting pipeline...")
-        pipe = StableDiffusionInpaintPipeline(
-            **common_args
-        )
+        if control_models:
+            pipe = StableDiffusionControlNetInpaintImg2ImgPipeline(**common_args)
+        else:
+            pipe = StableDiffusionInpaintPipeline(**common_args)
 
     if model.tiny_vae:
         pipe.vae = model.tiny_vae
@@ -226,13 +290,16 @@ def execute_pipeline(
     batch_size,
     input_image,
     strength,
-    mask
+    mask,
+    controlnets
 ):
     def pipeline_callback(step, timestep, latents):
         progress(step, steps)
         if progress_canceled():
             raise CancelException()
     progress_text("Generating the image...")
+    if controlnets:
+        batch_size = 1
     additional_args = {}
     if batch_size > 1:
             additional_args['batch_size'] = batch_size
@@ -253,6 +320,28 @@ def execute_pipeline(
         torch.Generator(device='cuda').manual_seed(seed + i)
         for i in range(batch_size)
     ]
+
+    if controlnets:
+        scales = []
+        control_images = []
+        for c in controlnets:
+            control_images.append(pil_from_dict(c['image']))
+            strength = c.get('strength', 1.0)
+            if strength < 0:
+                strength = 0
+            elif strength > 2.0:
+                strength = 2.0
+            scales.append(strength)
+        if len(control_images) == 1:
+            control_images = control_images[0]
+        if len(scales) == 1:
+            scales = scales[0]
+        if isinstance(pipeline, StableDiffusionControlNetPipeline):
+            additional_args['image'] = control_images
+        else:
+            additional_args['controlnet_conditioning_image'] = control_images
+        additional_args['controlnet_conditioning_scale'] = scales
+
 
     with torch.inference_mode(), torch.autocast('cuda'):
         result = pipeline(
@@ -306,7 +395,7 @@ def generate_internal(
         use_float16,
         keep_in_memory
     )
-    pipeline = create_pipeline(mode, scheduler_name, loaded_model)
+    pipeline = create_pipeline(mode, scheduler_name, loaded_model, controlnets, use_float16)
     try:
         result = execute_pipeline(
             pipeline=pipeline,
@@ -320,7 +409,8 @@ def generate_internal(
             batch_size=batch_size,
             input_image=None if mode == 'txt2img' else image,
             strength=strength,
-            mask=None if mode != 'inpaint' else  mask
+            mask=None if mode != 'inpaint' else  mask,
+            controlnets=controlnets
         )
         return [
             pil_as_dict(r) for r in result

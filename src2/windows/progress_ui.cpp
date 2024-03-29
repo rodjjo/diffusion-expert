@@ -135,6 +135,9 @@ void init_progress_title(progress_type ptype) {
     case progress_preprocessor:
         set_progress_title("Pre-processing the image, please wait...");
         break;
+    case progress_loading_python:
+        set_progress_title("Loading python libraries");
+        break;
     default:
         break;
     }

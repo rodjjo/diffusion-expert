@@ -272,6 +272,57 @@ namespace dfe
         }
     }
 
+    image_ptr_t ViewSettings::get_selected_image() {
+        image_ptr_t r;
+        int sx, sy, sw, sh;
+        if (selected_coords_to_image_coords(&sx, &sy, &sw, &sh)) {
+            auto merged = merge_layers_to_image();
+            r = merged->getCrop(sx, sy, sw, sh);
+        }
+        return r;
+    }
+
+    bool ViewSettings::selected_coords_to_image_coords(int *x, int *y, int *w, int *h) {
+        int sx, sy, sw, sh;
+        // get the selected area...
+        if (get_selected_area(&sx, &sy, &sw, &sh)) {
+            // apply the scroll
+            sx -= cache_.get_scroll_x();
+            sy -= cache_.get_scroll_y();
+            
+            // get the final image area
+            int iax, iay, iaw, iah;
+            get_image_area(&iax, &iay, &iaw, &iah);
+
+            // constraint the selection inside the image
+            if (sx < iax) {
+                sw -= (iax - sw);
+                sx = iax;
+            }
+
+            if (sy < iay) {
+                sh -= (iay - sh);
+                sy = iay;
+            }
+
+            if (sx + sw > iaw) {
+                sw = sw - (iaw - (sx + sw));
+            }
+
+            if (sy + sh > iah) {
+                sh = sh - (iah - (sy + sh));
+            }
+
+            *x = sx;
+            *y = sy;
+            *w = sw;
+            *h = sh;
+
+            return true;
+        }
+        return false;
+    }
+
     void ViewSettings::remove_background_selected() {
         if (selected_) {
             py11::dict empty;
@@ -552,7 +603,7 @@ namespace dfe
         r = py::newImage(w, h, false);
         for (auto & l : layers_) {
             if (l->getImage()) {
-                r->pasteAt(l->x(), l->y(), l->getImage());
+                r->pasteAt(l->x() + x, l->y() + y, l->getImage());
             }
         }
         return r;
@@ -566,6 +617,33 @@ namespace dfe
         clear_layers();
         add_layer(value);
         refresh(true);
+    }
+
+    void ViewSettings::fuse_image(image_ptr_t value) {
+        if (layer_count() < 1) {
+            add_layer(value);
+            refresh(true);
+            return;
+        }
+        int iax, iay, unused;
+        int sx, sy, sw, sh;
+        int px, py;
+        get_image_area(&iax, &iay, &unused, &unused);
+        value = value->addAlpha();
+        if (selected_coords_to_image_coords(&sx, &sy, &sw, &sh)) {
+            image_ptr_t negative_mask;
+            for (size_t i = layer_count(); i > 0; i--) {
+                auto ly = at(i - 1);
+                auto limg = ly->getImage();
+                if (!limg) {
+                    continue;
+                }
+                px = ly->x() - iax;
+                py = ly->y() - iay;
+                limg->fuseAt(-px, -py, value.get());
+                // mask = mask->negative_mask();
+            }
+        }
     }
     
     void ViewSettings::set_mask() {
@@ -1095,6 +1173,10 @@ namespace dfe
 
     bool ImagePanel::enable_mask_editor() {
         return false;
+    }
+
+    void ImagePanel::cancel_refresh() {
+        should_redraw_ = false;
     }
 
 } // namespace dfe

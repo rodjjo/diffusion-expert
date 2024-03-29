@@ -53,6 +53,7 @@ namespace dfe
 
         void execute(callback_t cb)
         {
+            wait_callback();
             replace_callback(cb);
             on_status(false);
             wait_callback();

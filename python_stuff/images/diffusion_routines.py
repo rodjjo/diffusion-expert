@@ -10,6 +10,7 @@ from utils.settings import get_setting
 from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
+from external.free_lunch import register_free_upblock2d, register_free_crossattn_upblock2d
 
 from dexpert import progress, progress_canceled, progress_title
 
@@ -85,6 +86,7 @@ def _run_pipeline(pipeline_type, params):
     batch_size = params.get('batch_size', 1)
     reload_model = params.get("reload_model", False) 
     use_lcm = params.get("use_lcm", False) 
+    free_lunch = params.get("free_lunch", False) 
     input_image = params.get("image")
     input_mask = params.get("mask")
     inpaint_mode = params.get("inpaint_mode", "original")
@@ -260,6 +262,10 @@ def _run_pipeline(pipeline_type, params):
         if batch_size > 1:
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
+
+        if free_lunch:
+            register_free_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
+            register_free_crossattn_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
 
         result = pipeline(
             prompt, 

@@ -192,6 +192,7 @@ namespace dexpert
             params["var_stren"] = this->var_stren;
             params["reload_model"] = this->reload_model;
             params["use_lcm"] = this->use_lcm;
+            params["free_lunch"] = this->free_lunch;
             params["restore_faces"] = this->restore_faces;
             params["enable_codeformer"] = this->enable_codeformer;
 

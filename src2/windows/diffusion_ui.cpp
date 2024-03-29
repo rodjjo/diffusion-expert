@@ -47,7 +47,7 @@ namespace dfe
         {
             bottom_panel_->begin();
             btnOk_.reset(new Button(xpm::image(xpm::img_24x24_ok), [this] {
-                
+                accept_current_image();
             }));
 
             btnCancel_.reset(new Button(xpm::image(xpm::img_24x24_abort), [this] {
@@ -80,8 +80,13 @@ namespace dfe
             selector_->callback(page_cb, this);
             right_panel_->end();
         }
+
+        image_ptr_t reference_img;
+        if (view_settings_) {
+            reference_img = view_settings_->get_selected_image();
+        }
+
         page_type_t where;
-        
         for (int i = (page_type_t)0; i < page_type_count; i++) {
             where = static_cast<page_type_t>(i);
             images_[where] = NULL;
@@ -91,19 +96,24 @@ namespace dfe
             pages_[where] = new Fl_Group(0, 0, 1, 1);
             pages_[where]->box(FL_DOWN_BOX);
             pages_[where]->begin();
+
             if (i != page_type_prompt) {
-                titles_[where] = buffer;
                 if (where == page_type_image) {
-                    images_[where] = new MaskEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());
+                    images_[where] = new MaskEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());        
+                    if (reference_img) {
+                        images_[where]->view_settings()->set_image(reference_img);
+                        images_[where]->cancel_refresh();
+                    }
                 } else {
                     images_[where] = new NonEditableImagePanel(0, 0, 1, 1, titles_[where].c_str());
                 }
+                titles_[where] = buffer;
                 if (i == page_type_image) {
                     image_frame_.reset(new ImageFrame(pages_[where],  images_[where]));
                 } else if (i == page_type_results) {
                     result_frame_.reset(new ResultFrame(pages_[where],  images_[where]));
                 } else {
-                    control_frames_[where] = std::unique_ptr<ControlnetFrame>(new ControlnetFrame(pages_[where],  images_[where]));
+                    control_frames_[where] = std::unique_ptr<ControlnetFrame>(new ControlnetFrame(pages_[where],  images_[where], images_[page_type_image]));
                 }
             } else {
                 prompt_frame_.reset(new PromptFrame(pages_[where]));
@@ -322,6 +332,27 @@ namespace dfe
         }
     }
 
+    void DiffusionWindow::accept_current_image() {
+        if (images_[page_type_image]->view_settings()->layer_count() < 1) {
+            show_error("You should generate an image and send it to image page first!");
+            return;
+        }
+        confirm_ = true;
+        this->hide();
+    }
+
+    image_ptr_t DiffusionWindow::get_current_image() {
+        image_ptr_t r;
+        if (images_[page_type_image]->view_settings()->layer_count() > 0) {
+            r = images_[page_type_image]->view_settings()->at(0)->getImage()->duplicate();
+        }
+        return r;
+    }
+
+    bool DiffusionWindow::was_confirmed() {
+        return confirm_;
+    }
+
     image_ptr_t DiffusionWindow::choose_and_open_image(const char * scope) {
         std::string result = choose_image_to_open_fl(scope);
         if (!result.empty()) {
@@ -395,6 +426,25 @@ namespace dfe
             }
         }
 
+        page_type_t controlnet_pages[] = {
+            page_type_controlnet1, 
+            page_type_controlnet2, 
+            page_type_controlnet3, 
+            page_type_controlnet4
+        };
+        for (int i = 0; i < sizeof(controlnet_pages) / sizeof(controlnet_pages[0]); i++) {
+            auto & frame = control_frames_[controlnet_pages[i]];
+            if (!frame->enabled()) {
+                continue;
+            }
+            ControlnetParameters ctrl_params;
+            ctrl_params.mode = frame->getModeStr();
+            ctrl_params.image = frame->getImage();
+            if (ctrl_params.image) {
+                params.controlnets.push_back(ctrl_params);
+            }
+        }
+
         auto result = py::generate_image(params.toDict());
         if (!result.empty()) {
             if (image_frame_->get_mode() == img2img_inpaint_masked || 
@@ -450,6 +500,9 @@ namespace dfe
                 break;
             }
             Fl::wait();
+        }
+        if (window->was_confirmed()) {
+            r = window->get_current_image();
         }
         Fl::delete_widget(window);
         Fl::do_widget_deletion();

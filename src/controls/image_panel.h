@@ -85,6 +85,8 @@ namespace dexpert
         int getScrollY();
         void zoomToFit(float &zoom, int &x, int &y);
         void open(image_type_t layer);
+        void pasteClipboard(image_type_t layer);
+        void rotate90();
         void save(image_type_t layer);
         void setTool(image_tool_t value);
         image_tool_t getTool();

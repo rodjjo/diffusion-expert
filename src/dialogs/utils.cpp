@@ -23,6 +23,17 @@ image_ptr_t open_image_from_dialog() {
     return result;
 }
 
+image_ptr_t open_image_from_cb() {
+    image_ptr_t result;
+    result = get_sd_state()->openImage("clipboard://");
+    if (!result) {
+        show_error(get_sd_state()->lastError());
+    } else {
+        getConfig().save();
+    }
+    return result;
+}
+
 bool save_image_with_dialog(image_ptr_t img) {
     std::string path = choose_image_to_save(&getConfig().lastImageSaveDir());
     if (!path.empty()) {

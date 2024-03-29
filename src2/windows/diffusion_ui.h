@@ -39,6 +39,8 @@ public:
     DiffusionWindow();
     DiffusionWindow(ViewSettings *view_settings);
     ~DiffusionWindow();
+    image_ptr_t get_current_image();
+    bool was_confirmed();
 
 protected:
     void resize(int x, int y, int w, int h) override;
@@ -56,7 +58,10 @@ private:
     void choose_and_save_image(const char * scope, image_ptr_t image);
     const char *get_mode();
     void show_current_result();
+    void accept_current_image();
+
 private:
+    bool confirm_ = false;
     bool selecting_page_ = false;
     ViewSettings *view_settings_;
     Fl_Group *bottom_panel_;

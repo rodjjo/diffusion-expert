@@ -1,23 +1,27 @@
 import os
 
-from PIL import Image
-
 from safetensors.torch import load_file as load_safetensors
 import torch
 
 
 from dfe.images.routines import pil_as_dict
-from dfe.misc.config import MODELS_DIR, get_additional_model_dir, get_textual_inversion_paths, get_lora_paths
+from dfe.misc.config import MODELS_DIR, MODEL_TYPES, get_additional_model_dir, get_textual_inversion_paths, get_lora_paths
 
 
 def list_models_path(path: str):
     contents = os.listdir(path)
-    return [{
-            'path': os.path.join(path, m),
-            'name': m, 
-            'inpaint': 'inpaint' in m,
-        } for m in contents if m.endswith('.safetensors')
-    ]
+    result = []
+    for f in contents:
+        full_path = os.path.join(path, f)
+        if os.path.isdir(full_path) and f.lower() in MODEL_TYPES:
+            result += list_models_path(full_path)
+        elif  f.endswith('.safetensors'):
+            result.append({
+                'path': os.path.join(path, f),
+                'name': f, 
+                'inpaint': 'inpaint' in f
+            })
+    return result
 
 
 def list_models():
@@ -29,6 +33,7 @@ def list_models():
         models += list_models_path(
             add_dir
         )
+    models.sort(key=lambda x: x['name'].lower())
     return models
 
 
@@ -45,13 +50,13 @@ def list_schedulers():
 
 def list_controlnets():
     return [
-        { "name": "scribble", "title": "Scribble" },
-        { "name": "canny", "title": "Canny Lines" },
-        { "name": "pose", "title": "Open Pose" },
-        { "name": "deepth", "title": "Deepth Map" },
-        { "name": "segmentation", "title": "Segmentation" },
-        { "name": "lineart", "title": "Line art" },
-        { "name": "mangaline", "title": "Mangaline" },
+        { "name": "scribble", "title": "Scribble", "pre_processor": True },
+        { "name": "canny", "title": "Canny Lines", "pre_processor": True },
+        { "name": "pose", "title": "Open Pose", "pre_processor": True },
+        { "name": "deepth", "title": "Deepth Map", "pre_processor": True },
+        { "name": "segmentation", "title": "Segmentation", "pre_processor": False },
+        { "name": "lineart", "title": "Line art", "pre_processor": True },
+        { "name": "mangaline", "title": "Mangaline", "pre_processor": True },
     ]
 
 

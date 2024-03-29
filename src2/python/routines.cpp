@@ -99,6 +99,39 @@ image_ptr_t remove_background(RawImage* img, const py11::dict& params) {
     return result;
 }
 
+
+image_ptr_t pre_process(RawImage* img, const py11::dict& params) {
+    image_ptr_t result;
+    std::string error;
+    
+    enable_progress_window(progress_background);
+
+    execute([&result, &error, img, params] (py11::module_ &module) {
+        try {
+            py11::dict src;
+            img->toPyDict(src);
+            auto r = module.attr("pre_process_image")(src, params);
+            py11::dict d = r.cast<py11::dict>();
+            error = parse_dict_error(d);
+            if (error.empty()) {
+                result = dfe::py::rawImageFromPyDict(d);
+                if (!result) {
+                    error = "Could not parse the dictionary";
+                }
+            }
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+    
+    hide_progress_window();
+
+    if (!result.get()) {
+        fl_alert("Error pre-processing the image: %s", error.c_str());
+    } 
+    return result;
+}
+
 std::list<image_ptr_t> generate_image(py11::dict parameters) {
     std::list<image_ptr_t> result;
     std::string error;
@@ -165,6 +198,10 @@ void store_config(const py11::dict& config) {
 std::vector<std::pair<bool, std::string> > list_models() {
     std::vector<std::pair<bool, std::string> > result;
     std::string error;
+    
+    enable_progress_window(progress_loading_python);
+    set_progress(50, 100);
+    
     execute([&result, &error] (py11::module_ &module) {
         try {
             auto r = module.attr("list_models")();
@@ -184,6 +221,9 @@ std::vector<std::pair<bool, std::string> > list_models() {
             error = e.what();
         }
     });
+
+    hide_progress_window();
+
     if (!error.empty()) {
         fl_alert("Error loading the config: %s", error.c_str());
     } 
@@ -229,6 +269,46 @@ py11::list list_embeddings(bool lora) {
         fl_alert("Error loading the config: %s", error.c_str());
     } 
     return result;
+}
+
+std::vector<std::pair<std::string, std::string> > list_controlnet() {
+    std::vector<std::pair<std::string, std::string> > result;
+    std::string error;
+    execute([&result, &error] (py11::module_ &module) {
+        try {
+            auto r = module.attr("list_controlnet")();
+            auto temp = r.cast<py11::list>();
+            for (auto & i : temp) {
+                auto d = py11::cast<py11::dict>(i);
+                if (d.contains("name") && d.contains("title")) {
+                    result.push_back(std::pair<std::string, std::string> (
+                        py11::cast<std::string>(d["name"]),
+                        py11::cast<std::string>(d["title"])
+                    ));
+                }
+            }
+        } catch(std::exception e) {
+            error = e.what();
+        }
+    });
+    if (!error.empty()) {
+        fl_alert("Error loading the config: %s", error.c_str());
+    } 
+    return result;
+}
+
+void load_heavy_modules() {
+    enable_progress_window(progress_loading_python);   
+     
+
+    execute([](py11::module_ &module) {
+        try {
+            auto r = module.attr("load_heavy_modules")();
+        } catch(std::exception e) {
+        }
+    });
+
+    hide_progress_window();
 }
 
 }

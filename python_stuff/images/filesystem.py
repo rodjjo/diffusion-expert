@@ -1,9 +1,17 @@
-from PIL import Image
+from PIL import Image, ImageGrab
 from utils.images import pil_as_dict, pil_from_dict
+
+
+def paste_from_clipboard():
+    img = ImageGrab.grabclipboard()
+    return pil_as_dict(img)
+    
 
 
 def open_image(path: str):
     print(f"Open image: {path}")
+    if path.lower() == 'clipboard://':
+        return paste_from_clipboard()
     with Image.open(path) as im:
         return pil_as_dict(im)
 

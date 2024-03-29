@@ -318,6 +318,38 @@ void RawImage::pasteInvertMask(RawImage *image) {
     }
 }
 
+void RawImage::fuseAt(int x, int y, RawImage *image) {
+    if (image->format() != img_rgba) {
+        return;
+    }
+    //
+    int ww = image->w();
+    int hh = image->h();
+    if (x >= ww || y >= hh) {
+        return;
+    }
+    if (x < 0) {
+        ww = ww - (-x);
+        x = 0;        
+    }
+    if (y < 0) {
+        hh = hh - (-y);
+        y = 0;
+    }
+    if (x + ww > image->w()) {
+        ww = image->w() - (x + ww);
+    }
+    if (y + hh > image->w()) {
+        hh = image->h() - (y + hh);
+    }
+    if (ww < 1 || hh < 1) {
+        return;
+    }
+    auto crop = image->getCrop(x, y, ww, hh);
+    auto mask = this->getCrop(0, 0,  ww, hh);
+    pasteAt(0, 0, mask.get(), crop.get());
+}
+
 image_ptr_t RawImage::resize_down_alpha() {
     /*
         Resize the image to its minimal size considering the alpha channel.
@@ -603,6 +635,44 @@ image_ptr_t RawImage::fit1024() {
     return this->resizeImage(nx, ny);
 }
 
+image_ptr_t RawImage::addAlpha() {
+    // convert the image to RGBA
+    if (format_ == img_rgba) {
+        return duplicate();
+    }
+    auto img = std::make_shared<RawImage>(
+        (const unsigned char *) NULL, this->w(), this->h(), img_rgba, false
+    );
+    img->pasteAt(0, 0, this);
+    return img;
+}
+
+image_ptr_t RawImage::negative_mask() {
+    /*
+        Return a negative mask.
+    */
+    if (format_ != img_rgba) {
+        return std::make_shared<RawImage>(
+            (const unsigned char *) NULL, this->w(), this->h(), img_rgba, false
+        );
+    }
+    auto img = this->duplicate();
+    unsigned char *p = img->buffer_;
+    unsigned char *r, *g, *b, *a;
+    for (int i = 0; i < img->buffer_len_; i += 4) {
+        r = p; ++p;
+        g = p; ++p;
+        b = p; ++p;
+        a = p; ++p;
+        *r = 255;
+        *g = 255;
+        *b = 255;
+        *a = (255 - *a);
+    }
+
+    return img;
+}
+
 image_ptr_t RawImage::resizeLeft(int value) {
     auto img = std::make_shared<RawImage>(
         (const unsigned char *) NULL, this->w() + value, this->h(), img_rgba, false
@@ -674,6 +744,8 @@ image_ptr_t newImage(uint32_t w, uint32_t h, bool enable_alpha) {
         (const unsigned char *) NULL, w, h, enable_alpha ? img_rgba : img_rgb
     );
 }
+
+
 
 
 } // namespace py

@@ -52,6 +52,7 @@ class txt2img_config_t {
     bool enable_codeformer = false;
     bool reload_model = false;
     bool use_lcm = false;
+    bool free_lunch = false;
     std::list<control_net_t> controlnets;
     virtual ~txt2img_config_t() {};
     virtual const void fill_prompt_dict(py11::dict &params) const;

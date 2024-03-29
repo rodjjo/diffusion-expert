@@ -11,6 +11,7 @@ namespace dexpert
 
 
 image_ptr_t open_image_from_dialog();
+image_ptr_t open_image_from_cb();
 bool save_image_with_dialog(image_ptr_t img);
 
 

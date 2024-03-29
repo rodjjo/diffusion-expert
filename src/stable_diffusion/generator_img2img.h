@@ -40,7 +40,8 @@ class GeneratorImg2Image: public GeneratorBase {
             bool reload_model,
             float mask_blur_size,
             inpaint_mode_t inpaint_mode,
-            bool use_lcm
+            bool use_lcm,
+            bool free_lunch
         );
 
         void generate(
@@ -79,6 +80,7 @@ class GeneratorImg2Image: public GeneratorBase {
         bool enable_codeformer_ = false;
         bool scalled_down_ = false;
         bool use_lcm_ = false;
+        bool free_lunch_ = false;
 };
 
 

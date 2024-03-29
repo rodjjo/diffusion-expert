@@ -107,6 +107,8 @@ namespace dfe
         void get_image_area(int *x, int *y, int *w, int *h);
         void duplicate_selected();
         void remove_background_selected();
+        image_ptr_t get_selected_image();
+        bool selected_coords_to_image_coords(int *x, int *y, int *w, int *h);
         bool get_selected_area(int *x, int *y, int *w, int *h);
         void set_selected_area(int x, int y, int w, int h);
         bool has_selected_area();
@@ -116,6 +118,8 @@ namespace dfe
         void set_mask();
         void brush_size(int value);
         int brush_size();
+        void fuse_image(image_ptr_t value);
+
     private:
         Layer* add_layer(std::shared_ptr<Layer> l);
         void scroll_again(float old_zoom);
@@ -155,6 +159,7 @@ namespace dfe
         ViewSettings *view_settings();
         void resize(int x, int y, int w, int h) override;
         float getZoom();
+        void cancel_refresh();
 
     private:
         void after_constructor();

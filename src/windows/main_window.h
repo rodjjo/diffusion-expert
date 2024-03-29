@@ -41,6 +41,8 @@ class MainWindow : Fl_Menu_Window {
   void editConfig();
   void updateStatusbar();
   void newImage(bool fromStableDiffusion);
+  void pasteFromCb();
+  void rotate90();
   void openImage();
   void saveImage();
   void editSelection(painting_mode_t mode, float scale=0.0);

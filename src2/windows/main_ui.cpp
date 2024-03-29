@@ -6,6 +6,7 @@
 #include "misc/config.h"
 #include "misc/utils.h"
 
+#include "python/routines.h"
 #include "windows/settings_ui.h"
 #include "windows/diffusion_ui.h"
 #include "windows/main_ui.h"
@@ -105,6 +106,10 @@ namespace dfe
         puts("Starting user interface...");
         Fl::scheme("gtk+");
         MainWindow *wnd = new MainWindow();
+        
+        dfe::get_config();
+        py::load_heavy_modules();
+
         while (!stopped)
         {
             Fl::wait(0.33);
@@ -239,10 +244,10 @@ namespace dfe
         case event_main_menu_clicked:
             break;
         case event_main_menu_file_new_art:
-            generate_image();
+            create_image(false);
             break;
         case event_main_menu_selection_generate:
-            generate_image(image_->view_settings());
+            create_image(true);
             break;
         case event_main_menu_file_open:
             choose_file_and_open(true);
@@ -351,6 +356,23 @@ namespace dfe
         const char *message = image_->view_settings()->layer_count() > 1 ? "Do you want to close all the layers ?" : "Do you want to close the image ?";
         if (ask(message)) {
             image_->view_settings()->clear_layers();
+        }
+    }
+
+    void MainWindow::create_image(bool selection) {
+        if (selection) {
+            if (image_->view_settings()->layer_count() < 1) {
+                show_error("Open an image first!");
+                return;
+            }
+            if (!image_->view_settings()->has_selected_area()) {
+                show_error("There is no selection!\nSelect a area in the image first!");
+                return;
+            }
+        }
+        auto img = selection ? generate_image(image_->view_settings()) : generate_image();
+        if (img) {
+            image_->view_settings()->fuse_image(img);
         }
     }
 

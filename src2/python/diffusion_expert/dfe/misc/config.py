@@ -7,6 +7,37 @@ ROOT_DIR = os.path.normpath(os.path.join(
     '..', '..', '..'
 ))
 
+class ModelType:
+    MODEL_SD15          = "SD1_5"
+    MODEL_SD20          = "SD20"
+    MODEL_SDXL          = "SDXL"
+    MODEL_SDXL_TURBO    = "SDXLTURBO"
+    MODEL_LCM15         = "LCM15"
+    MODEL_LCM20         = "LCM20"
+    MODEL_LCMXL         = "LCMXL"
+    MODEL_SSD1B         = "SSD_1B"
+
+    @staticmethod
+    def detect_model_type(path: str) -> str:
+        dir_name = os.path.basename(os.path.pardir(path))
+        for m in MODEL_TYPES:
+            if dir_name.upper() == m:
+                return m
+        return ModelType.MODEL_SD15
+            
+
+
+MODEL_TYPES = set([
+    ModelType.MODEL_SD15.lower(),
+    ModelType.MODEL_SD20.lower(),
+    ModelType.MODEL_SDXL.lower(),
+    ModelType.MODEL_SDXL_TURBO.lower(),
+    ModelType.MODEL_LCM15.lower(),
+    ModelType.MODEL_LCM20.lower(),
+    ModelType.MODEL_LCMXL.lower(),
+    ModelType.MODEL_SSD1B.lower()
+])
+
 
 BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(sys.executable), '..'))
 CONFIG_DIR = os.path.join(BASE_DIR, 'python_stuff','configurations')
@@ -19,6 +50,7 @@ DEEPBOORU_DIR = os.path.join(BASE_DIR, 'models', 'deepbooru')
 EMBEDDING_DIR = os.path.join(BASE_DIR, 'models', 'embeddings')
 LORA_DIR = os.path.join(BASE_DIR, 'models', 'lora')
 CONFIG_PATH = os.path.join(ROOT_DIR, 'config', 'config.json')
+
 
 def create_dirs():
     try:

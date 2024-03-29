@@ -68,7 +68,19 @@ def list_controlnet(*args, **kwargs):
 def list_embeddings(*args, **kwargs):
     from dfe.models.model_list import list_embeddings as list_embeddings_original
     return list_embeddings_original(*args, **kwargs)
-    
+
+
+@capture_exception
+def load_heavy_modules(*args, **kwargs):
+    import safetensors  # noqa
+    import torch  # noqa
+    import dfe.images.pre_processors
+
+
+@capture_exception
+def pre_process_image(*args, **kwargs):
+    from dfe.images.pre_processors import pre_process_image as pre_proc
+    return pre_proc(*args, **kwargs)
 
 
 def main():

@@ -39,12 +39,14 @@ class RawImage {
     void pasteAt(int x, int y, RawImage *image);
     void pasteAt(int x, int y, RawImage *mask, RawImage *image);
     void pasteAt(int x, int y, int w, int h, RawImage *image);
+    void fuseAt(int x, int y, RawImage *image);
     image_ptr_t pasteAtNoBackground(int x, int y, RawImage *mask, RawImage *image);
     void pasteInvertMask(RawImage *image);
     void rectangle(int x, int y, int w, int h, uint8_t color[4], float fill_opacity=0);
     image_ptr_t duplicate();
     image_ptr_t removeBackground(bool white);
     image_ptr_t removeAlpha();
+    image_ptr_t addAlpha();
     image_ptr_t resizeCanvas(uint32_t x, uint32_t y);
     image_ptr_t resizeImage(uint32_t x, uint32_t y);
     image_ptr_t resizeInTheCenter(uint32_t x, uint32_t y);
@@ -61,6 +63,7 @@ class RawImage {
     image_ptr_t resize_down_alpha();
     image_ptr_t rotate();
     image_ptr_t invert_mask();
+    image_ptr_t negative_mask();
     void clear(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     bool getColor(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);

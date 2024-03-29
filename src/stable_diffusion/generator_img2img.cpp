@@ -40,7 +40,8 @@ namespace dexpert
         bool reload_model,
         float mask_blur_size,
         inpaint_mode_t inpaint_mode,
-        bool use_lcm) : GeneratorBase(seed_gen, variation),
+        bool use_lcm,
+        bool free_lunch) : GeneratorBase(seed_gen, variation),
                                        prompt_(prompt),
                                        negative_(negative),
                                        model_(model),
@@ -60,7 +61,8 @@ namespace dexpert
                                        reload_model_(reload_model),
                                        mask_blur_size_(mask_blur_size),
                                        inpaint_mode_(inpaint_mode),
-                                       use_lcm_(use_lcm)
+                                       use_lcm_(use_lcm),
+                                       free_lunch_(free_lunch)
     {
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
@@ -118,7 +120,8 @@ namespace dexpert
             false, // only the first one should reload the model
             this->mask_blur_size_,
             this->inpaint_mode_,
-            this->use_lcm_));
+            this->use_lcm_,
+            this->free_lunch_));
         auto g = (GeneratorImg2Image *)d.get();
         if (img) {
             g->setImage(img);
@@ -164,6 +167,7 @@ namespace dexpert
         params.inpaint_mode = inpaint_mode_names[inpaint_mode_];
         params.reload_model = reload_model_;
         params.use_lcm = use_lcm_;
+        params.free_lunch = free_lunch_;
         reload_model_ = false;
 
         if (mask_)

@@ -75,6 +75,7 @@ void MainWindow::initMenu() {
 
     menu_->addItem([this] { newImage(false); }, "", "File/New", "", 0, xpm::file_new_16x16);
     menu_->addItem([this] { newImage(true); }, "", "File/New art", "^n", 0, xpm::file_new_16x16);
+    menu_->addItem([this] { pasteFromCb(); }, "", "File/New from clipboard", "^v", 0, xpm::file_new_16x16);
     menu_->addItem([this] { openImage(); }, "", "File/Open", "^o", 0, xpm::directory_16x16);
     menu_->addItem([this] { saveImage(); }, "", "File/Save", "^s", 0, xpm::save_16x16);
     menu_->addItem([this] { closeImage(); }, "", "File/Close");
@@ -110,6 +111,7 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
     menu_->addItem([this] { flip(true); }, "", "Image/Flip/Vertical");
     menu_->addItem([this] { flip(false); }, "", "Image/Flip/Horizontal");
+    menu_->addItem([this] { rotate90(); }, "", "Image/Flip/Rotate 90");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
 }
@@ -160,6 +162,14 @@ void MainWindow::closeImage() {
 
 void MainWindow::openImage() {
     image_editor_->open(image_type_image);
+}
+
+void MainWindow::pasteFromCb() {
+    image_editor_->pasteClipboard(image_type_image);
+}
+
+void MainWindow::rotate90() {
+    image_editor_->rotate90();
 }
 
 void MainWindow::saveImage() {

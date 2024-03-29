@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Choice.H>
@@ -12,27 +13,22 @@ namespace dfe
 {
 
 
-typedef enum {
-   controlnet_disabled,
-   controlnet_scribble,
-   controlnet_canny,
-   controlnet_pose,
-   controlnet_deepth,
-   controlnet_segmentation,
-   controlnet_lineart,
-   controlnet_mangaline,
-
-   //
-   controlnet_mode_max
-} controlnet_mode_t;
-
 class ControlnetFrame {
 public:
-    ControlnetFrame(Fl_Group *parent, ImagePanel *img);
+    ControlnetFrame(Fl_Group *parent, ImagePanel *img, ImagePanel *reference);
     ~ControlnetFrame();
 
     bool enabled();
     void alignComponents();
+    std::string getModeStr();
+    image_ptr_t getImage();
+    
+private:
+    void pre_process();
+    void open_mask();
+    void save_mask();
+    void load_modes();
+
 protected:
     static void combobox_cb(Fl_Widget* widget, void *cbdata);
     void combobox_cb(Fl_Widget* widget);
@@ -43,6 +39,7 @@ private:
 private:
     Fl_Group *parent_;
     ImagePanel *img_;
+    ImagePanel *reference_;
     Fl_Choice *mode_;
     std::unique_ptr<Button> btnPreprocess_;
     std::unique_ptr<Button> btnOpenMask_;

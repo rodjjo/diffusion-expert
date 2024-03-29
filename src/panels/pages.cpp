@@ -234,9 +234,9 @@ void Pages::textToImage() {
 
         if (maskRaw) {
             if (inpaintMasked) {
-                mask = maskRaw->duplicate();
-            } else {
                 mask = maskRaw->removeAlpha();
+            } else {
+                mask = maskRaw->duplicate();
             }
         }
         g.reset(new GeneratorImg2Image(
@@ -261,7 +261,8 @@ void Pages::textToImage() {
             reload,
             inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
             inputImage_->getInpaintMode(),
-            promptPanel_->shouldUseLcm()
+            promptPanel_->shouldUseLcm(),
+            promptPanel_->shouldUseFreeLunch()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -281,7 +282,8 @@ void Pages::textToImage() {
             promptPanel_->shouldRestoreFaces(),
             false,
             reload,
-            promptPanel_->shouldUseLcm()
+            promptPanel_->shouldUseLcm(),
+            promptPanel_->shouldUseFreeLunch()
         ));
     }
     

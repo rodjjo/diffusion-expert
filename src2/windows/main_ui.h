@@ -47,6 +47,8 @@ private:
     void clear_layers();
     void update_layer_list();
 
+    void create_image(bool selection);
+
 private:
     int16_t wheel_correct_delta_ = 0;
     uint16_t correct_keys_;

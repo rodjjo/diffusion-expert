@@ -42,6 +42,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     modelsInpaint_ = new Fl_Choice(0, 0, 1, 1, "Inpainting Model");
     restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
     use_lcm_ = new Fl_Check_Button(0, 0, 1, 1, "Boost Speed");
+    free_lunch_ = new Fl_Check_Button(0, 0, 1, 1, "Free Lunch");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -307,6 +308,12 @@ void PromptPanel::alignComponents() {
         120,
         25
     );
+    free_lunch_->resize(
+        use_lcm_->x() +  use_lcm_->w() + 5,
+        models_->y() + models_->h() + 5,
+        120,
+        25
+    );
     textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
     loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);
 }
@@ -462,6 +469,10 @@ bool PromptPanel::shouldReload(bool clear) {
 bool PromptPanel::shouldUseLcm() {
     last_use_lcm = use_lcm_->value() != 0;
     return last_use_lcm;
+}
+
+bool PromptPanel::shouldUseFreeLunch() {
+    return free_lunch_->value() != 0;
 }
 
 } // namespace dexpert

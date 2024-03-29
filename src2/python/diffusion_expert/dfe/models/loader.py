@@ -21,7 +21,7 @@ from diffusers import (
 
 from transformers import CLIPTokenizer, CLIPTextModel
 from dexpert import progress_text
-from dfe.misc.config import CONFIG_DIR, VAES_DIR, CACHE_DIR, get_lora_location, get_textual_inversion_paths, get_lora_location
+from dfe.misc.config import CONFIG_DIR, VAES_DIR, CACHE_DIR, ModelType, get_lora_location, get_textual_inversion_paths, get_lora_location
 from dfe.models.sd15unet_conv import convertsd15_checkpoint, convert_ldm_clip_checkpoint, create_unet_diffusers_config
 
 
@@ -29,16 +29,6 @@ usefp16 = {
     True: torch.float16,
     False: torch.float32
 }
-
-MODEL_SD15          = "SD1_5"
-MODEL_SD20          = "SD20"
-MODEL_SDXL          = "SDXL"
-MODEL_SDXL_TURBO    = "SDXLTURBO"
-MODEL_LCM15         = "LCM15"
-MODEL_LCM20         = "LCM20"
-MODEL_LCMXL         = "LCMXL"
-MODEL_SSD1B         = "SSD_1B"
-
 
 SD1_5_REPLACEMENTS = {
     'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
@@ -71,7 +61,7 @@ class StateDictInfo:
 
 
 def unet_config_path(kind: str, inpaint: bool) -> str:
-    if kind == MODEL_SD15:
+    if kind == ModelType.MODEL_SD15:
         if inpaint:
             return os.path.join(CONFIG_DIR, 'v1-inpainting-inference.yaml')
         else:
@@ -80,15 +70,13 @@ def unet_config_path(kind: str, inpaint: bool) -> str:
 
 
 def vae_config_path(kind: str) -> str:
-    if kind == MODEL_SD15:
+    if kind == ModelType.MODEL_SD15:
         return os.path.join(CONFIG_DIR, 'v1-vae.config')
     return ""
 
 
-def detect_kind(checkpoint: dict):
-    #if 'time_embed.0.weight' not in checkpoint:
-    #    return MODEL_SDXL
-    return MODEL_SD15
+def detect_kind(model_path: str):
+    return ModelType.detect_model_type(model_path)
 
 
 def load_state_dict(path: str):
@@ -99,11 +87,11 @@ def load_state_dict(path: str):
 
     checkpoint = checkpoint.pop("state_dict", checkpoint)
     checkpoint.pop("state_dict", None)
-    kind = detect_kind(checkpoint) # TODO: detect model type
+    kind = detect_kind(path) 
     inpaint = False
     text_model = None
 
-    if kind == MODEL_SD15:
+    if kind == ModelType.MODEL_SD15:
         b = checkpoint.get('model.diffusion_model.input_blocks.0.0.weight')
         if b is not None and b.shape[1] == 9:
             inpaint = True
@@ -136,7 +124,7 @@ def load_text_model(text_model_dict: dict) -> CLIPTextModel:
 
 def load_unet(info: StateDictInfo, use_float16: bool):
     state = info.state
-    if info.kind == MODEL_SD15:
+    if info.kind == ModelType.MODEL_SD15:
         unet = UNet2DConditionModel(**info.unet_config)
         unet.load_state_dict(state, strict=True)
         if use_float16:
@@ -146,7 +134,7 @@ def load_unet(info: StateDictInfo, use_float16: bool):
 
 
 def load_vae(info: StateDictInfo, use_float16: bool): 
-    if info.kind in (MODEL_SD15, MODEL_LCM15):
+    if info.kind in (ModelType.MODEL_SD15, ModelType.MODEL_LCM15):
         vae_path = os.path.join(VAES_DIR, 'sd15.vae.safetensors')
         #if not os.path.exists(vae_path):
         #    raise Exception(f"Vae file not found! Path: {vae_path}" )
@@ -210,12 +198,12 @@ def load_embeddings(text_encoder, tokenizer):
 
 
 def load_tokenizer(info: StateDictInfo):
-    if info.kind in (MODEL_SD15, MODEL_LCM15):
+    if info.kind in (ModelType.MODEL_SD15, ModelType.MODEL_LCM15):
         return CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14", cache_dir=CACHE_DIR)
 
 
 def load_tiny_vae(info: StateDictInfo, use_float16: bool):
-    if info.kind in (MODEL_SD15, MODEL_LCM15):
+    if info.kind in (ModelType.MODEL_SD15, ModelType.MODEL_LCM15):
         return AutoencoderTiny.from_pretrained(
             "madebyollin/taesd", 
             cache_dir=CACHE_DIR, 

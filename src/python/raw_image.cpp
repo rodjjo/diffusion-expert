@@ -468,7 +468,10 @@ image_ptr_t RawImage::flip(bool vertically) {
 
 image_ptr_t RawImage::rotate() {
     image_ptr_t result = this->duplicate();
-    // CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    CImg<unsigned char> self(result->buffer(), format_channels[result->format()], result->w(), result->h(), 1, true);
+    self.permute_axes("yzcx");
+    self.rotate(90);
+    self.permute_axes("cxyz");
     return result;
 }
 

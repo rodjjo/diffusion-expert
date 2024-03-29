@@ -371,6 +371,24 @@ namespace dexpert
         }
     }
 
+    void ImagePanel::pasteClipboard(image_type_t layer) {
+        auto img = open_image_from_cb();
+        if (img) {
+            images_[layer] = img;
+            adjustSizes();
+            scrollAgain();
+        }
+    }
+
+    void ImagePanel::rotate90()  {
+        auto img = images_[image_type_image].get();
+        if (!img) {
+            return;
+        }
+        images_[image_type_image] = img->rotate();
+        scrollAgain();
+    }
+
     void ImagePanel::save(image_type_t layer) {
         if (!images_[layer]) {
             show_error("No image to save!");
