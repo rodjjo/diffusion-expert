@@ -43,6 +43,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     restore_face_ = new Fl_Check_Button(0, 0, 1, 1, "Restore faces");
     use_lcm_ = new Fl_Check_Button(0, 0, 1, 1, "Boost Speed");
     free_lunch_ = new Fl_Check_Button(0, 0, 1, 1, "Free Lunch");
+    control_inpaint_ = new Fl_Check_Button(0, 0, 1, 1, "Inpaint with controlnet");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -76,9 +77,13 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     width_->value("512");
     height_->value("512");
 
+    control_inpaint_->value(1);
+
     if (last_use_lcm) {
         use_lcm_->value(1);
     }
+
+    
 
     alignComponents();
     refreshModels();
@@ -314,6 +319,12 @@ void PromptPanel::alignComponents() {
         120,
         25
     );
+    control_inpaint_->resize(
+        free_lunch_->x() +  free_lunch_->w() + 5,
+        models_->y() + models_->h() + 5,
+        120,
+        25
+    );
     textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
     loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);
 }
@@ -473,6 +484,10 @@ bool PromptPanel::shouldUseLcm() {
 
 bool PromptPanel::shouldUseFreeLunch() {
     return free_lunch_->value() != 0;
+}
+
+bool PromptPanel::shouldInpaintControlnet() {
+    return control_inpaint_->value() != 0;
 }
 
 } // namespace dexpert

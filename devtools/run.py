@@ -24,7 +24,7 @@ def main():
     #])
 
     subprocess.check_call(prefix + [
-        'dexpert/bin/diffusion-exp2.exe'
+        'dexpert/bin/diffusion-exp.exe'
     ])
 
 

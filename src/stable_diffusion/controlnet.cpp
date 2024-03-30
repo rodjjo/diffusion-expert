@@ -11,8 +11,10 @@ ControlNet::ControlNet(const char *mode, image_ptr_t image, float strength) :
     if (strength_ > 2.0) {
         strength_ = 2.0;
     }
-    if (image_->w() % 8 > 0 || image_->h() % 8 > 0) {
-        image_ = image_->ensureMultipleOf8();
+    if (image_) {
+        if (image_->w() % 8 > 0 || image_->h() % 8 > 0) {
+            image_ = image_->ensureMultipleOf8();
+        }
     }
 }
 

@@ -2,6 +2,7 @@ import gc
 import re
 import torch
 import os
+import numpy as np
 from datetime import datetime
 from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
 from images.latents import create_latents_noise, latents_to_pil
@@ -10,7 +11,7 @@ from utils.settings import get_setting
 from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
-from external.free_lunch import register_free_upblock2d, register_free_crossattn_upblock2d
+from PIL import Image
 
 from dexpert import progress, progress_canceled, progress_title
 
@@ -61,6 +62,17 @@ def parse_prompt_loras(prompt: str):
             continue
         lora_items.append([filepath, weight])
     return re.sub(lora_re, '', prompt), lora_items
+
+
+def make_inpaint_condition(image, image_mask):
+    image = np.array(image.convert("RGB")).astype(np.float32) / 255.0
+    image_mask = np.array(image_mask.convert("L")).astype(np.float32) / 255.0
+
+    assert image.shape[0:1] == image_mask.shape[0:1], "image and image_mask must have the same image size"
+    image[image_mask > 0.5] = -1.0  # set as masked pixel
+    image = np.expand_dims(image, 0).transpose(0, 3, 1, 2)
+    image = torch.from_numpy(image)
+    return image
 
 
 @torch.no_grad()
@@ -125,7 +137,8 @@ def _run_pipeline(pipeline_type, params):
         f'{"lcm_" if use_lcm else ""}{pipeline_type}', model, 
         controlnets=controlnets, 
         lora_list=lora_list, 
-        reload_model=reload_model
+        reload_model=reload_model,
+        free_lunch=free_lunch
     ) 
     report("pipeline created")
 
@@ -220,19 +233,29 @@ def _run_pipeline(pipeline_type, params):
         if len(controlnets):
             images = []
             conds = []
+            has_inpaint = False
             for c in controlnets:
                 if c['strength'] < 0:
                     c['strength'] = 0
                 if c['strength'] > 2.0:
                     c['strength'] = 2.0
-                images.append(pil_from_dict(c['image']))
+                if c['mode'] == 'inpaint':
+                    images.append(make_inpaint_condition(image, mask))
+                    has_inpaint = True
+                else:
+                    images.append(pil_from_dict(c['image']))
                 conds.append(c['strength'])
             if len(images) == 1:
                 images = images[0]
             if len(conds) == 1:
                 conds = conds[0]
-            additional_args['controlnet_conditioning_image'] = images
-            additional_args['controlnet_conditioning_scale'] = conds
+            if has_inpaint:
+                additional_args['control_image'] = images
+                additional_args['controlnet_conditioning_scale'] = conds
+            else:
+                additional_args['controlnet_conditioning_image'] = images
+                additional_args['controlnet_conditioning_scale'] = conds
+
 
     latents_noise.to(device)
     report("generating the variation" if variation_enabled else "generating the image")
@@ -262,10 +285,6 @@ def _run_pipeline(pipeline_type, params):
         if batch_size > 1:
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
-
-        if free_lunch:
-            register_free_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
-            register_free_crossattn_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
 
         result = pipeline(
             prompt, 

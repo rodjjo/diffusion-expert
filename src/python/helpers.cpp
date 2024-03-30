@@ -204,7 +204,8 @@ namespace dexpert
                 {
                     py11::dict c;
                     py11::dict data;
-                    it->image->toPyDict(data);
+                    if (it->image)
+                        it->image->toPyDict(data);
                     c["mode"] = it->mode;
                     c["image"] = data;
                     c["strength"] = it->strength;

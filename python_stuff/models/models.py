@@ -12,6 +12,7 @@ from diffusers import (
         AutoPipelineForText2Image,
         AutoPipelineForImage2Image,
         AutoPipelineForInpainting,
+        StableDiffusionControlNetInpaintPipeline,
         ControlNetModel
     )
 
@@ -26,6 +27,7 @@ from utils.downloader import download_file
 from models.loader import load_stable_diffusion_model, get_textual_inversion_paths, get_lora_paths
 from external.img2img_controlnet import StableDiffusionControlNetImg2ImgPipeline
 from external.img2img_inpaint_controlnet import StableDiffusionControlNetInpaintImg2ImgPipeline
+from external.free_lunch import register_free_upblock2d, register_free_crossattn_upblock2d
 
 
 CURRENT_MODEL_PARAMS = {}
@@ -62,7 +64,7 @@ usefp16 = {
 }
 
 
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False):
     current_mode = mode
     if mode.startswith('lcm_'):
         use_lcm = True
@@ -71,13 +73,23 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         use_lcm = False    
     global CURRENT_PIPELINE
     reload_model = reload_model or current_mode != CURRENT_PIPELINE.get("mode")
-    load_model(model_path, lora_list, reload_model, mode == 'inpaint2img', use_lcm=use_lcm)
+
+    allow_inpaint_model = True
+    for c in controlnets or []:
+        if c['mode'] == 'inpaint':
+            print("using inpaint controlnet")
+            allow_inpaint_model = False
+            break
+    
+    load_model(model_path, lora_list, reload_model, (mode == 'inpaint2img') and allow_inpaint_model, use_lcm=use_lcm)
+
     controlnet_modes = sorted([f["mode"] for f in (controlnets or [])])
     if CURRENT_PIPELINE.get("model_path") != model_path or \
             CURRENT_PIPELINE.get("contronet") != controlnet_modes or \
             current_mode != CURRENT_PIPELINE.get("mode") or \
             reload_model or \
-            settings_version() != CURRENT_PIPELINE.get('settings_version'):
+            settings_version() != CURRENT_PIPELINE.get('settings_version') or \
+            free_lunch != CURRENT_PIPELINE.get('free_lunch'):
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') and not current_model_is_xl_model() else []
@@ -91,6 +103,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 'segmentation': 'lllyasviel/sd-controlnet-seg',
                 'lineart': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
                 'mangaline': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+                'inpaint': 'lllyasviel/control_v11p_sd15_inpaint',
         }
         for c in controlnets:
             have_controlnet = True
@@ -102,6 +115,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 mode_str = f"models--lllyasviel--sd-controlnet-seg"
             elif c['mode'] == 'lineart':
                 mode_str = f"models--lllyasviel--control_v11p_sd15s2_lineart_anime"
+            elif c['mode'] == 'inpaint':
+                mode_str = f"models--lllyasviel--sd-control_v11p_sd15_inpaint"
             else:
                 mode_str = f"models--lllyasviel--sd-controlnet-{c['mode']}"
             local_files_only = os.path.exists(os.path.join(CACHE_DIR, mode_str, 'snapshots'))
@@ -121,7 +136,10 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             if mode == 'txt2img':
                 pipe = StableDiffusionControlNetPipeline(**params)
             elif mode == 'inpaint2img':
-                pipe = StableDiffusionControlNetInpaintImg2ImgPipeline(**params)
+                if  allow_inpaint_model:
+                    pipe = StableDiffusionControlNetInpaintImg2ImgPipeline(**params)
+                else:
+                    pipe = StableDiffusionControlNetInpaintPipeline(**params)
             else:
                 pipe = StableDiffusionControlNetImg2ImgPipeline(**params)
 
@@ -155,12 +173,17 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         pipe.enable_xformers_memory_efficient_attention()
         pipe.unet.set_attn_processor(AttnProcessor2_0())
 
+        if free_lunch:
+            register_free_upblock2d(pipe, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
+            register_free_crossattn_upblock2d(pipe, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
+
         CURRENT_PIPELINE = {
             'settings_version': settings_version(),
             'mode': current_mode,
             'model_path': model_path,
             'pipeline': pipe,
-            'contronet': controlnet_modes
+            'contronet': controlnet_modes,
+            'free_lunch': free_lunch,
         }
     gc.collect()
     return CURRENT_PIPELINE['pipeline']

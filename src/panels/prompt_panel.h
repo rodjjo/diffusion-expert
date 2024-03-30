@@ -47,6 +47,7 @@ class PromptPanel: public EventListener, public Fl_Group {
     bool shouldReload(bool clear);
     bool shouldUseLcm();
     bool shouldUseFreeLunch();
+    bool shouldInpaintControlnet();
  private:
     void alignComponents();
     void interrogate(const char* model);
@@ -73,6 +74,7 @@ class PromptPanel: public EventListener, public Fl_Group {
    Fl_Check_Button *restore_face_;
    Fl_Check_Button *use_lcm_;
    Fl_Check_Button *free_lunch_;
+   Fl_Check_Button *control_inpaint_;
    EmbeddingPanel *textualPanel_;
    EmbeddingPanel *loraPanel_;
    std::unique_ptr<Button> interrogateBtn1_;

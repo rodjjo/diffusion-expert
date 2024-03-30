@@ -192,7 +192,12 @@ void Pages::textToImage() {
         return;
     }
 
-    bool is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL && inputImage_->getInpaintMode() != inpaint_img2img;
+    bool is_inpaint = false;
+     
+    if (!promptPanel_->shouldInpaintControlnet()) {
+        is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL && inputImage_->getInpaintMode() != inpaint_img2img;
+    }
+
     const char* model = promptPanel_->getSdModel(is_inpaint);
 
     if (model == NULL) {
@@ -237,6 +242,9 @@ void Pages::textToImage() {
                 mask = maskRaw->removeAlpha();
             } else {
                 mask = maskRaw->duplicate();
+            }
+            if (promptPanel_->shouldInpaintControlnet()) {
+                controlnets.push_back(std::make_shared<ControlNet>("inpaint", image_ptr_t()));
             }
         }
         g.reset(new GeneratorImg2Image(
