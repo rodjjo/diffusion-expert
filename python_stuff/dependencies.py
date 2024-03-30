@@ -95,10 +95,10 @@ def _install_dependencies():
         sys.stdout.flush()
         install_local_dependencies()
         subprocess.check_call([
-            sys.executable, '-m', 'pip', 'install', '-r', requirements_torch
+            sys.executable, '-m', 'pip', 'install', '-r', requirements_path
         ])
         subprocess.check_call([
-            sys.executable, '-m', 'pip', 'install', '-r', requirements_path
+            sys.executable, '-m', 'pip', 'install', '-r', requirements_torch
         ])
     else:
         print(f'{PRINT_PREFIX} It already has the dependencies installed.')

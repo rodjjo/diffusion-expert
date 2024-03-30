@@ -2,6 +2,7 @@
 
 #include "src/stable_diffusion/state.h"
 #include "src/dialogs/common_dialogs.h"
+#include "src/dialogs/utils.h"
 #include "src/config/config.h"
 #include "src/data/xpm.h"
 #include "src/python/helpers.h"
@@ -30,6 +31,9 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     }));
     interrogateBtn2_.reset(new Button("??", [this] {
         this->interrogate("DeepBooru");
+    }));
+    face_button_.reset(new Button("Set Face", [this] {
+        this->toggle_face();
     }));
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
     batch_ = new Fl_Int_Input(0, 0, 1, 1, "Batch size");
@@ -68,6 +72,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     
     interrogateBtn1_->tooltip("Interrogate Clip");
     interrogateBtn2_->tooltip("Interrogate DeepBooru");
+    face_button_->tooltip("Set/Clear face");
 
     seed_->value("-1");
     batch_->value("1");
@@ -157,6 +162,26 @@ int PromptPanel::getBatchSize() {
     batch_->value(buffer);
     return result;
 }
+
+void PromptPanel::toggle_face() {
+    if (face_) {
+        face_.reset();
+        face_button_->change_label("Set face");
+    } else {
+        face_ = open_image_from_dialog();
+        if (face_) {
+            face_button_->change_label("Clear face");
+        }
+    }
+}
+
+RawImage *PromptPanel::get_face() { 
+    if (face_) {
+        return face_.get();
+    }
+    return NULL;
+}
+
 
 int PromptPanel::getSteps() {
     last_steps = steps_->value();
@@ -322,9 +347,12 @@ void PromptPanel::alignComponents() {
     control_inpaint_->resize(
         free_lunch_->x() +  free_lunch_->w() + 5,
         models_->y() + models_->h() + 5,
-        120,
+        190,
         25
     );
+    face_button_->size(75, 24);
+    face_button_->position(control_inpaint_->x() +  control_inpaint_->w() + 5,
+        models_->y() + models_->h() + 5);
     textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
     loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);
 }

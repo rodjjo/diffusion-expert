@@ -3,8 +3,6 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 import torch.fft as fft
 from diffusers.utils import is_torch_version
-from diffusers.models.unet_2d_condition import logger as logger2d
-from diffusers.models.unet_3d_condition import logger as logger3d
 
 
 def isinstance_str(x: object, cls_name: str):
@@ -66,8 +64,6 @@ def register_upblock2d(model):
             upsample_size=None,
             scale: float = 1.0
         ):
-            logger2d.debug(f"in upblock2d, hidden states shape: {hidden_states.shape}")
-            
             for resnet in self.resnets:
                 # pop res hidden states
                 res_hidden_states = res_hidden_states_tuple[-1]
@@ -120,8 +116,6 @@ def register_free_upblock2d(model, b1=1.2, b2=1.4, s1=0.9, s2=0.2):
             upsample_size=None,
             scale: float = 1.0
         ):
-            logger2d.debug(f"in free upblock2d, hidden states shape: {hidden_states.shape}")
-
             for resnet in self.resnets:
                 # pop res hidden states
                 res_hidden_states = res_hidden_states_tuple[-1]
@@ -191,8 +185,6 @@ def register_crossattn_upblock2d(model):
             attention_mask: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
-            logger2d.debug(f"in crossatten upblock2d, hidden states shape: {hidden_states.shape}")
-
             lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
 
             for resnet, attn in zip(self.resnets, self.attentions):
@@ -270,8 +262,6 @@ def register_free_crossattn_upblock2d(model, b1=1.2, b2=1.4, s1=0.9, s2=0.2):
             attention_mask: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
-            logger2d.debug(f"in free crossatten upblock2d, hidden states shape: {hidden_states.shape}")
-
             lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
 
             for resnet, attn in zip(self.resnets, self.attentions):
@@ -361,9 +351,6 @@ def register_upblock3d(model):
             upsample_size=None,
             num_frames=1
         ):
-
-            logger3d.debug(f"in upblock3d, hidden states shape: {hidden_states.shape}")
-
             for resnet, temp_conv in zip(self.resnets, self.temp_convs):
                 # pop res hidden states
                 res_hidden_states = res_hidden_states_tuple[-1]
@@ -400,9 +387,6 @@ def register_free_upblock3d(model, b1=1.2, b2=1.4, s1=0.9, s2=0.2):
             upsample_size=None,
             num_frames=1
         ):
-
-            logger3d.debug(f"in free upblock3d, hidden states shape: {hidden_states.shape}")
-
             for resnet, temp_conv in zip(self.resnets, self.temp_convs):
                 # pop res hidden states
                 res_hidden_states = res_hidden_states_tuple[-1]
@@ -456,8 +440,6 @@ def register_crossattn_upblock3d(model):
             attention_mask: Optional[torch.FloatTensor] = None,
             num_frames: int = 1
         ):
-            logger3d.debug(f"in crossatten upblock3d, hidden states shape: {hidden_states.shape}")
-
             for resnet, temp_conv, attn, temp_attn in zip(
                 self.resnets, self.temp_convs, self.attentions, self.temp_attentions
             ):
@@ -508,8 +490,6 @@ def register_free_crossattn_upblock3d(model, b1=1.2, b2=1.4, s1=0.9, s2=0.2):
             attention_mask: Optional[torch.FloatTensor] = None,
             num_frames: int = 1
         ):
-            logger3d.debug(f"in free crossatten upblock3d, hidden states shape: {hidden_states.shape}")
-
             for resnet, temp_conv, attn, temp_attn in zip(
                 self.resnets, self.temp_convs, self.attentions, self.temp_attentions
             ):

@@ -198,6 +198,11 @@ void Pages::textToImage() {
         is_inpaint = inputImage_->getImg2ImgImage() != NULL && inputImage_->getImg2ImgMask() != NULL && inputImage_->getInpaintMode() != inpaint_img2img;
     }
 
+    image_ptr_t face_image;
+    if (promptPanel_->get_face()) {
+        face_image = promptPanel_->get_face()->duplicate();
+    }
+
     const char* model = promptPanel_->getSdModel(is_inpaint);
 
     if (model == NULL) {
@@ -243,7 +248,7 @@ void Pages::textToImage() {
             } else {
                 mask = maskRaw->duplicate();
             }
-            if (promptPanel_->shouldInpaintControlnet()) {
+            if (promptPanel_->shouldInpaintControlnet() && inputImage_->getInpaintMode() != inpaint_img2img) {
                 controlnets.push_back(std::make_shared<ControlNet>("inpaint", image_ptr_t()));
             }
         }
@@ -270,7 +275,8 @@ void Pages::textToImage() {
             inputImage_->maskBlurEnabled() ? getConfig().inpaint_get_mask_blur() : 0,
             inputImage_->getInpaintMode(),
             promptPanel_->shouldUseLcm(),
-            promptPanel_->shouldUseFreeLunch()
+            promptPanel_->shouldUseFreeLunch(),
+            face_image
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -291,7 +297,8 @@ void Pages::textToImage() {
             false,
             reload,
             promptPanel_->shouldUseLcm(),
-            promptPanel_->shouldUseFreeLunch()
+            promptPanel_->shouldUseFreeLunch(),
+            face_image
         ));
     }
     

@@ -64,7 +64,7 @@ usefp16 = {
 }
 
 
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False):
     current_mode = mode
     if mode.startswith('lcm_'):
         use_lcm = True
@@ -89,7 +89,13 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             current_mode != CURRENT_PIPELINE.get("mode") or \
             reload_model or \
             settings_version() != CURRENT_PIPELINE.get('settings_version') or \
-            free_lunch != CURRENT_PIPELINE.get('free_lunch'):
+            free_lunch != CURRENT_PIPELINE.get('free_lunch') or \
+            allow_inpaint_model != CURRENT_PIPELINE.get('allow_inpaint_model') or \
+            face_image != CURRENT_PIPELINE.get('face_image'):
+        
+        if face_image != CURRENT_PIPELINE.get('face_image'):
+            if CURRENT_PIPELINE.get('face_image'):
+                CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') and not current_model_is_xl_model() else []
@@ -173,6 +179,10 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         pipe.enable_xformers_memory_efficient_attention()
         pipe.unet.set_attn_processor(AttnProcessor2_0())
 
+        if face_image:
+            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name="ip-adapter-plus-face_sd15.safetensors")
+            pipe.set_ip_adapter_scale(0.7)
+
         if free_lunch:
             register_free_upblock2d(pipe, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
             register_free_crossattn_upblock2d(pipe, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
@@ -184,6 +194,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             'pipeline': pipe,
             'contronet': controlnet_modes,
             'free_lunch': free_lunch,
+            'allow_inpaint_model': allow_inpaint_model,
+            'face_image': face_image
         }
     gc.collect()
     return CURRENT_PIPELINE['pipeline']

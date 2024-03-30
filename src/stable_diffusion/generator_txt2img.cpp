@@ -24,12 +24,13 @@ namespace dexpert
         bool enable_codeformer,
         bool reload_model,
         bool use_lcm,
-        bool free_lunch
+        bool free_lunch,
+        image_ptr_t face_image
     ) : GeneratorBase(seed_gen, variation), prompt_(prompt), negative_(negative), model_(model), controlnets_(controlnets),
         seed_(seed), batch_size_(batch_size), width_(width), height_(height), steps_(steps), 
         cfg_(cfg), var_strength_(var_stren), 
         restore_faces_(restore_faces), enable_codeformer_(enable_codeformer), reload_model_(reload_model), 
-        use_lcm_(use_lcm), free_lunch_(free_lunch)
+        use_lcm_(use_lcm), free_lunch_(free_lunch), face_image_(face_image)
         {
 }
 
@@ -54,7 +55,8 @@ std::shared_ptr<GeneratorBase> GeneratorTxt2Image::duplicate(bool variation, ima
         this->enable_codeformer_,
         false, // only the first one should reload the model
         this->use_lcm_,
-        this->free_lunch_
+        this->free_lunch_,
+        this->face_image_
     ));
     if (img) {
         d->setImage(img);
@@ -86,6 +88,7 @@ void GeneratorTxt2Image::generate(generator_cb_t cb) {
     params.reload_model = reload_model_;
     params.use_lcm = use_lcm_;
     params.free_lunch = free_lunch_;
+    params.face = face_image_.get();
     reload_model_ = false;
 
     for (auto it = controlnets_.begin(); it != controlnets_.end(); it++) {

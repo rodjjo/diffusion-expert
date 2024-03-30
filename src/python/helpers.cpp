@@ -195,6 +195,12 @@ namespace dexpert
             params["free_lunch"] = this->free_lunch;
             params["restore_faces"] = this->restore_faces;
             params["enable_codeformer"] = this->enable_codeformer;
+            
+            py11::dict face_image;
+            if (this->face) {
+                this->face->toPyDict(face_image);
+            }
+            params["face"] = face_image; 
 
             if (!this->controlnets.empty())
             {

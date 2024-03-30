@@ -74,6 +74,15 @@ def make_inpaint_condition(image, image_mask):
     image = torch.from_numpy(image)
     return image
 
+def create_ipadapter_embds(pipeline, image):
+    return pipeline.prepare_ip_adapter_image_embeds(
+        ip_adapter_image=image,
+        ip_adapter_image_embeds=None,
+        device="cuda",
+        num_images_per_prompt=1,
+        do_classifier_free_guidance=True,
+    )
+
 
 @torch.no_grad()
 def _run_pipeline(pipeline_type, params):
@@ -103,6 +112,11 @@ def _run_pipeline(pipeline_type, params):
     input_mask = params.get("mask")
     inpaint_mode = params.get("inpaint_mode", "original")
     controlnets = params.get("controlnets", [])
+    face = params.get("face")
+    if face:
+        face = pil_from_dict(face)
+    else:
+        face = None
 
     if 'img2img' in pipeline_type  and input_mask is not None:
         pipeline_type = pipeline_type.replace('img2img', 'inpaint2img')
@@ -138,7 +152,8 @@ def _run_pipeline(pipeline_type, params):
         controlnets=controlnets, 
         lora_list=lora_list, 
         reload_model=reload_model,
-        free_lunch=free_lunch
+        free_lunch=free_lunch,
+        face_image=face is not None
     ) 
     report("pipeline created")
 
@@ -285,6 +300,9 @@ def _run_pipeline(pipeline_type, params):
         if batch_size > 1:
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
+
+        if face:
+            additional_args["ip_adapter_image"] = face
 
         result = pipeline(
             prompt, 

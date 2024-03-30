@@ -48,16 +48,20 @@ class PromptPanel: public EventListener, public Fl_Group {
     bool shouldUseLcm();
     bool shouldUseFreeLunch();
     bool shouldInpaintControlnet();
+    RawImage *get_face();
+    
  private:
     void alignComponents();
     void interrogate(const char* model);
-    
+    void toggle_face();
+
  protected:
     void resize(int x, int y, int w, int h) override;
     void event_trigged(const void *sender, int event, void *data) override;
 
  private:
    bool should_reload_model_;
+   image_ptr_t face_;
    PaintingPanel* image_panel_ = NULL;
    callback_t on_generate_;
    Fl_Multiline_Input *positivePrompt_;
@@ -79,6 +83,8 @@ class PromptPanel: public EventListener, public Fl_Group {
    EmbeddingPanel *loraPanel_;
    std::unique_ptr<Button> interrogateBtn1_;
    std::unique_ptr<Button> interrogateBtn2_;
+   std::unique_ptr<Button> face_button_;
+
 };
 
 
