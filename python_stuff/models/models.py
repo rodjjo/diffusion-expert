@@ -5,6 +5,7 @@ from utils.images import pil_as_dict
 
 from contextlib import contextmanager
 from diffusers import (
+        T2IAdapter,
         StableDiffusionPipeline, 
         StableDiffusionControlNetPipeline, 
         StableDiffusionImg2ImgPipeline,
@@ -63,8 +64,7 @@ usefp16 = {
     False: torch.float32
 }
 
-
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False, adapter_image=False):
     current_mode = mode
     if mode.startswith('lcm_'):
         use_lcm = True
@@ -75,11 +75,12 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
     reload_model = reload_model or current_mode != CURRENT_PIPELINE.get("mode")
 
     allow_inpaint_model = True
-    for c in controlnets or []:
-        if c['mode'] == 'inpaint':
-            print("using inpaint controlnet")
-            allow_inpaint_model = False
-            break
+    if 'xl' not in model_path.lower():
+        for c in controlnets or []:
+            if c['mode'] == 'inpaint':
+                print("using inpaint controlnet")
+                allow_inpaint_model = False
+                break
     
     load_model(model_path, lora_list, reload_model, (mode == 'inpaint2img') and allow_inpaint_model, use_lcm=use_lcm)
 
@@ -91,26 +92,28 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             settings_version() != CURRENT_PIPELINE.get('settings_version') or \
             free_lunch != CURRENT_PIPELINE.get('free_lunch') or \
             allow_inpaint_model != CURRENT_PIPELINE.get('allow_inpaint_model') or \
-            face_image != CURRENT_PIPELINE.get('face_image'):
-        
-        if face_image != CURRENT_PIPELINE.get('face_image'):
-            if CURRENT_PIPELINE.get('face_image'):
-                CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
+            face_image != CURRENT_PIPELINE.get('face_image') or \
+            adapter_image !=  CURRENT_PIPELINE.get('adapter_image'):
+
+        if  CURRENT_PIPELINE.get('had_adapter'):
+            CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
+
         CURRENT_PIPELINE = {}
         gc.collect()
         controlnets = controlnets or [] if mode in ('txt2img', 'img2img', 'inpaint2img') and not current_model_is_xl_model() else []
         control_model = []
         have_controlnet = False
         model_repos = {
-                'canny': 'lllyasviel/sd-controlnet-canny',
-                'pose': 'lllyasviel/sd-controlnet-openpose',
-                'scribble': 'lllyasviel/sd-controlnet-scribble',
-                'deepth': 'lllyasviel/sd-controlnet-depth',
-                'segmentation': 'lllyasviel/sd-controlnet-seg',
-                'lineart': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
-                'mangaline': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
-                'inpaint': 'lllyasviel/control_v11p_sd15_inpaint',
+            'canny': 'lllyasviel/sd-controlnet-canny',
+            'pose': 'lllyasviel/sd-controlnet-openpose',
+            'scribble': 'lllyasviel/sd-controlnet-scribble',
+            'deepth': 'lllyasviel/sd-controlnet-depth',
+            'segmentation': 'lllyasviel/sd-controlnet-seg',
+            'lineart': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+            'mangaline': 'lllyasviel/control_v11p_sd15s2_lineart_anime',
+            'inpaint': 'lllyasviel/control_v11p_sd15_inpaint',
         }
+
         for c in controlnets:
             have_controlnet = True
             if not model_repos.get(c['mode']):
@@ -158,9 +161,20 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 pipe = StableDiffusionImg2ImgPipeline(**CURRENT_MODEL_PARAMS['params'])
         elif mode == 'inpaint2img':
             if current_model_is_xl_model():
-                pipe = AutoPipelineForInpainting.from_pipe(
-                    CURRENT_MODEL_PARAMS['params']['unet']
-                )
+                if not allow_inpaint_model:
+                    if get_setting('use_float16', True):
+                        variant = 'fp16'
+                        torch_dtype = torch.float16
+                    else:
+                        variant = 'fp32'
+                        torch_dtype = torch.float32
+                    inpainting_ctrl = ControlNetModel.from_pretrained('destitech/controlnet-inpaint-dreamer-sdxl', torch_dtype=torch_dtype, variant=variant)
+                    pipe = AutoPipelineForImage2Image.from_pipe(CURRENT_MODEL_PARAMS['params']['unet'], controlnet=inpainting_ctrl)
+                else:
+                    print("Not inpainting")
+                    pipe = AutoPipelineForInpainting.from_pipe(
+                        CURRENT_MODEL_PARAMS['params']['unet']
+                    )
             else:
                 pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
         else:
@@ -174,14 +188,33 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         # pipe.enable_model_cpu_offload()
         if CURRENT_MODEL_PARAMS['tiny_vae']:
             pipe.vae = CURRENT_MODEL_PARAMS['tiny_vae']
+
+        #if ti2_adapter:
+        #    pipe.adapter = ti2_adapter
+        #    pipe.adapter = pipe.adapter.to('cuda')
+
         pipe.to('cuda')
         pipe.enable_attention_slicing()
         pipe.enable_xformers_memory_efficient_attention()
         pipe.unet.set_attn_processor(AttnProcessor2_0())
 
+        
+        adapter_models = []
+        had_adapter = False
         if face_image:
-            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name="ip-adapter-plus-face_sd15.safetensors")
-            pipe.set_ip_adapter_scale(0.7)
+            adapter_models += [
+                'ip-adapter-plus-face_sd15.safetensors'
+            ]
+        if adapter_image:
+            adapter_models += [
+                'ip-adapter-plus_sd15.safetensors'
+            ]
+
+        
+        if adapter_models:
+            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name=adapter_models)
+            pipe.set_ip_adapter_scale(0.6)
+            had_adapter = True
 
         if free_lunch:
             register_free_upblock2d(pipe, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
@@ -195,7 +228,9 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             'contronet': controlnet_modes,
             'free_lunch': free_lunch,
             'allow_inpaint_model': allow_inpaint_model,
-            'face_image': face_image
+            'had_adapter': had_adapter,
+            'face_image': face_image,
+            'adapter_image': adapter_image,
         }
     gc.collect()
     return CURRENT_PIPELINE['pipeline']

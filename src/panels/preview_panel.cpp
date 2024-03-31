@@ -11,7 +11,7 @@ namespace dexpert
 {
 
 
-PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), painting_(painting) {
+PreviewPanel::PreviewPanel(PaintingPanel *painting, PromptPanel *prompt) : Fl_Group(0, 0, 1, 1), painting_(painting), prompt_(prompt) {
     begin();
     miniature_ = new ImagePanel(0, 0, 1, 1, []{});
     btnUse_.reset(new Button(xpm::image(xpm::green_pin_16x16), [this] {
@@ -31,6 +31,13 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
             painting_->clearPasteImage();
         }
     }));
+    btnUseFace_.reset(new Button("F", [this] {
+        prompt_->set_face(get_sd_state()->getResultsImage(getRow())->duplicate());
+    }));
+    btnUseAdapt_.reset(new Button("A", [this] {
+        prompt_->set_adapter_image(get_sd_state()->getResultsImage(getRow())->duplicate());
+    }));
+
     btnView_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
         auto img = get_sd_state()->getResultsImage(getRow());
         if (img) {
@@ -81,6 +88,8 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting) : Fl_Group(0, 0, 1, 1), pain
 
     btnUse_->tooltip("Use this image as input image (as the result)");
     btnUse2_->tooltip("Select a area of the image and set it as the result");
+    btnUseFace_->tooltip("Send this image to face image (adapter)");
+    btnUseAdapt_->tooltip("Send this image to adapter image");
     btnView_->tooltip("Preview the image");
     btnRemove_->tooltip("Remove the image");
     btnRemoveAll_->tooltip("Remove all the images");
@@ -98,6 +107,8 @@ void PreviewPanel::enableControls(bool should_redraw) {
     if (get_sd_state()->getGeneratorSize() > 0) {
         miniature_->set_visible();
         btnUse_->set_visible();
+        btnUseFace_->set_visible();
+        btnUseAdapt_->set_visible();
         btnUse2_->set_visible();
         lblCounter_->set_visible();
         btnScrollLeft_->set_visible();
@@ -112,6 +123,8 @@ void PreviewPanel::enableControls(bool should_redraw) {
         miniature_->hide();
         btnUse_->hide();
         btnUse2_->hide();
+        btnUseFace_->hide();
+        btnUseAdapt_->hide();
         lblCounter_->hide();
         btnScrollLeft_->hide();
         btnScrollRight_->hide();
@@ -129,6 +142,8 @@ void PreviewPanel::resize(int x, int y, int w, int h) {
 void PreviewPanel::alignComponents() {
     miniature_->resize(x() + 3, y() + 3, w() - 6 - 26, h()- 36);
     btnUse_->size(20, 20);
+    btnUseAdapt_->size(20, 20);
+    btnUseFace_->size(20, 20);
     btnUse2_->size(20, 20);
     btnView_->size(20, 20);
     btnRemove_->size(20, 20);
@@ -141,6 +156,10 @@ void PreviewPanel::alignComponents() {
     btnView_->position(x() + w() - 23, btnUse2_->y() + btnUse2_->h() + 2);
     btnRemove_->position(x() + w() - 23, btnView_->y() + btnView_->h() + 2);
     btnRemoveAll_->position(x() + w() - 23, btnRemove_->y() + btnRemove_->h() + 2);
+    
+    btnUseFace_->position(x() + w() - 23, btnRemoveAll_->y() + btnRemoveAll_->h() + 2);
+    btnUseAdapt_->position(x() + w() - 23, btnUseFace_->y() + btnUseFace_->h() + 2);
+
     int navWidth = 210;
     
     btnScrollLeft_->position(x() + w() / 2 - navWidth / 2, y() + h() - 31);

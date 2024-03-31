@@ -201,6 +201,12 @@ namespace dexpert
                 this->face->toPyDict(face_image);
             }
             params["face"] = face_image; 
+            py11::dict adapt_image; 
+            if (this->adapter_image) {
+                this->adapter_image->toPyDict(adapt_image);
+            }
+            params["adapter_image"] = adapt_image; 
+            
 
             if (!this->controlnets.empty())
             {

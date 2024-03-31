@@ -12,13 +12,14 @@
 #include "src/panels/miniature.h"
 #include "src/controls/button.h"
 #include "src/panels/painting_panel.h"
+#include "src/panels/prompt_panel.h"
 
 namespace dexpert
 {
     class PreviewPanel: public Fl_Group
     {
     public:
-        PreviewPanel(PaintingPanel *painting);
+        PreviewPanel(PaintingPanel *painting, PromptPanel *prompt);
         virtual ~PreviewPanel();
         void setRow(size_t value);
         size_t getRow();
@@ -35,11 +36,14 @@ namespace dexpert
     private:
         size_t row_ = 0;
         PaintingPanel *painting_;
+        PromptPanel *prompt_;
         ImagePanel *miniature_;
         Fl_Box *lblCounter_;
 
         std::unique_ptr<Button> btnUse_;
         std::unique_ptr<Button> btnUse2_;
+        std::unique_ptr<Button> btnUseFace_;
+        std::unique_ptr<Button> btnUseAdapt_;
         std::unique_ptr<Button> btnRemove_;
         std::unique_ptr<Button> btnRemoveAll_;
         std::unique_ptr<Button> btnView_;

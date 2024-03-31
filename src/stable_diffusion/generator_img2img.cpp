@@ -42,7 +42,8 @@ namespace dexpert
         inpaint_mode_t inpaint_mode,
         bool use_lcm,
         bool free_lunch,
-        image_ptr_t face_image) : GeneratorBase(seed_gen, variation),
+        image_ptr_t face_image,
+        image_ptr_t adapter_image) : GeneratorBase(seed_gen, variation),
                                        prompt_(prompt),
                                        negative_(negative),
                                        model_(model),
@@ -64,7 +65,8 @@ namespace dexpert
                                        inpaint_mode_(inpaint_mode),
                                        use_lcm_(use_lcm),
                                        free_lunch_(free_lunch),
-                                       face_image_(face_image)
+                                       face_image_(face_image),
+                                       adapter_image_(adapter_image)
     {
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
@@ -124,7 +126,8 @@ namespace dexpert
             this->inpaint_mode_,
             this->use_lcm_,
             this->free_lunch_,
-            this->face_image_));
+            this->face_image_,
+            this->adapter_image_));
         auto g = (GeneratorImg2Image *)d.get();
         if (img) {
             g->setImage(img);
@@ -157,6 +160,7 @@ namespace dexpert
         params.steps = steps_;
         params.cfg = cfg_;
         params.face = face_image_.get();
+        params.adapter_image = adapter_image_.get();
 
         if (scalled_down_)
         {

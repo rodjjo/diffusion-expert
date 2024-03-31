@@ -23,7 +23,7 @@ namespace {
         "Canny",
         "Pose",
         "Deepth",
-        "Segmentation",
+        "IP Adapter",
         "Lineart",
         "Mangaline"
     };

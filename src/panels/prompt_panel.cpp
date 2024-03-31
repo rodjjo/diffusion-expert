@@ -35,6 +35,9 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     face_button_.reset(new Button("Set Face", [this] {
         this->toggle_face();
     }));
+    adapter_button_.reset(new Button("Set Image", [this] {
+        this->toggle_adapter();
+    }));
     seed_ = new Fl_Int_Input(0, 0, 1, 1, "Seed");
     batch_ = new Fl_Int_Input(0, 0, 1, 1, "Batch size");
     steps_ = new Fl_Int_Input(0, 0, 1, 1, "Steps");
@@ -73,6 +76,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     interrogateBtn1_->tooltip("Interrogate Clip");
     interrogateBtn2_->tooltip("Interrogate DeepBooru");
     face_button_->tooltip("Set/Clear face");
+    adapter_button_->tooltip("Set/Clear adapter image");
 
     seed_->value("-1");
     batch_->value("1");
@@ -87,8 +91,6 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     if (last_use_lcm) {
         use_lcm_->value(1);
     }
-
-    
 
     alignComponents();
     refreshModels();
@@ -175,9 +177,38 @@ void PromptPanel::toggle_face() {
     }
 }
 
+void PromptPanel::toggle_adapter() {
+    if (adapter_image_) {
+        adapter_image_.reset();
+        adapter_button_->change_label("Set image");
+    } else {
+        adapter_image_ = open_image_from_dialog();
+        if (adapter_image_) {
+            adapter_button_->change_label("Clear image");
+        }
+    }
+}
+
+void PromptPanel::set_face(image_ptr_t face) {
+    face_button_->change_label("Clear face");
+    face_ = face;
+}
+
+void PromptPanel::set_adapter_image(image_ptr_t img) {
+    adapter_button_->change_label("Clear image");
+    adapter_image_ = img;
+}
+
 RawImage *PromptPanel::get_face() { 
     if (face_) {
         return face_.get();
+    }
+    return NULL;
+}
+
+RawImage *PromptPanel::get_adapter_image() {
+    if (adapter_image_) {
+        return adapter_image_.get();
     }
     return NULL;
 }
@@ -351,7 +382,10 @@ void PromptPanel::alignComponents() {
         25
     );
     face_button_->size(75, 24);
+    adapter_button_->size(75, 24);
     face_button_->position(control_inpaint_->x() +  control_inpaint_->w() + 5,
+        models_->y() + models_->h() + 5);
+    adapter_button_->position(face_button_->x() +  face_button_->w() + 5,
         models_->y() + models_->h() + 5);
     textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
     loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);

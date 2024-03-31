@@ -42,7 +42,8 @@ class GeneratorImg2Image: public GeneratorBase {
             inpaint_mode_t inpaint_mode,
             bool use_lcm,
             bool free_lunch,
-            image_ptr_t face_image
+            image_ptr_t face_image,
+            image_ptr_t adapter_image
         );
 
         void generate(
@@ -62,6 +63,7 @@ class GeneratorImg2Image: public GeneratorBase {
         std::string negative_;
         std::string model_;
         image_ptr_t face_image_;
+        image_ptr_t adapter_image_;
         controlnet_list_t controlnets_;
         int seed_ = -1;
         int batch_size_ = 1;

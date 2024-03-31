@@ -34,7 +34,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
     
-    resultsPanel_ = new PreviewPanel(inputImage_);
+    resultsPanel_ = new PreviewPanel(inputImage_, promptPanel_);
     pages_[page_results] = resultsPanel_;
 
     promptPanel_->setImagePanel(inputImage_);
@@ -203,6 +203,11 @@ void Pages::textToImage() {
         face_image = promptPanel_->get_face()->duplicate();
     }
 
+    image_ptr_t adapt_image;
+    if (promptPanel_->get_adapter_image()) {
+        adapt_image  = promptPanel_->get_adapter_image()->duplicate();
+    }
+
     const char* model = promptPanel_->getSdModel(is_inpaint);
 
     if (model == NULL) {
@@ -276,7 +281,8 @@ void Pages::textToImage() {
             inputImage_->getInpaintMode(),
             promptPanel_->shouldUseLcm(),
             promptPanel_->shouldUseFreeLunch(),
-            face_image
+            face_image,
+            adapt_image
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -298,7 +304,8 @@ void Pages::textToImage() {
             reload,
             promptPanel_->shouldUseLcm(),
             promptPanel_->shouldUseFreeLunch(),
-            face_image
+            face_image,
+            adapt_image
         ));
     }
     

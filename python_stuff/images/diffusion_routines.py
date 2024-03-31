@@ -113,10 +113,17 @@ def _run_pipeline(pipeline_type, params):
     inpaint_mode = params.get("inpaint_mode", "original")
     controlnets = params.get("controlnets", [])
     face = params.get("face")
+    adapter_image = params.get("adapter_image")
+
     if face:
         face = pil_from_dict(face)
     else:
         face = None
+
+    if adapter_image:
+        adapter_image = pil_from_dict(adapter_image)
+    else:
+        adapter_image = None
 
     if 'img2img' in pipeline_type  and input_mask is not None:
         pipeline_type = pipeline_type.replace('img2img', 'inpaint2img')
@@ -153,7 +160,8 @@ def _run_pipeline(pipeline_type, params):
         lora_list=lora_list, 
         reload_model=reload_model,
         free_lunch=free_lunch,
-        face_image=face is not None
+        face_image=face is not None,
+        adapter_image=adapter_image is not None
     ) 
     report("pipeline created")
 
@@ -176,7 +184,7 @@ def _run_pipeline(pipeline_type, params):
             progress(step, steps, latents_to_pil(step, pipeline.vae, latents))
         if progress_canceled():
             raise CancelException()
-    
+
     additional_args = {
         'generator': generator
     }
@@ -300,9 +308,16 @@ def _run_pipeline(pipeline_type, params):
         if batch_size > 1:
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
-
+        
+        image_list_adapt = []
         if face:
-            additional_args["ip_adapter_image"] = face
+            image_list_adapt  += [face]
+
+        if adapter_image:
+            image_list_adapt += [adapter_image]
+        
+        if image_list_adapt:
+            additional_args["ip_adapter_image"] = image_list_adapt
 
         result = pipeline(
             prompt, 
