@@ -3,19 +3,22 @@
 #include "src/dialogs/common_dialogs.h"
 #include "src/windows/image_viewer.h"
 #include "src/stable_diffusion/state.h"
-
 #include "src/panels/preview_panel.h"
-
+#include "src/panels/pages.h"
 
 namespace dexpert
 {
 
 
-PreviewPanel::PreviewPanel(PaintingPanel *painting, PromptPanel *prompt) : Fl_Group(0, 0, 1, 1), painting_(painting), prompt_(prompt) {
+PreviewPanel::PreviewPanel(PaintingPanel *painting, PromptPanel *prompt, Pages *pages) : Fl_Group(0, 0, 1, 1), painting_(painting), prompt_(prompt), pages_(pages) {
     begin();
     miniature_ = new ImagePanel(0, 0, 1, 1, []{});
     btnUse_.reset(new Button(xpm::image(xpm::green_pin_16x16), [this] {
-        if (ask("Do you want to set this as input image ?")) {
+        if (Fl::event_shift() != 0) {
+            if (ask("Send it to all enabled controlnets ?")) {
+                pages_->setControlImage(get_sd_state()->getResultsImage(getRow()));
+            }
+        } else if (ask("Do you want to set this as input image ?")) {
             painting_->setImage(get_sd_state()->getResultsImage(getRow()));
             painting_->clearPasteImage();
         }

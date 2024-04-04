@@ -431,7 +431,15 @@ void PaintingPanel::openMask() {
         show_error("This mode does not allow masks!");
         return;
     }
-    auto img = open_image_from_dialog();
+
+    image_ptr_t img;
+
+    if (Fl::event_shift() != 0) {
+        img = open_image_from_cb();
+    } else {
+        img = open_image_from_dialog();
+    }
+
     if (img) {
         if (img->format() != dexpert::py::img_rgba && getSelectedMode() != painting_deepth && getSelectedMode() != painting_segmentation && getSelectedMode() != painting_lineart) {
             show_error("The image does not have alpha channel.");

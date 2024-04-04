@@ -16,10 +16,12 @@
 
 namespace dexpert
 {
+    class Pages;
+
     class PreviewPanel: public Fl_Group
     {
     public:
-        PreviewPanel(PaintingPanel *painting, PromptPanel *prompt);
+        PreviewPanel(PaintingPanel *painting, PromptPanel *prompt, Pages *pages);
         virtual ~PreviewPanel();
         void setRow(size_t value);
         size_t getRow();
@@ -35,6 +37,7 @@ namespace dexpert
 
     private:
         size_t row_ = 0;
+        Pages *pages_;
         PaintingPanel *painting_;
         PromptPanel *prompt_;
         ImagePanel *miniature_;

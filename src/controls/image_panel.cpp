@@ -363,7 +363,14 @@ namespace dexpert
     }
 
     void ImagePanel::open(image_type_t layer) {
-        auto img = open_image_from_dialog();
+        image_ptr_t img;
+
+        if (Fl::event_shift() != 0) {
+            img = open_image_from_cb();
+        } else {
+            img = open_image_from_dialog();
+        }
+        
         if (img) {
             images_[layer] = img;
             adjustSizes();

@@ -150,6 +150,14 @@ image_ptr_t ImageViewer::get_merged() {
     return r;
 }
 
+image_ptr_t ImageViewer::get_merge_mask() {
+    image_ptr_t r;
+    if (src_.get() != NULL) {
+        r = panel_->getLayerImage(image_type_mask)->duplicate();
+    }
+    return r;
+}
+
 bool ImageViewer::confirmed() {
     return confirmed_;
 }
@@ -160,7 +168,6 @@ void view_image(image_ptr_t image) {
 }
 
 
-
 image_ptr_t copy_inpaint(image_ptr_t src_image, image_ptr_t result_image) {
     ImageViewer viewer(result_image, true);
     viewer.set_src(src_image);
@@ -169,6 +176,16 @@ image_ptr_t copy_inpaint(image_ptr_t src_image, image_ptr_t result_image) {
         return viewer.get_merged();
     }
     return src_image;
+}
+
+image_ptr_t copy_inpaint_merge_mask(image_ptr_t src_image, image_ptr_t result_image) {
+    ImageViewer viewer(result_image, true);
+    viewer.set_src(src_image);
+    viewer.show();
+    if (viewer.confirmed()) {
+        return viewer.get_merge_mask();
+    }
+    return image_ptr_t();
 }
 
 

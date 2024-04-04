@@ -278,7 +278,8 @@ namespace dexpert
         callback_t img2_image(const img2img_config_t &config, image_callback_t status_cb)
         {
             enable_progress_window();
-            return get_diffusion_callback("img2img", config, status_cb);
+            
+            return get_diffusion_callback(config.leditpp ? "txt2img" : "img2img", config, status_cb);
         }
 
         callback_t list_models(const std::wstring &path, model_callback_t status_cb)
@@ -300,6 +301,9 @@ namespace dexpert
                     add("Stable Diffusion XL inpainting", "/hugging-xl/diffusers/stable-diffusion-xl-1.0-inpainting-0.1");
                     add("Segmind Small-SD", "/hugging-xl/segmind/small-sd");
                     add("SimianLuo LCM_Dreamshaper_v7", "/hugging-xl/SimianLuo/LCM_Dreamshaper_v7");
+                    add("Stable Cascade", "/hugging-xl/stabilityai/stable-cascade");
+                    add("Playground v2", "/hugging-xl/playgroundai/playground-v2-1024px-aesthetic");
+                    
                     
                     auto r = dexpert::py::getModule().attr("list_models")(path);
                     auto seq = r.cast<py11::sequence>();

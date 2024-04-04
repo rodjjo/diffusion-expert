@@ -48,6 +48,7 @@ class PromptPanel: public EventListener, public Fl_Group {
     bool shouldUseLcm();
     bool shouldUseFreeLunch();
     bool shouldInpaintControlnet();
+    bool shouldUseLEditPP();
     RawImage *get_face();
     RawImage *get_adapter_image();
 
@@ -84,6 +85,7 @@ class PromptPanel: public EventListener, public Fl_Group {
    Fl_Check_Button *use_lcm_;
    Fl_Check_Button *free_lunch_;
    Fl_Check_Button *control_inpaint_;
+   Fl_Check_Button *leditpp_;
    EmbeddingPanel *textualPanel_;
    EmbeddingPanel *loraPanel_;
    std::unique_ptr<Button> interrogateBtn1_;

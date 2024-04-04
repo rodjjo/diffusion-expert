@@ -14,7 +14,11 @@ from diffusers import (
         AutoPipelineForImage2Image,
         AutoPipelineForInpainting,
         StableDiffusionControlNetInpaintPipeline,
-        ControlNetModel
+        ControlNetModel,
+        LEditsPPPipelineStableDiffusion,
+        StableCascadeDecoderPipeline, 
+        StableCascadePriorPipeline,
+        StableCascadeUNet
     )
 
 from diffusers.models.attention_processor import AttnProcessor2_0
@@ -33,6 +37,38 @@ from external.free_lunch import register_free_upblock2d, register_free_crossattn
 
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
+CURRENT_CASCADE = {}
+
+def uload_sd_models():
+    global CURRENT_MODEL_PARAMS
+    global CURRENT_PIPELINE
+    CURRENT_MODEL_PARAMS = {}
+    CURRENT_PIPELINE = {}
+    gc.collect()
+
+def uload_cascade_model():
+    global CURRENT_CASCADE
+    CURRENT_CASCADE = {}
+    gc.collect()
+
+def create_cascade_pipeline():
+    uload_sd_models()
+    prior = CURRENT_CASCADE.get('PRIOR') 
+        # StableCascadePriorPipeline.from_pretrained("stabilityai/stable-cascade-prior", variant="bf16", torch_dtype=torch.bfloat16)
+    decoder = CURRENT_CASCADE.get('DECODER') 
+        # StableCascadeDecoderPipeline.from_pretrained("stabilityai/stable-cascade", variant="bf16", torch_dtype=torch.float16)
+    if prior is None:
+        prior_unet = StableCascadeUNet.from_pretrained("stabilityai/stable-cascade-prior", subfolder="prior_lite", cache_dir=CACHE_DIR)
+        prior = StableCascadePriorPipeline.from_pretrained("stabilityai/stable-cascade-prior", prior=prior_unet, cache_dir=CACHE_DIR)
+    if decoder is None:
+        decoder_unet = StableCascadeUNet.from_pretrained("stabilityai/stable-cascade", subfolder="decoder_lite", cache_dir=CACHE_DIR)
+        decoder = StableCascadeDecoderPipeline.from_pretrained("stabilityai/stable-cascade", decoder=decoder_unet, cache_dir=CACHE_DIR)
+
+    CURRENT_CASCADE['PRIOR'] = prior 
+    CURRENT_CASCADE['DECODER'] = decoder
+    prior.to('cpu')
+    decoder.to('cpu')
+    return prior, decoder
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
@@ -64,7 +100,8 @@ usefp16 = {
     False: torch.float32
 }
 
-def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False, adapter_image=False):
+def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False, adapter_image=False, leditpp=False):
+    uload_cascade_model()
     current_mode = mode
     if mode.startswith('lcm_'):
         use_lcm = True
@@ -93,10 +130,12 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             free_lunch != CURRENT_PIPELINE.get('free_lunch') or \
             allow_inpaint_model != CURRENT_PIPELINE.get('allow_inpaint_model') or \
             face_image != CURRENT_PIPELINE.get('face_image') or \
-            adapter_image !=  CURRENT_PIPELINE.get('adapter_image'):
+            adapter_image !=  CURRENT_PIPELINE.get('adapter_image') or \
+            leditpp != CURRENT_PIPELINE.get('leditpp'):
 
         if  CURRENT_PIPELINE.get('had_adapter'):
-            CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
+            if CURRENT_PIPELINE.get('pipeline') and hasattr(CURRENT_PIPELINE.get('pipeline'), 'unload_ip_adapter'):
+                CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
 
         CURRENT_PIPELINE = {}
         gc.collect()
@@ -184,7 +223,10 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                 )
                 pipe.enable_model_cpu_offload()
             else:
-                pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
+                if leditpp:
+                    pipe = LEditsPPPipelineStableDiffusion(**CURRENT_MODEL_PARAMS['params'])
+                else:
+                    pipe = StableDiffusionPipeline(**CURRENT_MODEL_PARAMS['params'])
         # pipe.enable_model_cpu_offload()
         if CURRENT_MODEL_PARAMS['tiny_vae']:
             pipe.vae = CURRENT_MODEL_PARAMS['tiny_vae']
@@ -211,8 +253,8 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             ]
 
         
-        if adapter_models:
-            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name=adapter_models)
+        if adapter_models and hasattr(pipe, 'load_ip_adapter'):
+            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name=adapter_models, cache_dir=CACHE_DIR)
             pipe.set_ip_adapter_scale(0.6)
             had_adapter = True
 
@@ -231,6 +273,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             'had_adapter': had_adapter,
             'face_image': face_image,
             'adapter_image': adapter_image,
+            'leditpp': leditpp,
         }
     gc.collect()
     return CURRENT_PIPELINE['pipeline']

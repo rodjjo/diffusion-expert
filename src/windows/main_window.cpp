@@ -9,6 +9,7 @@
 #include "src/data/xpm.h"
 
 #include "src/windows/main_window.h"
+#include "src/windows/image_viewer.h"
 
 namespace dexpert {
 
@@ -111,7 +112,10 @@ void MainWindow::initMenu() {
     menu_->addItem([this] { upScale(4.0); }, "", "Image/Upscale/4x");
     menu_->addItem([this] { flip(true); }, "", "Image/Flip/Vertical");
     menu_->addItem([this] { flip(false); }, "", "Image/Flip/Horizontal");
-    menu_->addItem([this] { rotate90(); }, "", "Image/Flip/Rotate 90");
+    menu_->addItem([this] { rotate90(); }, "", "Image/Rotate 90");
+    menu_->addItem([this] { scaledInpaint(1024); }, "", "Image/Resolution/Inpait 1024");
+    menu_->addItem([this] { scaledInpaint(768); }, "", "Image/Resolution/Inpait 768");
+    menu_->addItem([this] { scaledInpaint(512); }, "", "Image/Resolution/Inpait 512");
     menu_->addItem([this] { download_model_from_dialog(); }, "", "Tools/Model downloader");
     menu_->addItem([this] { showConsoles("Console windows", true); }, "", "Tools/Terminal");
 }
@@ -304,6 +308,61 @@ void MainWindow::editSelection(painting_mode_t mode, float scale) {
         }
     } else {
         show_error("Invalid selection. No image to process.");
+    }
+}
+
+void MainWindow::scaledInpaint(int size) {
+    auto img = image_editor_->getLayerImage(image_type_image);
+    if (!img) {
+        show_error("No image to process.");
+        return;
+    }
+    int w = img->w();
+    int h = img->h();
+    bool per_w = w > h;
+    float ss = per_w  ? (size / (float)w) : (size / (float)h);
+    w = per_w ? size : (w * ss);
+    h = per_w ? (h * ss) : size;
+    float scale = per_w ? w / (float) img->w() : h / (float) img->h();
+    if (scale < 0.0001) {
+        show_error("Image too big");
+        return;
+    }
+    auto result = img->resizeImage(w, h);
+    result = get_stable_diffusion_image(result.get(), painting_inpaint_masked);
+    if (result) {
+        bool ok = false;
+        float re_scale = 1.0 / scale;
+        std::string error_msg;
+
+        auto mask = copy_inpaint_merge_mask(img->resizeImage(w, h), result);
+        if (!mask) {
+            return;
+        }
+
+        dexpert::py::get_py()->execute_callback(
+            py::upscale_image(result.get(), re_scale, getConfig().gfpgan_get_weight(), [&ok, &error_msg, mask, img] (bool success, const char *message, std::list<image_ptr_t> image) {
+                ok = success;
+                if (ok) {
+                    if (image.size()) {
+                        img->pasteAt(
+                            0, 0, 
+                            mask->resizeImage(img->w(), img->h())->removeAlpha().get(), 
+                            image.begin()->get()->resizeImage(img->w(), img->h()).get()
+                        );
+                    }
+                } else if(message) {
+                    error_msg = message;
+                }
+            })
+        );
+        if (ok) {
+            image_editor_->noSelection();
+        } else {
+            show_error(error_msg.c_str());
+        }
+    } else {
+        show_error("Canceled");
     }
 }
 

@@ -109,7 +109,7 @@ int Config::windowYPos() {
 }
 
 int Config::windowWidth() {
-    return 860;
+    return 960;
 }
 
 int Config::windowHeight() {

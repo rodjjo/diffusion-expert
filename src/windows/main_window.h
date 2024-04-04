@@ -58,6 +58,7 @@ class MainWindow : Fl_Menu_Window {
   void upScale(float scale);
   void flip(bool vertical);
   void closeImage();
+  void scaledInpaint(int size);
 
  private:
     Fl_Group *menuPanel_ = NULL;

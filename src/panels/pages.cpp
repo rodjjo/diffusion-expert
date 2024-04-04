@@ -34,7 +34,7 @@ Pages::Pages(int x, int y, int w, int h) : Fl_Group(x, y, w, h, "") {
     inputImage_ = new PaintingPanel(0, 0, 1, 1, promptPanel_);
     pages_[page_input_image] = inputImage_;
     
-    resultsPanel_ = new PreviewPanel(inputImage_, promptPanel_);
+    resultsPanel_ = new PreviewPanel(inputImage_, promptPanel_, this);
     pages_[page_results] = resultsPanel_;
 
     promptPanel_->setImagePanel(inputImage_);
@@ -172,6 +172,15 @@ void Pages::setInputImage(RawImage *img, painting_mode_t mode) {
     inputImage_->setSelectedMode(mode);
 }
 
+void Pages::setControlImage(RawImage *img) {
+    int sz = sizeof(controlNets_) / sizeof(controlNets_[0]);
+    for (int i = 0; i < sz; i += 1) {
+        if (controlNets_[i]->getSelectedMode() != paiting_disabled) {
+            controlNets_[i]->setImage(img);
+        }
+    }
+}
+
 RawImage *Pages::getInputImage() {
     return inputImage_->getImage();
 }
@@ -282,7 +291,8 @@ void Pages::textToImage() {
             promptPanel_->shouldUseLcm(),
             promptPanel_->shouldUseFreeLunch(),
             face_image,
-            adapt_image
+            adapt_image,
+            promptPanel_->shouldUseLEditPP()
         ));
     } else {
         g.reset(new GeneratorTxt2Image(

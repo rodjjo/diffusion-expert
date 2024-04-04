@@ -66,6 +66,7 @@ class img2img_config_t: public txt2img_config_t {
     RawImage *mask = NULL;
     const char *inpaint_mode = "";
     float strength = 0.8;
+    bool leditpp = false;
     const void fill_prompt_dict(py11::dict &params) const override;
 };
 

@@ -43,7 +43,8 @@ namespace dexpert
         bool use_lcm,
         bool free_lunch,
         image_ptr_t face_image,
-        image_ptr_t adapter_image) : GeneratorBase(seed_gen, variation),
+        image_ptr_t adapter_image,
+        bool leditpp) : GeneratorBase(seed_gen, variation),
                                        prompt_(prompt),
                                        negative_(negative),
                                        model_(model),
@@ -66,7 +67,8 @@ namespace dexpert
                                        use_lcm_(use_lcm),
                                        free_lunch_(free_lunch),
                                        face_image_(face_image),
-                                       adapter_image_(adapter_image)
+                                       adapter_image_(adapter_image),
+                                       leditpp_(leditpp)
     {
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
@@ -127,7 +129,8 @@ namespace dexpert
             this->use_lcm_,
             this->free_lunch_,
             this->face_image_,
-            this->adapter_image_));
+            this->adapter_image_,
+            this->leditpp_));
         auto g = (GeneratorImg2Image *)d.get();
         if (img) {
             g->setImage(img);
@@ -177,6 +180,7 @@ namespace dexpert
         params.reload_model = reload_model_;
         params.use_lcm = use_lcm_;
         params.free_lunch = free_lunch_;
+        params.leditpp = leditpp_;
         reload_model_ = false;
 
         if (mask_)

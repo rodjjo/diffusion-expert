@@ -45,6 +45,7 @@ class Pages: public Fl_Group {
     void textToImage();
     void loadConfig();
     void setInputImage(RawImage *img, painting_mode_t mode);
+    void setControlImage(RawImage *img);
     RawImage *getInputImage();
     void refreshModels();
     
@@ -59,7 +60,7 @@ class Pages: public Fl_Group {
     Fl_Group *pages_[page_max] = {0,};
     bool visible_pages_[page_max] = {0,};
 
-    PaintingPanel *controlNets_[4] = {};
+    PaintingPanel *controlNets_[4] = {NULL, NULL, NULL, NULL};
     PromptPanel *promptPanel_ = NULL;
     PaintingPanel *inputImage_ = NULL;
     PreviewPanel *resultsPanel_ = NULL;

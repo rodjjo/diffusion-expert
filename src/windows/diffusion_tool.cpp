@@ -8,7 +8,7 @@
 #include "src/windows/diffusion_tool.h"
 
 
-#define MIN_WIDTH 640
+#define MIN_WIDTH 740
 #define MIN_HEIGHT 740
 
 namespace dexpert {
@@ -203,6 +203,13 @@ void DiffusionTool::setInitialImage(RawImage *image, painting_mode_t mode) {
     pages_->setInputImage(image, mode);
     page_browser_->value(pages_->getIndexAtPage(pages_->activePage()) + 1);
     gotoSelectedPage();
+}
+
+void DiffusionTool::setControlImage(RawImage *image) {
+    if (!image) {
+        return;
+    }
+    pages_->setControlImage(image);
 }
 
 RawImage *DiffusionTool::getInputImage() {

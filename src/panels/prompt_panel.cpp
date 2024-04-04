@@ -51,6 +51,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     use_lcm_ = new Fl_Check_Button(0, 0, 1, 1, "Boost Speed");
     free_lunch_ = new Fl_Check_Button(0, 0, 1, 1, "Free Lunch");
     control_inpaint_ = new Fl_Check_Button(0, 0, 1, 1, "Inpaint with controlnet");
+    leditpp_ = new Fl_Check_Button(0, 0, 1, 1, "LEdit++");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -87,6 +88,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     height_->value("512");
 
     control_inpaint_->value(1);
+    leditpp_->value(0);
 
     if (last_use_lcm) {
         use_lcm_->value(1);
@@ -170,7 +172,11 @@ void PromptPanel::toggle_face() {
         face_.reset();
         face_button_->change_label("Set face");
     } else {
-        face_ = open_image_from_dialog();
+        if (Fl::event_shift() != 0) {
+            face_ = open_image_from_cb();
+        } else {
+            face_ = open_image_from_dialog();
+        }
         if (face_) {
             face_button_->change_label("Clear face");
         }
@@ -182,7 +188,11 @@ void PromptPanel::toggle_adapter() {
         adapter_image_.reset();
         adapter_button_->change_label("Set image");
     } else {
-        adapter_image_ = open_image_from_dialog();
+        if (Fl::event_shift() != 0) {
+            adapter_image_ = open_image_from_cb();
+        } else {
+            adapter_image_ = open_image_from_dialog();
+        }
         if (adapter_image_) {
             adapter_button_->change_label("Clear image");
         }
@@ -381,9 +391,15 @@ void PromptPanel::alignComponents() {
         190,
         25
     );
+    leditpp_->resize(
+        control_inpaint_->x() +  control_inpaint_->w() + 5,
+        models_->y() + models_->h() + 5,
+        100,
+        25
+    );
     face_button_->size(75, 24);
     adapter_button_->size(75, 24);
-    face_button_->position(control_inpaint_->x() +  control_inpaint_->w() + 5,
+    face_button_->position(leditpp_->x() +  leditpp_->w() + 5,
         models_->y() + models_->h() + 5);
     adapter_button_->position(face_button_->x() +  face_button_->w() + 5,
         models_->y() + models_->h() + 5);
@@ -473,6 +489,10 @@ bool PromptPanel::ready(bool require_prompt) {
 
 bool PromptPanel::shouldRestoreFaces() {
     return restore_face_->value() != 0;
+}
+
+bool PromptPanel::shouldUseLEditPP() {
+    return leditpp_->value() != 0;
 }
 
 void PromptPanel::setImageSize(int w, int h) {

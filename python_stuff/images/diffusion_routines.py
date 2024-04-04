@@ -4,7 +4,7 @@ import torch
 import os
 import numpy as np
 from datetime import datetime
-from models.models import create_pipeline, current_model_is_in_painting, models_memory_checker
+from models.models import create_pipeline,  create_cascade_pipeline
 from images.latents import create_latents_noise, latents_to_pil
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
@@ -12,6 +12,8 @@ from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
 from PIL import Image
+from torchvision.transforms.functional import pil_to_tensor
+
 
 from dexpert import progress, progress_canceled, progress_title
 
@@ -73,6 +75,7 @@ def make_inpaint_condition(image, image_mask):
     image = np.expand_dims(image, 0).transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
     return image
+
 
 def create_ipadapter_embds(pipeline, image):
     return pipeline.prepare_ip_adapter_image_embeds(
@@ -154,6 +157,7 @@ def _run_pipeline(pipeline_type, params):
     report("started")
 
     report("creating the pipeline")
+    leditpp = bool(input_image) and pipeline_type == 'txt2img'
     pipeline = create_pipeline(
         f'{"lcm_" if use_lcm else ""}{pipeline_type}', model, 
         controlnets=controlnets, 
@@ -161,17 +165,18 @@ def _run_pipeline(pipeline_type, params):
         reload_model=reload_model,
         free_lunch=free_lunch,
         face_image=face is not None,
-        adapter_image=adapter_image is not None
+        adapter_image=adapter_image is not None,
+        leditpp=leditpp
     ) 
     report("pipeline created")
 
     '''
     if pipeline_type == 'inpaint2img':
-        if not current_model_is_in_painting():
+        if not ):
             return [{
                 "error": "The current model is not for inpainting"
             }]
-    elif current_model_is_in_painting():
+    elif ):
         return [{
             "error": "The current model is a inpainting model"
         }]
@@ -235,7 +240,7 @@ def _run_pipeline(pipeline_type, params):
             additional_args['controlnet_conditioning_scale'] = conds
     elif pipeline_type == 'inpaint2img':
         '''
-        if not current_model_is_in_painting():
+        if not ):
             return [{
                 "error": "The current model is not for in painting"
             }]
@@ -281,7 +286,6 @@ def _run_pipeline(pipeline_type, params):
 
 
     latents_noise.to(device)
-    report("generating the variation" if variation_enabled else "generating the image")
     with torch.inference_mode(), torch.autocast(device):
         additional_args['callback'] = progress_preview
         additional_args['callback_steps'] = 1
@@ -309,23 +313,41 @@ def _run_pipeline(pipeline_type, params):
             additional_args['batch_size'] = batch_size
             additional_args['num_images_per_prompt'] = batch_size
         
-        image_list_adapt = []
-        if face:
-            image_list_adapt  += [face]
+        if hasattr(pipeline, 'load_ip_adapter'):
+            image_list_adapt = []
+            if face:
+                image_list_adapt  += [face]
 
-        if adapter_image:
-            image_list_adapt += [adapter_image]
+            if adapter_image:
+                image_list_adapt += [adapter_image]
+            
+            if image_list_adapt:
+                additional_args["ip_adapter_image"] = image_list_adapt
+
         
-        if image_list_adapt:
-            additional_args["ip_adapter_image"] = image_list_adapt
-
-        result = pipeline(
-            prompt, 
-            negative_prompt=negative, 
-            guidance_scale=cfg, 
-            num_inference_steps=steps,
-            **additional_args,
-        ).images 
+        if leditpp:
+            report("Inverting image")
+            pipeline.invert(
+                image=pil_from_dict(input_image),
+                num_inversion_steps=steps,
+                skip=0.1
+            )
+            report("generating the variation" if variation_enabled else "generating the image")
+            result = pipeline(
+                editing_prompt=[prompt], 
+                # negative_prompt=[negative] if negative else [''],
+                edit_guidance_scale=cfg, 
+                edit_threshold=1.0 - params["strength"],
+            ).images 
+        else:
+            report("generating the variation" if variation_enabled else "generating the image")
+            result = pipeline(
+                prompt, 
+                negative_prompt=negative,
+                guidance_scale=cfg, 
+                num_inference_steps=steps,
+                **additional_args,
+            ).images 
 
     if restore_faces:
         for i, r in enumerate(result):
@@ -335,12 +357,100 @@ def _run_pipeline(pipeline_type, params):
     return [pil_as_dict(r) for r in result]
 
 
+def _run_cascade(pipeline_type: str, params: dict):
+    if 'txt2img' != pipeline_type:
+        raise CancelException()
+    restore_faces = params.get('restore_faces')
+    if restore_faces:
+        gfpgan_dwonload_model()
+        restore_faces = True
+    prompt, _ = parse_prompt_loras(params['prompt'])
+    negative = params['negative']
+
+    if len(negative or '') < 2:
+        negative = None
+
+    seed = params['seed']
+    # model = params["model"]
+    cfg = params["cfg"]
+    steps = params["steps"]
+    width = params["width"]
+    height = params["height"]
+    # batch_size = params.get('batch_size', 1)
+    input_image = params.get("image")
+    input_mask = None # params.get("mask")
+    inpaint_mode = params.get("inpaint_mode", "original")
+
+
+    if width % 8 != 0:
+        width += 8 - width % 8
+
+    if height % 8 != 0:
+        height += 8 - height % 8
+    
+    report("Loading stable cascade model")
+    prior, decoder = create_cascade_pipeline()
+    
+    with torch.inference_mode(), torch.autocast('cuda'):
+        report("Generating the fist image")
+
+        generator = None if seed == -1  else [
+            torch.Generator(device='cuda').manual_seed(seed)
+        ]
+        # image = image.to(device=device, dtype=dtype)
+        # image_embed = self.image_encoder(image).image_embeds.unsqueeze(1)
+        if 'img2img' in pipeline_type and input_image is not None:
+            prior_output = pil_to_tensor(pil_from_dict(input_image))
+        else:
+            prior.to('cuda')
+            prior_output = prior(
+                prompt=prompt,
+                height=height,
+                width=width,
+                negative_prompt=negative,
+                guidance_scale=cfg,
+                generator=generator,
+                num_images_per_prompt=1,
+                num_inference_steps=steps,
+            )
+            prior.to('cpu')
+            gc.collect()
+            torch.cuda.empty_cache()
+            prior_output = prior_output.image_embeddings.to(torch.float16)
+
+
+        report("Generating the final")
+
+        decoder.to('cuda')
+        result = decoder(
+            image_embeddings=prior_output,
+            prompt=prompt,
+            negative_prompt=negative,
+            guidance_scale=0.0,
+            output_type="pil",
+            num_inference_steps=steps // 2
+        ).images
+        decoder.to('cpu')
+        gc.collect()
+        torch.cuda.empty_cache()
+
+
+    if restore_faces:
+        for i, r in enumerate(result):
+            progress(99, 100, pil_as_dict(r)) 
+            result[i] = gfpgan_restore_faces(r)
+
+    return [pil_as_dict(r) for r in result]
+
 def run_pipeline(mode: str, params: dict):
     progress(0, 100, {})
 
     try:
         time_start = datetime.utcnow()
-        data = _run_pipeline(mode, params)   
+        if 'cascade' in params["model"].lower():
+            data = _run_cascade(mode, params)
+        else:
+            data = _run_pipeline(mode, params)   
         end_time = datetime.utcnow()
         dur = round((end_time - time_start).total_seconds(), 2)
         report(f"Image generation took {dur} seconds")

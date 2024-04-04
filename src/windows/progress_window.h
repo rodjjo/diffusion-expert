@@ -36,7 +36,6 @@ class ProgressWindow {
     Fl_Progress *progress_;
     Fl_Box* title_;
     std::unique_ptr<Button> btnCancel_;
-    
 };
 
 void set_progress_title(const char *title);

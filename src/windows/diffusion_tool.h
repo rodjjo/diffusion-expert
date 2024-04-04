@@ -28,6 +28,7 @@ class DiffusionTool : public Fl_Window {
     ~DiffusionTool();
     image_ptr_t run();
     void setInitialImage(RawImage *image, painting_mode_t mode);
+    void setControlImage(RawImage *image);
     RawImage *getInputImage();
 
  protected:
