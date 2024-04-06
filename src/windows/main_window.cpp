@@ -303,8 +303,14 @@ void MainWindow::editSelection(painting_mode_t mode, float scale) {
             if (scale > 0.01) {
                 img = img->resizeImage(ow, oh);
             }
-            image_editor_->setPasteImageAtSelection(image_type_image, img.get());
-            image_editor_->pasteImage();
+            auto current = image_editor_->getLayerImage(image_type_image);
+            if (current && img->w() + 1 >= current->w() && img->h() + 1 >= current->h()) {
+                image_editor_->setLayerImage(image_type_image, img);
+                image_editor_->noSelection();
+            } else {
+                image_editor_->setPasteImageAtSelection(image_type_image, img.get());
+                image_editor_->pasteImage();
+            }
         }
     } else {
         show_error("Invalid selection. No image to process.");

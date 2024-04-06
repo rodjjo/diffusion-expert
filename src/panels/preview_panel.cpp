@@ -5,6 +5,7 @@
 #include "src/stable_diffusion/state.h"
 #include "src/panels/preview_panel.h"
 #include "src/panels/pages.h"
+#include "src/dialogs/utils.h"
 
 namespace dexpert
 {
@@ -39,6 +40,9 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting, PromptPanel *prompt, Pages *
     }));
     btnUseAdapt_.reset(new Button("A", [this] {
         prompt_->set_adapter_image(get_sd_state()->getResultsImage(getRow())->duplicate());
+    }));
+    btnSaveIt_.reset(new Button(xpm::image(xpm::save_as_16x16), [this] {
+        save_image_with_dialog(get_sd_state()->getResultsImage(getRow())->duplicate());
     }));
 
     btnView_.reset(new Button(xpm::image(xpm::lupe_16x16), [this] {
@@ -93,6 +97,7 @@ PreviewPanel::PreviewPanel(PaintingPanel *painting, PromptPanel *prompt, Pages *
     btnUse2_->tooltip("Select a area of the image and set it as the result");
     btnUseFace_->tooltip("Send this image to face image (adapter)");
     btnUseAdapt_->tooltip("Send this image to adapter image");
+    btnSaveIt_->tooltip("Save the current image!");
     btnView_->tooltip("Preview the image");
     btnRemove_->tooltip("Remove the image");
     btnRemoveAll_->tooltip("Remove all the images");
@@ -112,6 +117,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
         btnUse_->set_visible();
         btnUseFace_->set_visible();
         btnUseAdapt_->set_visible();
+        btnSaveIt_->set_visible();
         btnUse2_->set_visible();
         lblCounter_->set_visible();
         btnScrollLeft_->set_visible();
@@ -128,6 +134,7 @@ void PreviewPanel::enableControls(bool should_redraw) {
         btnUse2_->hide();
         btnUseFace_->hide();
         btnUseAdapt_->hide();
+        btnSaveIt_->hide();
         lblCounter_->hide();
         btnScrollLeft_->hide();
         btnScrollRight_->hide();
@@ -146,6 +153,7 @@ void PreviewPanel::alignComponents() {
     miniature_->resize(x() + 3, y() + 3, w() - 6 - 26, h()- 36);
     btnUse_->size(20, 20);
     btnUseAdapt_->size(20, 20);
+    btnSaveIt_->size(20, 20);
     btnUseFace_->size(20, 20);
     btnUse2_->size(20, 20);
     btnView_->size(20, 20);
@@ -162,6 +170,7 @@ void PreviewPanel::alignComponents() {
     
     btnUseFace_->position(x() + w() - 23, btnRemoveAll_->y() + btnRemoveAll_->h() + 2);
     btnUseAdapt_->position(x() + w() - 23, btnUseFace_->y() + btnUseFace_->h() + 2);
+    btnSaveIt_->position(x() + w() - 23, btnUseAdapt_->y() + btnUseAdapt_->h() + 2);
 
     int navWidth = 210;
     

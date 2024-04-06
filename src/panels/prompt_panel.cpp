@@ -20,6 +20,7 @@ namespace {
     std::string last_negative_prompt;
     std::string last_steps = "25";
     bool last_use_lcm = false;
+    bool last_control_inpaint = true;
 }
 
 PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group(x, y, w, h) {
@@ -31,6 +32,9 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     }));
     interrogateBtn2_.reset(new Button("??", [this] {
         this->interrogate("DeepBooru");
+    }));
+    negativeRealisticBtn_.reset(new Button("!", [this] {
+        this->negativePrompt_->value("anime, manga, drawing, cartoon, 3d, cg, illustration, worst quality, normal quality, low quality, low res, blurry, text, ugly, monochrome, horror, geometry, mutation");
     }));
     face_button_.reset(new Button("Set Face", [this] {
         this->toggle_face();
@@ -76,18 +80,22 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     
     interrogateBtn1_->tooltip("Interrogate Clip");
     interrogateBtn2_->tooltip("Interrogate DeepBooru");
+    negativeRealisticBtn_->tooltip("Default negative prompt for realistic");
     face_button_->tooltip("Set/Clear face");
     adapter_button_->tooltip("Set/Clear adapter image");
 
     seed_->value("-1");
     batch_->value("1");
-    steps_->value(last_steps.c_str());
+    steps_->value("25");
     guidance_->value("7.5");
     var_strength_->value("0.1");
     width_->value("512");
     height_->value("512");
 
-    control_inpaint_->value(1);
+    if (last_control_inpaint) {
+        control_inpaint_->value(1);
+    }
+
     leditpp_->value(0);
 
     if (last_use_lcm) {
@@ -304,15 +312,18 @@ void PromptPanel::alignComponents() {
 
     interrogateBtn1_->size(50, 24);
     interrogateBtn2_->size(50, 24);
+    negativeRealisticBtn_->size(50, 24);
     interrogateBtn1_->position(positivePrompt_->x() + positivePrompt_->w() + 5, positivePrompt_->y());
     interrogateBtn2_->position(interrogateBtn1_->x(), interrogateBtn1_->y() + interrogateBtn1_->h() + 2);
 
     negativePrompt_->resize(
         x() + 5, 
         positivePrompt_->y() + positivePrompt_->h() + 25, 
-        positivePrompt_->w() + 55, 
+         w() - 67,
         positivePrompt_->h()
     );
+    negativeRealisticBtn_->position(negativePrompt_->x() + negativePrompt_->w() + 5, negativePrompt_->y());
+
     seed_->resize(
         x() + 5, 
         negativePrompt_->y() + negativePrompt_->h() + 25, 
@@ -569,7 +580,8 @@ bool PromptPanel::shouldUseFreeLunch() {
 }
 
 bool PromptPanel::shouldInpaintControlnet() {
-    return control_inpaint_->value() != 0;
+    last_control_inpaint = control_inpaint_->value() != 0;
+    return last_control_inpaint;
 }
 
 } // namespace dexpert

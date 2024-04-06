@@ -47,6 +47,7 @@ namespace dexpert
         std::unique_ptr<Button> btnUse2_;
         std::unique_ptr<Button> btnUseFace_;
         std::unique_ptr<Button> btnUseAdapt_;
+        std::unique_ptr<Button> btnSaveIt_;
         std::unique_ptr<Button> btnRemove_;
         std::unique_ptr<Button> btnRemoveAll_;
         std::unique_ptr<Button> btnView_;

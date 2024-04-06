@@ -49,6 +49,7 @@ def have_dependencies():
         'filterpy',
         'future',
         'rembg',
+        'spandrel',
         # 'codeformer',
     ]
     for l in lib_names:

@@ -90,6 +90,7 @@ class PromptPanel: public EventListener, public Fl_Group {
    EmbeddingPanel *loraPanel_;
    std::unique_ptr<Button> interrogateBtn1_;
    std::unique_ptr<Button> interrogateBtn2_;
+   std::unique_ptr<Button> negativeRealisticBtn_;
    std::unique_ptr<Button> face_button_;
    std::unique_ptr<Button> adapter_button_;
 
