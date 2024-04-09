@@ -53,6 +53,8 @@ class GeneratorImg2Image: public GeneratorBase {
 
         int batchSize() override;
 
+        void next_seed() override;
+
         std::shared_ptr<GeneratorBase> duplicate(bool variation, image_ptr_t img);
     protected:
         void adjustResult(image_ptr_t & result);

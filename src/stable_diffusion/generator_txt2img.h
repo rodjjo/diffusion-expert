@@ -45,7 +45,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         ) override;
 
         int batchSize() override;
-
+        void next_seed() override;
         
         std::shared_ptr<GeneratorBase> duplicate(bool variation, image_ptr_t img) override;
         

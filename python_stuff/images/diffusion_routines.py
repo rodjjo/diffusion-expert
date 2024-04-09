@@ -5,10 +5,10 @@ import os
 import numpy as np
 from datetime import datetime
 from models.models import create_pipeline,  create_cascade_pipeline
-from images.latents import create_latents_noise, latents_to_pil
+from images.latents import create_latents_noise, latents_to_pil, latents_to_pil_image
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
-from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image
+from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image, inpaint_noise
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
 from PIL import Image
@@ -24,6 +24,12 @@ REPORT_PREFIXES = {
     'inpaint2img': 'Inpaint',
     'img2img': 'Image to Image',
 }
+
+usefp16 = {
+    True: torch.float16,
+    False: torch.float32
+}
+
 
 def set_prefix(text):
     global REPORT_PREFIX
@@ -146,6 +152,7 @@ def _run_pipeline(pipeline_type, params):
     
     shape = (4, height // 8, width // 8 )
     latents_noise = create_latents_noise(shape, seed, subseed, var_stren)
+    latents_noise = latents_noise.to(dtype=usefp16[get_setting('use_float16', True)])
     
     generator = None if seed == -1  else [
         torch.Generator(device=device).manual_seed(seed + i)
@@ -249,7 +256,12 @@ def _run_pipeline(pipeline_type, params):
         mask = pil_from_dict(input_mask)
         
         if inpaint_mode != 'original' and inpaint_mode != 'img2img':
-            image = inpaint_fill_image(image, mask)
+            if inpaint_mode == 'noise':
+                temp = inpaint_noise(image, mask, latents_to_pil_image(0, pipeline.vae, latents_noise))
+                if temp: 
+                    image = temp
+            else:
+                image = inpaint_fill_image(image, mask)
 
         additional_args = {
             'image': image,
@@ -293,7 +305,7 @@ def _run_pipeline(pipeline_type, params):
         if len(controlnets):
             batch_size = 1
 
-        if type(pipeline.scheduler).__name__ == 'LCMScheduler':
+        if type(pipeline.scheduler).__name__ == 'LCMScheduler' or 'sdxl turbo' in model.lower():
             if pipeline_type == 'txt2img':
                 if cfg > 2:
                     cfg = 2
@@ -306,6 +318,7 @@ def _run_pipeline(pipeline_type, params):
 
             if steps > 8:
                 steps = 8
+
         if  batch_size > 1 and additional_args.get('latents') is not None:
             del additional_args['latents']
 

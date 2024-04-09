@@ -19,6 +19,7 @@ namespace dexpert
 typedef enum {
     inpaint_original,
     inpaint_fill,
+    inpaint_noise,
     inpaint_wholepicture,
     inpaint_wholefill,
     inpaint_img2img,
@@ -46,6 +47,7 @@ class GeneratorBase {
     virtual ~GeneratorBase();
     virtual void generate(generator_cb_t cb) = 0;
     virtual int batchSize() = 0;
+    virtual void next_seed() = 0;
 
     virtual std::shared_ptr<GeneratorBase> duplicate(bool variation, image_ptr_t img) = 0;
 
@@ -53,7 +55,8 @@ class GeneratorBase {
     void clearImage();
     int getSeed();
 
-    bool isVariation();
+    bool isVariation();   
+    
 
     std::shared_ptr<SeedGenerator> getSeedGenerator();
 

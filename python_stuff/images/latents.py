@@ -16,9 +16,7 @@ def pil_to_latents(image, vae):
     return init_latent_dist
 
 
-def latents_to_pil(step, vae, latents):
-    if step % 5 != 0:
-        return {}
+def latents_to_pil_image(step, vae, latents):
     '''
     Function to convert latents to images
     '''
@@ -29,9 +27,18 @@ def latents_to_pil(step, vae, latents):
     image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
     images = (image * 255).round().astype("uint8")
     if (len(images) < 1):
-        return {}
+        return None
     image = Image.fromarray(images[-1]) 
-    return pil_as_dict(image)
+    return image
+
+
+def latents_to_pil(step, vae, latents):
+    if step % 5 != 0:
+        return {}
+    image = latents_to_pil_image(step, vae, latents)
+    if image:
+        return pil_as_dict(image)
+    return {}
 
 
 def randn(seed, shape):

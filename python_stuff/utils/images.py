@@ -28,9 +28,11 @@ def pil_from_dict(data, convert_rgb=True):
 
 
 def inpaint_fill_image(image, mask):
-    image_mod = Image.new('RGBA', (image.width, image.height))
+    image_mod = Image.new('RGBA', (image.width, image.height), (255, 255, 255))
 
-    image_masked = Image.new('RGBA', (image.width, image.height))
+    mask = mask.filter(ImageFilter.MaxFilter(3))
+
+    image_masked = Image.new('RGBA', (image.width, image.height), (255, 255, 255))
     image_masked.paste(image.convert("RGBA"), mask=ImageOps.invert(mask.convert('L')))
 
     image_masked = image_masked.convert('RGBA')
@@ -39,5 +41,15 @@ def inpaint_fill_image(image, mask):
         blurred = image_masked.filter(ImageFilter.GaussianBlur(radius)).convert('RGBA')
         for _ in range(repeats):
             image_mod.alpha_composite(blurred)
-
     return image_mod.convert("RGB")
+
+
+def inpaint_noise(image, mask, noise_image):
+    if not noise_image:
+        return None
+    mask = mask.convert('L')
+    image_masked = Image.new('RGBA', (image.width, image.height))
+    blank = Image.new('RGBA', (image.width, image.height), (255, 255, 255, 255))
+    image_masked.paste(blank, mask=mask.filter(ImageFilter.MinFilter(3)))
+    image_masked.paste(image.convert("RGBA"), mask=ImageOps.invert(mask))
+    return image_masked.convert('RGB')

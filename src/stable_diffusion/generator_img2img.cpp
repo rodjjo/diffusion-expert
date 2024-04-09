@@ -10,6 +10,7 @@ namespace dexpert
         const char *inpaint_mode_names[inpaint_mode_count] = {
             "original",
             "fill",
+            "noise",
             "original",  // wholepicture + original
             "fill",      // wholepicture + fill
             "img2img"    // use img2img + mask
@@ -308,6 +309,10 @@ namespace dexpert
 
     int GeneratorImg2Image::batchSize() {
         return batch_size_;
+    }
+
+    void GeneratorImg2Image::next_seed() {
+        seed_ += 17;
     }
 
 } // namespace dexpert

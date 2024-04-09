@@ -322,6 +322,56 @@ void Pages::textToImage() {
     if (Fl::event_shift() != 0) {
         get_sd_state()->clearGenerators();
     }
+    bool should_repeat = Fl::event_ctrl() != 0;
+    std::string path_to_save;
+    std::string extension;
+    if (should_repeat) {
+        path_to_save = choose_image_to_save_fl(&getConfig().lastImageSaveDir());
+        size_t p = path_to_save.find_last_of(".");
+        if (p != std::string::npos) {
+            extension = path_to_save.substr(p);
+            path_to_save = path_to_save.erase(p);
+        } else {
+            extension = ".jpg";
+        }
+    }
+    char buffer[64] = "";
+    bool should_continue = true;
+    int picture_number = 0;
+    while  (should_continue) {
+        if (should_repeat) {
+            if (path_to_save.empty()) {
+                break;
+            }
+            std::list<image_ptr_t> images;
+            g->generate([&should_continue, &images] (bool success, const char* msg, std::list<image_ptr_t> result) {
+                if (!success || result.empty()) {
+                    if (msg) {
+                        puts(msg);
+                    }
+                    should_continue = false;
+                } else {
+                    images = result;
+                }
+            });
+            if (should_continue) {
+                for (auto it : images) {
+                    picture_number += 1;
+                    sprintf(buffer, "%04d%s", picture_number, extension.c_str());
+                    if (!get_sd_state()->saveImage((path_to_save + buffer).c_str(), it.get())) {
+                        should_continue = false;
+                        break;
+                    }
+                }
+                 g->next_seed();
+            }
+        } else {
+            break;
+        }
+    }
+    if (should_repeat) { 
+        return;
+    }
 
     resultsPanel_->goLastImage();
     bool wasEmpy = get_sd_state()->getGeneratorSize() == 0;

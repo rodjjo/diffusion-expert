@@ -7,12 +7,14 @@ from contextlib import contextmanager
 from diffusers import (
         T2IAdapter,
         StableDiffusionPipeline, 
+        DPMSolverMultistepScheduler,
+        # StableDiffusionXLControlNetImg2ImgPipeline,
         StableDiffusionControlNetPipeline, 
         StableDiffusionImg2ImgPipeline,
         StableDiffusionInpaintPipeline,
         AutoPipelineForText2Image,
         AutoPipelineForImage2Image,
-        AutoPipelineForInpainting,
+        # AutoPipelineForInpainting,
         StableDiffusionControlNetInpaintPipeline,
         ControlNetModel,
         LEditsPPPipelineStableDiffusion,
@@ -112,12 +114,11 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
     reload_model = reload_model or current_mode != CURRENT_PIPELINE.get("mode")
 
     allow_inpaint_model = True
-    if 'xl' not in model_path.lower():
-        for c in controlnets or []:
-            if c['mode'] == 'inpaint':
-                print("using inpaint controlnet")
-                allow_inpaint_model = False
-                break
+    for c in controlnets or []:
+        if c['mode'] == 'inpaint':
+            print("using inpaint controlnet")
+            allow_inpaint_model = False
+            break
     
     load_model(model_path, lora_list, reload_model, (mode == 'inpaint2img') and allow_inpaint_model, use_lcm=use_lcm)
 
@@ -132,7 +133,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
             face_image != CURRENT_PIPELINE.get('face_image') or \
             adapter_image !=  CURRENT_PIPELINE.get('adapter_image') or \
             leditpp != CURRENT_PIPELINE.get('leditpp'):
-
+        
         if  CURRENT_PIPELINE.get('had_adapter'):
             if CURRENT_PIPELINE.get('pipeline') and hasattr(CURRENT_PIPELINE.get('pipeline'), 'unload_ip_adapter'):
                 CURRENT_PIPELINE['pipeline'].unload_ip_adapter()
@@ -209,19 +210,20 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
                         torch_dtype = torch.float32
                     inpainting_ctrl = ControlNetModel.from_pretrained('destitech/controlnet-inpaint-dreamer-sdxl', torch_dtype=torch_dtype, variant=variant)
                     pipe = AutoPipelineForImage2Image.from_pipe(CURRENT_MODEL_PARAMS['params']['unet'], controlnet=inpainting_ctrl)
-                else:
-                    print("Not inpainting")
-                    pipe = AutoPipelineForInpainting.from_pipe(
-                        CURRENT_MODEL_PARAMS['params']['unet']
-                    )
+                    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+                    pipe.scheduler.config.use_karras_sigmas = True
+                    ## https://github.com/huggingface/diffusers/discussions/7482
             else:
                 pipe = StableDiffusionInpaintPipeline(**CURRENT_MODEL_PARAMS['params'])
+                
         else:
             if current_model_is_xl_model():
                 pipe =  AutoPipelineForText2Image.from_pipe(
-                    CURRENT_MODEL_PARAMS['params']['unet']
+                    CURRENT_MODEL_PARAMS['params']['unet'],
+                    vae=CURRENT_MODEL_PARAMS['params']['vae'],
+                    requires_safety_checker=False
                 )
-                pipe.enable_model_cpu_offload()
+                # pipe.enable_model_cpu_offload()
             else:
                 if leditpp:
                     pipe = LEditsPPPipelineStableDiffusion(**CURRENT_MODEL_PARAMS['params'])
@@ -230,7 +232,7 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         # pipe.enable_model_cpu_offload()
         if CURRENT_MODEL_PARAMS['tiny_vae']:
             pipe.vae = CURRENT_MODEL_PARAMS['tiny_vae']
-
+        
         #if ti2_adapter:
         #    pipe.adapter = ti2_adapter
         #    pipe.adapter = pipe.adapter.to('cuda')
@@ -240,21 +242,31 @@ def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[]
         pipe.enable_xformers_memory_efficient_attention()
         pipe.unet.set_attn_processor(AttnProcessor2_0())
 
-        
-        adapter_models = []
+        xl_adapters = current_model_is_xl_model()
         had_adapter = False
+        adapter_models = []
         if face_image:
             adapter_models += [
-                'ip-adapter-plus-face_sd15.safetensors'
+                'ip-adapter-plus-face_sdxl_vit-h.safetensors' if xl_adapters else 'ip-adapter-plus-face_sd15.safetensors'
             ]
         if adapter_image:
             adapter_models += [
-                'ip-adapter-plus_sd15.safetensors'
+                'ip-adapter_sdxl_vit-h.safetensors' if xl_adapters else 'ip-adapter-plus_sd15.safetensors'
             ]
 
         
         if adapter_models and hasattr(pipe, 'load_ip_adapter'):
-            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="models", weight_name=adapter_models, cache_dir=CACHE_DIR)
+            subfolder='sdxl_models' if xl_adapters else "models"
+            add_args = {
+                'subfolder': subfolder,
+                'cache_dir': CACHE_DIR,
+                'weight_name': adapter_models,
+            }
+            #    add_args['image_encoder_folder'] = "sdxl_models/image_encoder"
+            if xl_adapters:
+                add_args['image_encoder_folder'] = "models/image_encoder"
+            print(add_args)
+            pipe.load_ip_adapter("h94/IP-Adapter", **add_args)
             pipe.set_ip_adapter_scale(0.6)
             had_adapter = True
 

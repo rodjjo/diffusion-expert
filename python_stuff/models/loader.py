@@ -1,6 +1,7 @@
 import json
 import os
 import safetensors
+import safetensors.torch
 import torch
 from collections import defaultdict
 from diffusers import (
@@ -18,7 +19,7 @@ from diffusers import (
     UNet2DConditionModel
 )
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
-from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer, AutoFeatureExtractor
+from transformers import CLIPTextModel,  CLIPTokenizer, AutoFeatureExtractor
 from omegaconf import OmegaConf
 from models.paths import CONFIG_DIR, CACHE_DIR, EMBEDDING_DIR, LORA_DIR
 from exceptions.exceptions import CancelException
@@ -26,78 +27,6 @@ from utils.settings import get_setting
 from utils.downloader import download_file
 
 from dexpert import progress_title, progress_canceled
-
-unnet_xl_config = json.loads('''
-{
-  "_class_name": "UNet2DConditionModel",
-  "_diffusers_version": "0.19.0.dev0",
-  "act_fn": "silu",
-  "addition_embed_type": "text_time",
-  "addition_embed_type_num_heads": 64,
-  "addition_time_embed_dim": 256,
-  "attention_head_dim": [
-    5,
-    10,
-    20
-  ],
-  "block_out_channels": [
-    320,
-    640,
-    1280
-  ],
-  "center_input_sample": false,
-  "class_embed_type": null,
-  "class_embeddings_concat": false,
-  "conv_in_kernel": 3,
-  "conv_out_kernel": 3,
-  "cross_attention_dim": 2048,
-  "cross_attention_norm": null,
-  "down_block_types": [
-    "DownBlock2D",
-    "CrossAttnDownBlock2D",
-    "CrossAttnDownBlock2D"
-  ],
-  "downsample_padding": 1,
-  "dual_cross_attention": false,
-  "encoder_hid_dim": null,
-  "encoder_hid_dim_type": null,
-  "flip_sin_to_cos": true,
-  "freq_shift": 0,
-  "in_channels": 4,
-  "layers_per_block": 2,
-  "mid_block_only_cross_attention": null,
-  "mid_block_scale_factor": 1,
-  "mid_block_type": "UNetMidBlock2DCrossAttn",
-  "norm_eps": 1e-05,
-  "norm_num_groups": 32,
-  "num_attention_heads": null,
-  "num_class_embeds": null,
-  "only_cross_attention": false,
-  "out_channels": 4,
-  "projection_class_embeddings_input_dim": 2816,
-  "resnet_out_scale_factor": 1.0,
-  "resnet_skip_time_act": false,
-  "resnet_time_scale_shift": "default",
-  "sample_size": 128,
-  "time_cond_proj_dim": null,
-  "time_embedding_act_fn": null,
-  "time_embedding_dim": null,
-  "time_embedding_type": "positional",
-  "timestep_post_act": null,
-  "transformer_layers_per_block": [
-    1,
-    2,
-    10
-  ],
-  "up_block_types": [
-    "CrossAttnUpBlock2D",
-    "CrossAttnUpBlock2D",
-    "UpBlock2D"
-  ],
-  "upcast_attention": null,
-  "use_linear_projection": true
-}
-''')
 
 scheduler_config_sdxl = json.loads(
 '''
@@ -621,9 +550,7 @@ def load_embeddings(text_encoder, tokenizer):
     for token_id, embedding in zip(token_ids, embeddings):
         text_encoder.get_input_embeddings().weight.data[token_id] = embedding
 
-
-def load_lora_list(lora_list, unet, text_model):
-    lora_list.sort(key=lambda s: (2, s) if 'lcm' in s[0] else (1, s))
+def scale_lora_list(lora_list):
     wsum = 0
     for lm in lora_list:
         if 'lcm' in lm[0]:
@@ -633,12 +560,19 @@ def load_lora_list(lora_list, unet, text_model):
         scale = 1.0 / wsum
     else:
         scale = 1
+    for lm in range(len(lora_list)):
+        lora_list[lm] = (lora_list[lm][0], scale * lora_list[lm][1])
+
+
+def load_lora_list(lora_list, unet, text_model):
+    lora_list.sort(key=lambda s: (2, s) if 'lcm' in s[0] else (1, s))
+    scale_lora_list(lora_list)
     for lm in lora_list:
         if 'lcm' in lm[0]:
             report(f"Adding lora {os.path.basename(lm[0])} with weight 1.0")
             load_lora_weights(unet, text_model, lm[0], 1.0)    
             continue
-        w = scale * lm[1]
+        w = lm[1]
         report(f"Adding lora {os.path.basename(lm[0])} with weight {w}")
         load_lora_weights(unet, text_model, lm[0], w)
 
@@ -841,6 +775,8 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             if MODEL_RAM_CACHE[cache_key]:
                 MODEL_RAM_CACHE[cache_key]['taesd'] = tiny_vae
             report("AutoencoderTiny Vae loaded")
+    elif xl_model and get_setting('use_float16', True):
+        vae = AutoencoderKL.from_pretrained('madebyollin/sdxl-vae-fp16-fix', torch_dtype=usefp16[True],  cache_dir=CACHE_DIR)
     #else:
     #    vae = AutoencoderKL.from_pretrained(
     #        "segmind/SSD-1B", 
@@ -895,7 +831,6 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             safety_checker = None
             feature_extractor = None
             requires_safety_checker = False
-
     else:
          text_model = None
          report("Unexpected model type loaded. It's not FrozenCLIPEmbedder")
@@ -905,13 +840,22 @@ def load_stable_diffusion_model(model_path: str, lora_list: list, for_inpainting
             pass
         else:
             text_model.to('cpu')
+            lora_list = [l for l in lora_list if 'xl' not in l[0].lower()]
             load_embeddings(text_model, tokenizer)
             load_lora_list(lora_list + [(get_lora_location('lcm-lora-sdv1-5'), 1.0)], unet, text_model)
     elif not xl_model:
         unet.to('cpu')
         text_model.to('cpu')
+        lora_list = [l for l in lora_list if 'xl' not in l[0].lower()]
         load_lora_list(lora_list, unet, text_model)
         load_embeddings(text_model, tokenizer)
+    else:
+        scale_lora_list(lora_list)
+        lora_list = [l for l in lora_list if 'xl' in l[0].lower()]
+        for l in lora_list:
+            report(f"Loading XL lora file from {l[0]}")
+            sd = safetensors.torch.load_file(l[0])
+            unet.load_lora_weights(sd)
 
     if not xl_model:
         if vae:

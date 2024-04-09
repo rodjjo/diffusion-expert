@@ -139,5 +139,9 @@ int GeneratorTxt2Image::batchSize() {
     return batch_size_;
 }
 
+void GeneratorTxt2Image::next_seed() {
+    seed_ += 1;
+}
+
 } // namespace dexpert
 
