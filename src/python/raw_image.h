@@ -67,6 +67,7 @@ class RawImage {
     void drawCircleColor(int x, int y, int radius, uint8_t color[4], uint8_t bgcolor[4], bool clear);
     void drawCircle(int x, int y, int radius, bool clear);
     void fillWithMask(int x, int y, RawImage *mask);
+    static image_ptr_t differenceToMask(RawImage *image1, RawImage *image2, bool invert_mask);
 
  private:
     unsigned char *buffer_;

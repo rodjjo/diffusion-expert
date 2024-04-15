@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <list>
+#include <map>
 #include <string>
 #include <memory>
 #include <functional>
@@ -56,6 +57,7 @@ class txt2img_config_t {
     RawImage *face = NULL;
     RawImage *adapter_image = NULL;
     std::list<control_net_t> controlnets;
+    std::map<std::string, std::string> extra_config;
     virtual ~txt2img_config_t() {};
     virtual const void fill_prompt_dict(py11::dict &params) const;
 };

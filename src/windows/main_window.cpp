@@ -334,14 +334,14 @@ void MainWindow::scaledInpaint(int size) {
         show_error("Image too big");
         return;
     }
-    auto result = img->resizeImage(w, h);
-    result = get_stable_diffusion_image(result.get(), painting_inpaint_masked);
+    auto source_image = img->resizeImage(w, h);
+    auto result = get_stable_diffusion_image(source_image.get(), painting_inpaint_masked);
     if (result) {
+        auto init_mask = RawImage::differenceToMask(source_image.get(), result.get(), false);
         bool ok = false;
         float re_scale = 1.0 / scale;
         std::string error_msg;
-
-        auto mask = copy_inpaint_merge_mask(img->resizeImage(w, h), result);
+        auto mask = copy_inpaint_merge_mask(img->resizeImage(w, h), result, init_mask);
         if (!mask) {
             return;
         }

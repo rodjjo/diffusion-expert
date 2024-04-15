@@ -138,6 +138,14 @@ void ImageViewer::set_src(image_ptr_t image) {
     panel_->setBrushSize(16);
 }
 
+void ImageViewer::set_mask(image_ptr_t image) {
+    panel_->setLayerImage(image_type_mask, image);
+    panel_->setEditType(edit_type_mask);
+    panel_->setLayerVisible(image_type_mask, true);
+    panel_->setTool(image_tool_brush);
+    panel_->setBrushSize(16);
+}
+
 image_ptr_t ImageViewer::get_merged() {
     image_ptr_t r;
     if (src_.get() != NULL) {
@@ -178,9 +186,11 @@ image_ptr_t copy_inpaint(image_ptr_t src_image, image_ptr_t result_image) {
     return src_image;
 }
 
-image_ptr_t copy_inpaint_merge_mask(image_ptr_t src_image, image_ptr_t result_image) {
+image_ptr_t copy_inpaint_merge_mask(image_ptr_t src_image, image_ptr_t result_image, image_ptr_t initial_mask) {
     ImageViewer viewer(result_image, true);
     viewer.set_src(src_image);
+    if (initial_mask)
+        viewer.set_mask(initial_mask);
     viewer.show();
     if (viewer.confirmed()) {
         return viewer.get_merge_mask();

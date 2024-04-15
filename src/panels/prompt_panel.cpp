@@ -56,6 +56,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     free_lunch_ = new Fl_Check_Button(0, 0, 1, 1, "Free Lunch");
     control_inpaint_ = new Fl_Check_Button(0, 0, 1, 1, "Inpaint with controlnet");
     leditpp_ = new Fl_Check_Button(0, 0, 1, 1, "LEdit++");
+    use_ella_ = new Fl_Check_Button(0, 0, 1, 1, "Use Ella");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -97,6 +98,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     }
 
     leditpp_->value(0);
+    use_ella_->value(0);
 
     if (last_use_lcm) {
         use_lcm_->value(1);
@@ -408,13 +410,19 @@ void PromptPanel::alignComponents() {
         100,
         25
     );
+    use_ella_->resize(
+        restore_face_->x(),
+        restore_face_->y() + restore_face_->h() + 5,
+        100,
+        25
+    );
     face_button_->size(75, 24);
     adapter_button_->size(75, 24);
     face_button_->position(leditpp_->x() +  leditpp_->w() + 5,
         models_->y() + models_->h() + 5);
     adapter_button_->position(face_button_->x() +  face_button_->w() + 5,
         models_->y() + models_->h() + 5);
-    textualPanel_->resize(x() + 5, restore_face_->y() + restore_face_->h() + 3, w() - 10, 160);
+    textualPanel_->resize(x() + 5, use_ella_->y() + use_ella_->h() + 3, w() - 10, 160);
     loraPanel_->resize(x() + 5, textualPanel_->y() + textualPanel_->h() + 3, w() - 10, 160);
 }
 
@@ -582,6 +590,10 @@ bool PromptPanel::shouldUseFreeLunch() {
 bool PromptPanel::shouldInpaintControlnet() {
     last_control_inpaint = control_inpaint_->value() != 0;
     return last_control_inpaint;
+}
+
+bool PromptPanel::shouldUseElla() {
+    return use_ella_->value() != 0;
 }
 
 } // namespace dexpert

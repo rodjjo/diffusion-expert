@@ -10,7 +10,8 @@ SETTINGS = {
     'gfpgan.has_aligned': False,
     'gfpgan.only_center_face': False,
     'gfpgan.paste_back': True,
-    'gfpgan.weight': 0.5
+    'gfpgan.weight': 0.5,
+    'ella.enabled': False
 }
 
 USER_SETTINGS = {

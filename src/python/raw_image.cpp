@@ -281,6 +281,35 @@ void RawImage::pasteInvertMask(RawImage *image) {
     }
 }
 
+image_ptr_t RawImage::differenceToMask(RawImage *image1, RawImage *image2, bool invert_mask) {
+    // compare image1 and image2 and create a mask where the pixels are different
+    image_ptr_t result;
+    if (image1->w() != image2->w() || image1->h() != image2->h() || image1->format() != image2->format() || image1->format() == img_gray_8bit)  {
+        return result;
+    }
+    result = std::make_shared<RawImage>((const unsigned char *) NULL, image1->w(), image1->h(), img_rgba, false);
+    unsigned char color[2] = {invert_mask ? 255 : 0, invert_mask ? 0 : 255};
+    unsigned char *mask_p = result->buffer_;
+    unsigned char *image1_p = image1->buffer_;
+    unsigned char *image2_p = image2->buffer_;
+    bool is_rgba = image1->format() == img_rgba;
+    int has_diff = 0;
+    for (int i = 0; i < result->buffer_len_; i += 4) {
+        has_diff = 0;
+        for (int i2 = 0; i2 < 3 + (is_rgba ? 1 : 0); i2 += 1) {
+            if (*image1_p != *image2_p) {
+                has_diff = 1; 
+            }
+            ++image1_p; ++image2_p; 
+        }
+        for (int i2 = 0; i2 < 4; i2 += 1) {
+            *mask_p = color[has_diff]; 
+            ++mask_p;
+        }
+    }
+    return result;
+}
+
 void RawImage::pasteFrom(int x, int y, float zoom, RawImage *image) {
     int w = this->w();
     int h = this->h();

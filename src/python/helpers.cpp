@@ -207,6 +207,9 @@ namespace dexpert
             }
             params["adapter_image"] = adapt_image; 
             
+            for (auto c : this->extra_config) {
+                params[c.first.c_str()] = c.second;
+            }
 
             if (!this->controlnets.empty())
             {

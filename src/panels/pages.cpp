@@ -240,6 +240,8 @@ void Pages::textToImage() {
     }
     
     bool reload = promptPanel_->shouldReload(true);
+    extra_config_t extra_cfg;
+    extra_cfg["use_ella"] = promptPanel_->shouldUseElla() ? "yes" : "no";
 
     std::shared_ptr<GeneratorBase> g;
     if (inputImage_->getImg2ImgImage()) {
@@ -292,7 +294,8 @@ void Pages::textToImage() {
             promptPanel_->shouldUseFreeLunch(),
             face_image,
             adapt_image,
-            promptPanel_->shouldUseLEditPP()
+            promptPanel_->shouldUseLEditPP(),
+            extra_cfg
         ));
     } else {
         g.reset(new GeneratorTxt2Image(
@@ -315,7 +318,8 @@ void Pages::textToImage() {
             promptPanel_->shouldUseLcm(),
             promptPanel_->shouldUseFreeLunch(),
             face_image,
-            adapt_image
+            adapt_image,
+            extra_cfg
         ));
     }
     
@@ -357,7 +361,7 @@ void Pages::textToImage() {
             if (should_continue) {
                 for (auto it : images) {
                     picture_number += 1;
-                    sprintf(buffer, "%04d%s", picture_number, extension.c_str());
+                    sprintf(buffer, "-%04d%s", picture_number, extension.c_str());
                     if (!get_sd_state()->saveImage((path_to_save + buffer).c_str(), it.get())) {
                         should_continue = false;
                         break;

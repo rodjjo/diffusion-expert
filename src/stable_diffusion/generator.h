@@ -8,6 +8,7 @@
 #include <functional>
 #include <list>
 #include <vector>
+#include <map>
 #include <memory>
 #include "src/python/raw_image.h"
 
@@ -31,6 +32,7 @@ typedef enum {
 
 typedef std::function<void(bool success, const char* msg, std::list<image_ptr_t> result)> generator_cb_t;
 
+typedef std::map<std::string, std::string> extra_config_t;
 
 class SeedGenerator {
  public:

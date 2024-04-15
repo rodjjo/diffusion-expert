@@ -44,7 +44,8 @@ class GeneratorImg2Image: public GeneratorBase {
             bool free_lunch,
             image_ptr_t face_image,
             image_ptr_t adapter_image,
-            bool leditpp
+            bool leditpp,
+            extra_config_t extra_config
         );
 
         void generate(
@@ -89,6 +90,7 @@ class GeneratorImg2Image: public GeneratorBase {
         bool use_lcm_ = false;
         bool free_lunch_ = false;
         bool leditpp_ = false;
+        extra_config_t extra_config_;
 };
 
 

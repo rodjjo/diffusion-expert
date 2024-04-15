@@ -26,6 +26,7 @@ class ImageViewer {
     virtual ~ImageViewer();
     void show();
     void set_src(image_ptr_t image);
+    void set_mask(image_ptr_t image);
     image_ptr_t get_merged();
     image_ptr_t get_merge_mask();
     bool confirmed();
@@ -52,7 +53,7 @@ class ImageViewer {
 
 void view_image(image_ptr_t image);
 image_ptr_t copy_inpaint(image_ptr_t src_image, image_ptr_t result_image);
-image_ptr_t copy_inpaint_merge_mask(image_ptr_t src_image, image_ptr_t result_image);
+image_ptr_t copy_inpaint_merge_mask(image_ptr_t src_image, image_ptr_t result_image, image_ptr_t initial_mask);
 
 } // namespace dexpert
 

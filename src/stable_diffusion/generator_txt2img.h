@@ -37,7 +37,8 @@ class GeneratorTxt2Image: public GeneratorBase {
             bool use_lcm,
             bool free_lunch,
             image_ptr_t face_image,
-            image_ptr_t adapter_image
+            image_ptr_t adapter_image,
+            extra_config_t extra_config
         );
 
         void generate(
@@ -68,6 +69,7 @@ class GeneratorTxt2Image: public GeneratorBase {
         bool reload_model_ = false;
         bool use_lcm_ = false;
         bool free_lunch_ = false;
+        extra_config_t extra_config_;
 };
 
 

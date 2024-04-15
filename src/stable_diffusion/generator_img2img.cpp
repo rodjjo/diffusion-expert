@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "src/stable_diffusion/generator_img2img.h"
 #include "src/python/helpers.h"
 #include "src/python/wrapper.h"
@@ -45,7 +46,8 @@ namespace dexpert
         bool free_lunch,
         image_ptr_t face_image,
         image_ptr_t adapter_image,
-        bool leditpp) : GeneratorBase(seed_gen, variation),
+        bool leditpp,
+        extra_config_t extra_config) : GeneratorBase(seed_gen, variation),
                                        prompt_(prompt),
                                        negative_(negative),
                                        model_(model),
@@ -69,7 +71,8 @@ namespace dexpert
                                        free_lunch_(free_lunch),
                                        face_image_(face_image),
                                        adapter_image_(adapter_image),
-                                       leditpp_(leditpp)
+                                       leditpp_(leditpp),
+                                       extra_config_(extra_config)
     {
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
@@ -131,7 +134,8 @@ namespace dexpert
             this->free_lunch_,
             this->face_image_,
             this->adapter_image_,
-            this->leditpp_));
+            this->leditpp_,
+            this->extra_config_));
         auto g = (GeneratorImg2Image *)d.get();
         if (img) {
             g->setImage(img);
@@ -182,6 +186,7 @@ namespace dexpert
         params.use_lcm = use_lcm_;
         params.free_lunch = free_lunch_;
         params.leditpp = leditpp_;
+        params.extra_config = extra_config_;
         reload_model_ = false;
 
         if (mask_)
@@ -312,7 +317,7 @@ namespace dexpert
     }
 
     void GeneratorImg2Image::next_seed() {
-        seed_ += 17;
+        seed_ = rand();
     }
 
 } // namespace dexpert

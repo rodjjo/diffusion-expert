@@ -11,6 +11,7 @@ from utils.settings import get_setting
 from utils.images import pil_as_dict, pil_from_dict, inpaint_fill_image, inpaint_noise
 from models.my_gfpgan import gfpgan_dwonload_model, gfpgan_restore_faces
 from models.paths import LORA_DIR
+from ella.inference import create_ella_prompts, inject_ella, offload_ella_for_pipe
 from PIL import Image
 from torchvision.transforms.functional import pil_to_tensor
 
@@ -353,12 +354,21 @@ def _run_pipeline(pipeline_type, params):
                 edit_threshold=1.0 - params["strength"],
             ).images 
         else:
+            additional_args['guidance_scale'] = cfg
+            additional_args['num_inference_steps'] = steps
+            if params.get("use_ella", "no") == "yes":
+                inject_ella(pipeline)
+                report("Using ella to create prompt embeddings")
+                prompt_embeds, negative_prompt_embeds = create_ella_prompts(pipeline, prompt, negative)
+                # additional_args['prompt'] = prompt
+                additional_args['prompt_embeds'] = prompt_embeds
+                additional_args['negative_prompt_embeds'] = negative_prompt_embeds
+            else:
+                offload_ella_for_pipe(pipeline)
+                additional_args['prompt'] = prompt
+                additional_args['negative_prompt'] = negative
             report("generating the variation" if variation_enabled else "generating the image")
             result = pipeline(
-                prompt, 
-                negative_prompt=negative,
-                guidance_scale=cfg, 
-                num_inference_steps=steps,
                 **additional_args,
             ).images 
 

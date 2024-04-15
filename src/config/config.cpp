@@ -113,7 +113,7 @@ int Config::windowWidth() {
 }
 
 int Config::windowHeight() {
-    return 640;
+    return 680;
 }
 
 int Config::screenWidth() {

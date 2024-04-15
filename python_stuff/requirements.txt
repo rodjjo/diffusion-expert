@@ -25,3 +25,4 @@ pynvml==11.5.0
 rembg==2.0.52
 spandrel==0.3.1
 # codeformer==0.0.8
+sentencepiece==0.2.0
