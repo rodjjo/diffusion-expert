@@ -142,6 +142,7 @@ def load_ella_for_pipe(pipe, ella):
     pipe.ella_t5_encoder = T5TextEmbedder().to(pipe.device, dtype=torch.float16)
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 
+
 def inject_ella(pipeline):
     if getattr(pipeline, 'ella_t5_encoder', None) is not None:
         return
@@ -157,10 +158,13 @@ def offload_ella_for_pipe(pipe):
         pipe.ella_t5_encoder = None
 
 
-
 def create_ella_prompts(pipe, prompt: str, negative: str):
-    prompt = [prompt] if isinstance(prompt, str) else prompt
-    negative = [negative] if isinstance(negative, str) else negative
+    if len(prompt.strip()) < 1:
+        prompt = "any thing"
+    if len(negative.strip()) < 1:
+        negative = "ugly"
+    prompt = [prompt] 
+    negative = [negative]
     prompt_embeds = pipe.ella_t5_encoder(prompt, max_length=128).to(pipe.device, pipe.dtype)
     negative_prompt_embeds = pipe.ella_t5_encoder(negative, max_length=128).to(pipe.device, pipe.dtype)
     return prompt_embeds, negative_prompt_embeds

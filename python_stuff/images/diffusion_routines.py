@@ -339,7 +339,7 @@ def _run_pipeline(pipeline_type, params):
                 additional_args["ip_adapter_image"] = image_list_adapt
 
         
-        if leditpp:
+        if leditpp and getattr(pipeline, 'invert') is not None:
             report("Inverting image")
             pipeline.invert(
                 image=pil_from_dict(input_image),

@@ -27,6 +27,10 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     this->begin();
     positivePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Prompt");
     negativePrompt_ = new Fl_Multiline_Input( 0, 0, 1, 1, "Negative Prompt");
+    positivePrompt_->callback(editor_changed_cb, this);
+    negativePrompt_->callback(editor_changed_cb, this);
+    positivePrompt_->when(FL_WHEN_CHANGED);
+    negativePrompt_->when(FL_WHEN_CHANGED);
     interrogateBtn1_.reset(new Button("?", [this] {
         this->interrogate("Clip");
     }));
@@ -35,6 +39,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     }));
     negativeRealisticBtn_.reset(new Button("!", [this] {
         this->negativePrompt_->value("anime, manga, drawing, cartoon, 3d, cg, illustration, worst quality, normal quality, low quality, low res, blurry, text, ugly, monochrome, horror, geometry, mutation");
+        this->editor_changed_cb(this->negativePrompt_);
     }));
     face_button_.reset(new Button("Set Face", [this] {
         this->toggle_face();
@@ -112,6 +117,30 @@ PromptPanel::~PromptPanel() {
 
 }
 
+void PromptPanel::editor_changed_cb(Fl_Widget* wg, void* data) {
+    ((PromptPanel *) data)->editor_changed_cb(wg);
+}
+
+void PromptPanel::editor_changed_cb(Fl_Widget* wg) {
+    Fl_Multiline_Input *editor = (Fl_Multiline_Input *) wg;
+    const char *p = editor->value();
+    int char_count = 0;
+    bool in_lora = false;
+    while (*p != '\0') {
+        if (*p == '<') {
+            in_lora = true;
+        } else if (*p == '>') { 
+            in_lora = false;
+        } else if (!in_lora) {
+            char_count += 1;
+        }
+        ++p;
+    }
+    char buffer[128] = "";
+    sprintf(buffer, "%s [%d]", wg == positivePrompt_ ? "Prompt" : "Negative Prompt", char_count);
+    editor->copy_label(buffer);
+}
+
 const char *PromptPanel::getPrompt() {
     last_prompt = positivePrompt_->value();
     return positivePrompt_->value();
@@ -147,6 +176,7 @@ void PromptPanel::interrogate(const char* model) {
         show_error(error);
     } else {
         positivePrompt_->value(result.c_str());
+        editor_changed_cb(positivePrompt_);
     }
 }
 

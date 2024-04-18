@@ -61,6 +61,9 @@ class PromptPanel: public EventListener, public Fl_Group {
     void interrogate(const char* model);
     void toggle_face();
     void toggle_adapter();
+    static void editor_changed_cb(Fl_Widget* wg, void* data);
+    void editor_changed_cb(Fl_Widget* wg);
+
  protected:
     void resize(int x, int y, int w, int h) override;
     void event_trigged(const void *sender, int event, void *data) override;
