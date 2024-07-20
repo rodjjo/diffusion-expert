@@ -113,22 +113,22 @@ void Window::handle_textentered(uint32_t unicode) {
 void Window::handle_mouse_left_pressed(int x, int y) {
     auto component = find_top_clickable(x, y);
     if (component) {
-        replace_focus(component->share());
+        replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
     }
 }
 
-void Window::replace_focus(std::shared_ptr<Component> component) {
+void Window::replace_focus(Component *component) {
     if (!component->focusable()) {
         return;
     }
-    if (component_in_focus_.get() != NULL && component != component_in_focus_) {
+    if (component_in_focus_.get() != NULL && component != component_in_focus_.get()) {
         auto lost = component_in_focus_;
-        component_in_focus_ = component;
+        component_in_focus_ = component->share();
         lost->handle_focus_lost();
         component_in_focus_->handle_focus_got();
     } else if (!component_in_focus_) {
-        component_in_focus_ = component;
+        component_in_focus_ = component->share();
     }
 }
 
@@ -143,7 +143,7 @@ void Window::remove_focus() {
 void Window::handle_mouse_middle_pressed(int x, int y) {
     auto component = find_top_clickable(x, y);
     if (component) {
-        replace_focus(component->share());
+        replace_focus(component);
         component->handle_mouse_middle_pressed(x, y);
     }
 }
@@ -151,7 +151,7 @@ void Window::handle_mouse_middle_pressed(int x, int y) {
 void Window::handle_mouse_right_pressed(int x, int y) {
     auto component = find_top_clickable(x, y);
     if (component) {
-        replace_focus(component->share());
+        replace_focus(component);
         component->handle_mouse_right_pressed(x, y);
     }
 }
@@ -162,6 +162,30 @@ void Window::handle_mouse_left_released(int x, int y) {
         component->handle_mouse_left_released(x, y);
     }
 }
+
+void Window::replace_drag(Component *component) {
+    if (!component->drag_enabled() || component == component_in_drag_.get()) {
+        return;
+    }
+    auto lost = component_in_drag_;
+    component_in_drag_ = component->share();
+    if (lost) {
+        lost->drag_end();
+        drop_end(lost.get());
+    }
+    component_in_drag_->drag_begin();
+    drop_begin(component_in_drag_.get());
+}
+
+void Window::remove_drag() {
+    if (component_in_drag_) {
+        component_in_drag_->drag_end();
+        drop_end(component_in_drag_.get());
+        component_in_drag_.reset();
+    }
+}
+
+
 
 void Window::handle_mouse_middle_released(int x, int y) {
     auto component = find_top_clickable(x, y);

@@ -13,7 +13,7 @@ namespace {
     bool global_damaged_ = true;
 }
 
-PaintingContext::PaintingContext(int target_h, Component *component) {
+ScissorContext::ScissorContext(int target_h, Component *component) {
     int sz[4];
     glGetIntegerv(GL_SCISSOR_BOX, &sz[0]);
     view_x_ = sz[0];
@@ -22,9 +22,9 @@ PaintingContext::PaintingContext(int target_h, Component *component) {
     view_h_ = sz[3];
 
     int nx = component->abs_x();
-    int ny = target_h - (component->abs_y() + component->h());
-    int nw = component->w();
-    int nh = component->h();
+    int ny = target_h - (component->abs_y() + component->abs_h());
+    int nw = component->abs_w();
+    int nh = component->abs_h();
 
     if (!glIsEnabled(GL_SCISSOR_TEST)) {
         disable_scissor_ = true;
@@ -61,11 +61,17 @@ PaintingContext::PaintingContext(int target_h, Component *component) {
     glScissor(nx, ny, nw, nh);
 }
 
-PaintingContext::~PaintingContext() {
+ScissorContext::~ScissorContext() {
     glScissor(view_x_, view_y_, view_w_, view_h_);
     if (disable_scissor_) {
         glDisable(GL_SCISSOR_TEST);
     }
+}
+
+bool ScissorContext::visible() {
+    if (view_w_ < 1) return false;
+    if (view_h_ < 1) return false;
+    return true;
 }
 
 ComponentList::ComponentList(Component *parent) : parent_(parent) {
@@ -129,9 +135,12 @@ std::shared_ptr<Component> Component::share() {
 void Component::add(std::shared_ptr<Component> child) {
     if (child->parent_) {
         child->parent_->items_.remove(child.get());
+        child->parent_->damaged(true);
     }
     this->items_.add(child);
     child->parent_ = this;
+    child->parent_changed();
+    child->damaged(true);
 }
 
 int Component::zorder() const {
@@ -167,19 +176,12 @@ void Component::visible(bool value) {
 }
 
 bool Component::drag_enabled() {
-    return drag_enabled_;
+    return false;
 }
 
-void Component::drag_enabled(bool value) {
-    drag_enabled_ = value;
-}
 
 bool Component::drop_enabled() {
-    return drop_enabled_;
-}
-
-void Component::drop_enabled(bool value) {
-    drop_enabled_ = value;
+    return false;
 }
 
 int Component::x() {
@@ -264,6 +266,9 @@ bool Component::focusable() {
     return false;
 }
 
+void Component::parent_changed() {
+}
+
 void Component::handle_parent_resized() {
 }
 
@@ -292,18 +297,51 @@ void Component::handle_mouse_moved(int x, int y) {
 }
 
 void Component::handle_keypressed(int key) {
-
 }
 
 void Component::handle_mouse_wheel(int8_t direction, int x, int y) {
 }
 
 void Component::handle_focus_lost() {
-
 }
 
 void Component::handle_focus_got() {
+}
 
+void Component::drag_begin() {
+}
+
+void Component::drag_end() {
+}
+
+void Component::drop_begin() {
+}
+
+void Component::drop_end() {
+}
+
+void Component::drop_begin(Component *source) {
+    if (accept_drop(source)) {
+        drop_begin();
+    }
+    for (size_t i = 0; i < items_.size(); i++) {
+        items_[i].drop_begin(source);
+    }
+}
+
+void Component::drop_end(Component *source) {
+    if (accept_drop(source)) {
+        drop_end();
+    }
+    for (size_t i = 0; i < items_.size(); i++) {
+        items_[i].drop_end(source);
+    }
+}
+
+
+
+ComponentList & Component::items() {
+    return items_;
 }
 
 void Component::fire_parent_resized() {
@@ -317,23 +355,27 @@ Component *Component::find_top_clickable(int &x, int &y) {
     if (!visible() || !enabled()) {
         return NULL;
     }
-
     Component *result = NULL, *next = NULL;
 
     if (clickable()) {
         result = this;
     }
 
-    x -= this->x();
-    y -= this->y();
+    float abs_scale = this->abs_scale();
+    if (abs_scale != 0) {
+        abs_scale = 1.0 / abs_scale;
+    }
+
+    x -= this->x() * abs_scale;
+    y -= this->y() * abs_scale;
 
     for (size_t i = 0; i < items_.size() && next == NULL; i++) {
         if (!items_[i].enabled()) continue;   
         if (!items_[i].visible()) continue;   
-        if (items_[i].x() > x) continue;   
-        if (items_[i].y() > y) continue;
-        if (items_[i].x() + items_[i].w() < x) continue;
-        if (items_[i].y() + items_[i].h() < y) continue;
+        if (items_[i].x() * abs_scale > x) continue;   
+        if (items_[i].y() * abs_scale > y) continue;
+        if ((items_[i].x() + items_[i].w()) * abs_scale < x) continue;
+        if ((items_[i].y() + items_[i].h()) * abs_scale < y) continue;
         next = items_[i].find_top_clickable(x, y);
     }
 
@@ -348,27 +390,76 @@ void Component::paint_children(void *render_window) {
     if (!visible()) {
         return;
     }
-    PaintingContext context(static_cast<sf::RenderWindow *>(render_window)->getSize().y, this);
-    paint(render_window);
-    for (size_t i = 0; i < items_.size(); i++) {
-        items_[i].paint_children(render_window);
+
+    ScissorContext context(static_cast<sf::RenderWindow *>(render_window)->getSize().y, this);
+    if (context.visible()) {
+        paint(render_window);
+        for (size_t i = 0; i < items_.size(); i++) {
+            items_[i].paint_children(render_window);
+        }
     }
 }
 
 int Component::abs_x() {
     if (parent_) {
-        return x_ + parent_->x_;
+        return (x_ * abs_scale())  + parent_->abs_x() - (scroll_x_ * abs_scale());
     }
-    return x_;
+    return (x_ * abs_scale()) - (scroll_x_ * abs_scale());
 }
 
 int Component::abs_y() {
     if (parent_) {
-        return y_ + parent_->y_;
+        return (y_ * abs_scale())  + parent_->abs_y() - (scroll_y_ * abs_scale());
     }
-    return y_;
+    return (y_ * abs_scale()) - (scroll_y_ * abs_scale());
 }
 
+int Component::scroll_x() {
+    return scroll_x_;
+}
+
+int Component::scroll_y() {
+    return scroll_y_;
+}
+
+float Component::scale() {
+    return scale_;
+}
+
+float Component::abs_scale() {
+    if (parent_) {
+        return scale_ * parent_->abs_scale();
+    }
+    return scale_;
+}
+
+int Component::abs_w() {
+    return w_ * abs_scale();
+}
+
+int Component::abs_h() {
+    return h_ * abs_scale();
+}
+
+void Component::scroll_x(int value) {
+    scroll_x_ = value;
+}
+
+void Component::scroll_y(int value) {
+    scroll_y_ = value;
+}
+
+void Component::scale(float value) {
+    scale_ = value;
+}
+
+bool Component::accept_drag(Component *comp) {
+    return false;
+}
+
+bool Component::accept_drop(Component *comp) {
+    return false;
+}
 
 
 }  // namespace dfe 

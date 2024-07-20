@@ -26,7 +26,9 @@ class Window : public Component {
 
   private:
     void remove_focus();
-    void replace_focus(std::shared_ptr<Component> component);
+    void remove_drag();
+    void replace_focus(Component *component);
+    void replace_drag(Component *component);
 
   private:
     std::shared_ptr<void> window_;
@@ -34,6 +36,9 @@ class Window : public Component {
     bool mouse_middle_pressed_ = false;
     bool mouse_right_pressed_ = false;
     std::shared_ptr<Component> component_in_focus_;
+    std::shared_ptr<Component> component_in_drag_;
+    std::shared_ptr<Component> component_in_drop_;
+
 };
 
 

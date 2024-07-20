@@ -7,10 +7,11 @@ namespace dfe_ui {
 
 class Component;
 
-class PaintingContext {
+class ScissorContext {
   public:
-    PaintingContext(int target_h, Component *component);
-    ~PaintingContext();
+    ScissorContext(int target_h, Component *component);
+    ~ScissorContext();
+    bool visible();
   private:
     bool disable_scissor_ = false;
     float view_x_ = 0;
@@ -43,30 +44,53 @@ class Component : public std::enable_shared_from_this<Component>  {
     Component();
     virtual ~Component();
     std::shared_ptr<Component> share();
-    void add(std::shared_ptr<Component> child);
+    virtual void add(std::shared_ptr<Component> child);
     int zorder() const;
     void zorder(int value);
     virtual void paint(void *render_window);
     bool damaged();
     void damaged(bool value);
     static bool global_damaged();
-    
     bool visible();
     void visible(bool value);
     bool enabled();
     void enabled(bool value);
-    bool drag_enabled();
-    void drag_enabled(bool value);
-    bool drop_enabled();
-    void drop_enabled(bool value);
+
+    virtual bool drag_enabled();
+    virtual bool drop_enabled();
+
+    virtual bool accept_drag(Component *comp);
+    virtual bool accept_drop(Component *comp);
+    
+    virtual void drag_begin();
+    virtual void drag_end();
+    virtual void drop_begin();
+    virtual void drop_end();
+    
+    void drop_begin(Component *source);
+    void drop_end(Component *source);
+
+    virtual void parent_changed();
+
     int x();
     int y();
     int w();
     int h();
+    int scroll_x();
+    int scroll_y();
+    float scale();
+    float abs_scale();
     void x(int value);
     void y(int value);
     void w(int value);
     void h(int value);
+    int abs_x();
+    int abs_y();
+    int abs_w();
+    int abs_h();
+    void scroll_x(int value);
+    void scroll_y(int value);
+    void scale(float value);
     void size(int w, int h);
     void coordinates(int x, int y, int w, int h);
     virtual bool clickable();
@@ -74,8 +98,9 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual bool focusable();
     Component *find_top_clickable(int &x, int &y);
     void paint_children(void *render_window);
-    int abs_x();
-    int abs_y();
+    
+    ComponentList & items();
+
    public:
     virtual void handle_parent_resized();
     virtual void handle_textentered(uint32_t unicode);
@@ -99,9 +124,10 @@ class Component : public std::enable_shared_from_this<Component>  {
     bool                      enabled_ = true;
     bool                      visible_ = true;
     bool                      damaged_ = true;
-    bool                      drag_enabled_ = false;
-    bool                      drop_enabled_ = false;
     int                       z_order_ = 0;
+    int                       scroll_x_ = 0;
+    int                       scroll_y_ = 0;
+    float                     scale_ = 1.0;
     int                       x_ = 0;
     int                       y_ = 0;
     int                       w_ = 0;

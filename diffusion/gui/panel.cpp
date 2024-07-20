@@ -19,7 +19,7 @@ void Panel::paint(void *render_window) {
     if (!visible()) {
         return;
     }
-    sf::RectangleShape rect(sf::Vector2f(w(), h()));
+    sf::RectangleShape rect(sf::Vector2f(abs_w(), abs_h()));
     rect.setPosition(sf::Vector2f(abs_x(), abs_y()));
     rect.setFillColor(sf::Color(bg_color_));
     rect.setOutlineColor(sf::Color(fg_color_));
@@ -63,7 +63,7 @@ uint8_t Panel::fg_color_b() {
 }
 
 uint8_t Panel::fg_color_a() {
-    return fg_color_  & 255;    
+    return fg_color_ & 255;    
 }
 
 } // namespace dfe_ui
