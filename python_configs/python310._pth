@@ -1,9 +1,0 @@
-python310.zip
-.
-Lib
-Lib/site-packages
-../python_deps/comfyui
-
-# Uncomment to run site.main() automatically
-#import site
-

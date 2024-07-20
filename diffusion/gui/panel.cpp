@@ -1,0 +1,69 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
+
+#include "simple-ui/panel.h"
+
+
+namespace dfe_ui
+{
+    
+Panel::Panel(int x, int y, int w, int h) : Component() {
+    this->coordinates(x, y, w, h);
+    this->bg_color(100, 100, 100, 255);
+}
+
+Panel::~Panel() {
+}
+
+void Panel::paint(void *render_window) {
+    if (!visible()) {
+        return;
+    }
+    sf::RectangleShape rect(sf::Vector2f(w(), h()));
+    rect.setPosition(sf::Vector2f(abs_x(), abs_y()));
+    rect.setFillColor(sf::Color(bg_color_));
+    rect.setOutlineColor(sf::Color(fg_color_));
+    static_cast<sf::RenderWindow *>(render_window)->draw(rect);
+}
+
+void Panel::bg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    bg_color_ = (r << 24) | (g << 16) | (b << 8)  | a;
+}
+
+void Panel::fg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    fg_color_ = (r << 24) | (g << 16) | (b << 8) | a;
+}
+
+uint8_t Panel::bg_color_r() {
+    return (bg_color_ >> 24) & 255;
+}
+
+uint8_t Panel::bg_color_g() {
+    return (bg_color_ >> 16) & 255;
+}
+
+uint8_t Panel::bg_color_b() {
+    return (bg_color_ >> 8) & 255;
+}
+
+uint8_t Panel::bg_color_a() {
+    return bg_color_ & 255;
+}
+
+uint8_t Panel::fg_color_r() {
+    return (fg_color_ >> 24) & 255;    
+}
+
+uint8_t Panel::fg_color_g() {
+    return (fg_color_ >> 16) & 255;    
+}
+
+uint8_t Panel::fg_color_b() {
+    return (fg_color_ >> 8) && 255;    
+}
+
+uint8_t Panel::fg_color_a() {
+    return fg_color_  & 255;    
+}
+
+} // namespace dfe_ui

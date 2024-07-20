@@ -19,3 +19,6 @@
 [submodule "comfyui"]
 	path = dependencies/comfyui
 	url = https://github.com/comfyanonymous/ComfyUI.git
+[submodule "dependencies/sfml"]
+	path = dependencies/sfml
+	url = https://github.com/SFML/SFML.git
