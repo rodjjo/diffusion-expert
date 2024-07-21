@@ -66,4 +66,24 @@ uint8_t Panel::fg_color_a() {
     return fg_color_ & 255;    
 }
 
+void Panel::set_on_mouse_enter(cb_event_t cb) {
+    on_mouse_enter_ = cb;
+}
+
+void Panel::set_on_mouse_exit(cb_event_t cb) {
+    on_mouse_exit_ = cb;
+}
+
+void Panel::mouse_enter()  {
+    if (on_mouse_enter_) {
+        on_mouse_enter_(this);
+    }
+}
+
+void Panel::mouse_exit() {
+    if (on_mouse_exit_) {
+        on_mouse_exit_(this);
+    }
+}
+
 } // namespace dfe_ui

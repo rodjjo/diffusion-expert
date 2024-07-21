@@ -134,8 +134,8 @@ std::shared_ptr<Component> Component::share() {
 
 void Component::add(std::shared_ptr<Component> child) {
     if (child->parent_) {
-        child->parent_->items_.remove(child.get());
         child->parent_->damaged(true);
+        child->parent_->items_.remove(child.get());
     }
     this->items_.add(child);
     child->parent_ = this;
@@ -320,6 +320,21 @@ void Component::drop_begin() {
 void Component::drop_end() {
 }
 
+void Component::mouse_enter() {
+}
+
+void Component::mouse_exit() {
+}
+
+size_t Component::tag() {
+    return tag_;
+}
+
+void Component::tag(size_t value) {
+    tag_ = value;
+}
+
+
 void Component::drop_begin(Component *source) {
     if (accept_drop(source)) {
         drop_begin();
@@ -362,9 +377,9 @@ Component *Component::find_top_clickable(int &x, int &y) {
     }
 
     float abs_scale = this->abs_scale();
-    if (abs_scale != 0) {
-        abs_scale = 1.0 / abs_scale;
-    }
+    //if (abs_scale != 0) {
+        // abs_scale = 1.0 / abs_scale;
+    //}
 
     x -= this->x() * abs_scale;
     y -= this->y() * abs_scale;
@@ -386,8 +401,8 @@ Component *Component::find_top_clickable(int &x, int &y) {
     return result;
 }
 
-void Component::paint_children(void *render_window) {
-    if (!visible()) {
+void Component::paint_children(void *render_window, bool check_status) {
+    if (!visible() || (status() == component_status_dragging && check_status)) {
         return;
     }
 
@@ -401,17 +416,21 @@ void Component::paint_children(void *render_window) {
 }
 
 int Component::abs_x() {
+    int dx = status() == component_status_dragging ? drag_x_ : 0;
+    float scale = abs_scale();
     if (parent_) {
-        return (x_ * abs_scale())  + parent_->abs_x() - (scroll_x_ * abs_scale());
+        return (x_ * scale)  + parent_->abs_x() - (scroll_x_ * scale) + dx;
     }
-    return (x_ * abs_scale()) - (scroll_x_ * abs_scale());
+    return (x_ * scale) - (scroll_x_ * scale) + dx;
 }
 
 int Component::abs_y() {
+    int dy = status() == component_status_dragging ? drag_y_ : 0;
+    float scale = abs_scale();
     if (parent_) {
-        return (y_ * abs_scale())  + parent_->abs_y() - (scroll_y_ * abs_scale());
+        return (y_ * scale)  + parent_->abs_y() - (scroll_y_ * scale) + dy;
     }
-    return (y_ * abs_scale()) - (scroll_y_ * abs_scale());
+    return (y_ * scale) - (scroll_y_ * scale) + dy;
 }
 
 int Component::scroll_x() {
@@ -449,6 +468,11 @@ void Component::scroll_y(int value) {
     scroll_y_ = value;
 }
 
+void Component::set_drag_coord(int x, int y) {
+    drag_x_ = x;
+    drag_y_ = y;
+}
+
 void Component::scale(float value) {
     scale_ = value;
 }
@@ -459,6 +483,10 @@ bool Component::accept_drag(Component *comp) {
 
 bool Component::accept_drop(Component *comp) {
     return false;
+}
+
+component_status_t Component::status() {
+    return component_status_normal;
 }
 
 

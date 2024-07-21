@@ -95,7 +95,10 @@ void Window::run() {
             }             
         }
         window->clear(sf::Color::Black, 0);
-        paint_children(window);
+        paint_children(window, true);
+        if (component_in_drag_) {
+            component_in_drag_->paint_children(window, false);
+        }
         window->display();
     }
 }
@@ -111,10 +114,20 @@ void Window::handle_textentered(uint32_t unicode) {
 }
 
 void Window::handle_mouse_left_pressed(int x, int y) {
+    mouse_down_x_ = x;
+    mouse_down_y_ = y;
+    mouse_move_x_ = x;
+    mouse_move_y_ = y;
     auto component = find_top_clickable(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
+        mouse_drag_x_ = x;
+        mouse_drag_y_ = y;
+        replace_drag(component);
+        update_drag_coord();
+    } else {
+        remove_drag();
     }
 }
 
@@ -161,6 +174,7 @@ void Window::handle_mouse_left_released(int x, int y) {
     if (component) {
         component->handle_mouse_left_released(x, y);
     }
+    remove_drag();
 }
 
 void Window::replace_drag(Component *component) {
@@ -185,8 +199,6 @@ void Window::remove_drag() {
     }
 }
 
-
-
 void Window::handle_mouse_middle_released(int x, int y) {
     auto component = find_top_clickable(x, y);
     if (component) {
@@ -202,10 +214,25 @@ void Window::handle_mouse_right_released(int x, int y) {
 }
 
 void Window::handle_mouse_moved(int x, int y) {
+    mouse_move_x_ = x;
+    mouse_move_y_ = y;
     auto component = find_top_clickable(x, y);
     if (component) {
         component->handle_mouse_moved(x, y);
+        replace_mouse(component);
+    } else {
+        remove_mouse();
     }
+    update_drag_coord();
+}
+
+void Window::update_drag_coord() {
+    if (!component_in_drag_) {
+        return;
+    }
+    int coord_x = (mouse_move_x_ - mouse_down_x_);
+    int coord_y = (mouse_move_y_ - mouse_down_y_);
+    component_in_drag_->set_drag_coord(coord_x, coord_y);
 }
 
 void Window::handle_keypressed(int key) {
@@ -221,9 +248,30 @@ void Window::handle_mouse_wheel(int8_t direction, int x, int y) {
     }
 }
 
+void Window::replace_mouse(Component *component) {
+    if (component_in_mouse_.get() == component) {
+        return;
+    }
+    if (component_in_mouse_) {
+        component_in_mouse_->mouse_exit();
+    }
+    component_in_mouse_ = component->share();
+    component_in_mouse_->mouse_enter();
+}
+
+
+void Window::remove_mouse() {
+    if (component_in_mouse_) {
+        component_in_mouse_->mouse_exit();
+        component_in_mouse_.reset();
+    }
+}
+
 
 std::shared_ptr<Window> window_new(int w, int h, const char *title) {
     return std::make_shared<Window>(Window(w, h, title));
 }
+
+
 
 } // namespace dfe

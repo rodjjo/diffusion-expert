@@ -1,9 +1,14 @@
 #pragma once
 
+#include <functional>
 #include "simple-ui/component.h"
 
 namespace dfe_ui
 {
+
+class Panel;
+
+typedef std::function<void(Panel *)> cb_event_t;
 
 class Panel : public Component {
   public:
@@ -23,9 +28,18 @@ class Panel : public Component {
     uint8_t fg_color_b();
     uint8_t fg_color_a();
 
+    void set_on_mouse_enter(cb_event_t cb);
+    void set_on_mouse_exit(cb_event_t cb);
+
+  protected:
+    void mouse_enter() override;
+    void mouse_exit() override;
+    
   private:
     uint32_t fg_color_ = 0;
     uint32_t bg_color_ = 0;
+    cb_event_t on_mouse_enter_;
+    cb_event_t on_mouse_exit_;
 };
     
 } // namespace dfe

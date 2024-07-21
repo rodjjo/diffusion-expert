@@ -5,6 +5,13 @@
 
 namespace dfe_ui {
 
+
+typedef enum {
+  component_status_normal = 0,
+  component_status_dragging,
+  component_status_dropping
+} component_status_t;
+
 class Component;
 
 class ScissorContext {
@@ -66,6 +73,9 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual void drag_end();
     virtual void drop_begin();
     virtual void drop_end();
+
+    virtual void mouse_enter();
+    virtual void mouse_exit();
     
     void drop_begin(Component *source);
     void drop_end(Component *source);
@@ -97,9 +107,14 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual bool editable();
     virtual bool focusable();
     Component *find_top_clickable(int &x, int &y);
-    void paint_children(void *render_window);
-    
+    void paint_children(void *render_window, bool check_status=true);
+    void set_drag_coord(int x, int y);
+
     ComponentList & items();
+    size_t tag();
+    void tag(size_t value);
+
+    virtual component_status_t status();
 
    public:
     virtual void handle_parent_resized();
@@ -118,7 +133,7 @@ class Component : public std::enable_shared_from_this<Component>  {
 
   protected:
     void fire_parent_resized();
-
+  
   private:
     ComponentList             items_;
     bool                      enabled_ = true;
@@ -132,6 +147,9 @@ class Component : public std::enable_shared_from_this<Component>  {
     int                       y_ = 0;
     int                       w_ = 0;
     int                       h_ = 0;
+    int                       drag_x_ = 0;
+    int                       drag_y_ = 0;
+    size_t                    tag_ = 0;
 
   private:
     friend class ComponentList;
