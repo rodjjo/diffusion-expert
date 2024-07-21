@@ -326,6 +326,9 @@ void Component::mouse_enter() {
 void Component::mouse_exit() {
 }
 
+void Component::complete_drop(Component *comp) {
+}
+
 size_t Component::tag() {
     return tag_;
 }
@@ -488,6 +491,12 @@ bool Component::accept_drop(Component *comp) {
 component_status_t Component::status() {
     return component_status_normal;
 }
+
+Component *Component::parent() {
+    return parent_;
+}
+
+
 
 
 }  // namespace dfe 

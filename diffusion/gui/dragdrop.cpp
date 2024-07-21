@@ -12,11 +12,11 @@ namespace dfe_ui
     }
 
     void DragDrop::set_on_accept_drop(cb_accept_component_t cb) {
-        cb_accept_drag_ = cb;
+        cb_accept_drop_ = cb;
     }
 
     void DragDrop::set_on_accept_drag(cb_accept_component_t cb) {
-        cb_accept_drop_ = cb;
+        cb_accept_drag_ = cb;
     }
 
     void DragDrop::drag_enabled(bool value) {
@@ -99,6 +99,16 @@ namespace dfe_ui
 
     component_status_t DragDrop::status() {
         return status_;
+    }
+
+    void DragDrop::set_on_complete_drop(cb_complete_drop_t cb) {
+        cb_on_complete_drop_ = cb;
+    }
+
+    void DragDrop::complete_drop(Component *comp) {
+        if (cb_on_complete_drop_) {
+            cb_on_complete_drop_(this, comp);
+        }
     }
 
 

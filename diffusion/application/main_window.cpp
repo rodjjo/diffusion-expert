@@ -54,6 +54,13 @@ namespace dfe
             static_cast<dfe_ui::Panel *>(comp)->fg_color(100, 100, 100, 255);
         });
 
+        panel2->set_on_complete_drop([](dfe_ui::Component *self, dfe_ui::Component *next) {
+            self->add(next->share());
+        });
+        panel->set_on_complete_drop([](dfe_ui::Component *self, dfe_ui::Component *next) {
+            self->add(next->share());
+        });
+
         auto turn_green = [](dfe_ui::Component *comp) { 
             static_cast<dfe_ui::Panel *>(comp)->fg_color(128, 255, 128, 255);
         };
@@ -72,7 +79,7 @@ namespace dfe
 
         win->add(panel);
         win->add(panel2);
-        win->scale(1.25);
+        win->scale(0.75);
         win->run();
     }
 } // namespace dfe

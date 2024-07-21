@@ -68,6 +68,7 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     virtual bool accept_drag(Component *comp);
     virtual bool accept_drop(Component *comp);
+    virtual void complete_drop(Component *comp);
     
     virtual void drag_begin();
     virtual void drag_end();
@@ -106,6 +107,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual bool clickable();
     virtual bool editable();
     virtual bool focusable();
+    Component *parent();
     Component *find_top_clickable(int &x, int &y);
     void paint_children(void *render_window, bool check_status=true);
     void set_drag_coord(int x, int y);

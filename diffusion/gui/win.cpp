@@ -122,8 +122,6 @@ void Window::handle_mouse_left_pressed(int x, int y) {
     if (component) {
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
-        mouse_drag_x_ = x;
-        mouse_drag_y_ = y;
         replace_drag(component);
         update_drag_coord();
     } else {
@@ -173,6 +171,7 @@ void Window::handle_mouse_left_released(int x, int y) {
     auto component = find_top_clickable(x, y);
     if (component) {
         component->handle_mouse_left_released(x, y);
+        complete_drag(component);
     }
     remove_drag();
 }
@@ -196,6 +195,15 @@ void Window::remove_drag() {
         component_in_drag_->drag_end();
         drop_end(component_in_drag_.get());
         component_in_drag_.reset();
+    }
+}
+
+void Window::complete_drag(Component *component) {
+    if (!component_in_drag_ || component == component_in_drag_->parent()) {
+        return;
+    }
+    if (component->accept_drop(component_in_drag_.get()) && component_in_drag_->accept_drag(component) ) {
+        component->complete_drop(component_in_drag_.get());
     }
 }
 
@@ -259,14 +267,12 @@ void Window::replace_mouse(Component *component) {
     component_in_mouse_->mouse_enter();
 }
 
-
 void Window::remove_mouse() {
     if (component_in_mouse_) {
         component_in_mouse_->mouse_exit();
         component_in_mouse_.reset();
     }
 }
-
 
 std::shared_ptr<Window> window_new(int w, int h, const char *title) {
     return std::make_shared<Window>(Window(w, h, title));

@@ -8,6 +8,7 @@ namespace dfe_ui
 {
 
 typedef std::function<bool(Component *self, Component *component)> cb_accept_component_t;
+typedef std::function<void(Component *self, Component *component)> cb_complete_drop_t;
 typedef std::function<void(Component *self)> cb_dragdrop_hint_t;
 
 class DragDrop : public Panel {
@@ -20,6 +21,7 @@ class DragDrop : public Panel {
         void set_on_drag_end(cb_dragdrop_hint_t cb);
         void set_on_drop_begin(cb_dragdrop_hint_t cb);
         void set_on_drop_end(cb_dragdrop_hint_t cb);
+        void set_on_complete_drop(cb_complete_drop_t cb);
         void drag_enabled(bool value);
         void drop_enabled(bool value);
         bool drag_enabled() override;
@@ -27,8 +29,9 @@ class DragDrop : public Panel {
         component_status_t status() override;
 
     protected:
-        bool accept_drag(Component *comp);
-        bool accept_drop(Component *comp);
+        bool accept_drag(Component *comp) override;
+        bool accept_drop(Component *comp) override;
+        void complete_drop(Component *comp) override;
         bool clickable() override;
 
         void drag_begin() override;
@@ -37,6 +40,7 @@ class DragDrop : public Panel {
         void drop_end() override;
 
     private:
+        cb_complete_drop_t cb_on_complete_drop_;
         cb_accept_component_t cb_accept_drop_;
         cb_accept_component_t cb_accept_drag_;
         cb_dragdrop_hint_t cb_drag_begin_;
