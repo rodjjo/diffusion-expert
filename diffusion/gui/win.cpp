@@ -25,6 +25,7 @@ Window::~Window() {
 
 void Window::run() {
     auto window = static_cast<sf::RenderWindow*>(window_.get());
+    restart_clock();
     while (window->isOpen())
     {
         // Handle events
@@ -107,7 +108,7 @@ void Window::handle_parent_resized() {
     // this windows has no parent, so it was resized instead.
 }
 
-void Window::handle_textentered(uint32_t unicode) {
+void Window::handle_textentered(wchar_t unicode) {
     if (this->component_in_focus_) {
         this->component_in_focus_->handle_textentered(unicode);
     }
@@ -124,6 +125,7 @@ void Window::handle_mouse_left_pressed(int x, int y) {
         component->handle_mouse_left_pressed(x, y);
         replace_drag(component);
         update_drag_coord();
+        component_in_mouse_down_left_ = component->share();
     } else {
         remove_drag();
     }
@@ -140,6 +142,7 @@ void Window::replace_focus(Component *component) {
         component_in_focus_->handle_focus_got();
     } else if (!component_in_focus_) {
         component_in_focus_ = component->share();
+        component_in_focus_->handle_focus_got();
     }
 }
 
@@ -156,6 +159,7 @@ void Window::handle_mouse_middle_pressed(int x, int y) {
     if (component) {
         replace_focus(component);
         component->handle_mouse_middle_pressed(x, y);
+        component_in_mouse_down_middle_ = component->share();
     }
 }
 
@@ -164,10 +168,15 @@ void Window::handle_mouse_right_pressed(int x, int y) {
     if (component) {
         replace_focus(component);
         component->handle_mouse_right_pressed(x, y);
+        component_in_mouse_down_right_ = component->share();
     }
 }
 
 void Window::handle_mouse_left_released(int x, int y) {
+    if (component_in_mouse_down_left_) {
+        component_in_mouse_down_left_->handle_mouse_left_released(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
+        component_in_mouse_down_left_.reset();
+    }
     auto component = find_top_clickable(x, y);
     if (component) {
         component->handle_mouse_left_released(x, y);
@@ -208,6 +217,10 @@ void Window::complete_drag(Component *component) {
 }
 
 void Window::handle_mouse_middle_released(int x, int y) {
+    if (component_in_mouse_down_middle_) {
+        component_in_mouse_down_middle_->handle_mouse_middle_released(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
+        component_in_mouse_down_middle_.reset();
+    }
     auto component = find_top_clickable(x, y);
     if (component) {
         component->handle_mouse_middle_released(x, y);
@@ -215,6 +228,10 @@ void Window::handle_mouse_middle_released(int x, int y) {
 }
 
 void Window::handle_mouse_right_released(int x, int y) {
+    if (component_in_mouse_down_right_) {
+        component_in_mouse_down_right_->handle_mouse_middle_released(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
+        component_in_mouse_down_right_.reset();
+    }
     auto component = find_top_clickable(x, y);
     if (component) {
         component->handle_mouse_right_released(x, y);
@@ -222,6 +239,15 @@ void Window::handle_mouse_right_released(int x, int y) {
 }
 
 void Window::handle_mouse_moved(int x, int y) {
+    if (component_in_mouse_down_right_) {
+        component_in_mouse_down_right_->handle_mouse_moved(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
+    }
+    if (component_in_mouse_down_left_) {
+        component_in_mouse_down_left_->handle_mouse_moved(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
+    }
+    if (component_in_mouse_down_middle_) {
+        component_in_mouse_down_middle_->handle_mouse_moved(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
+    }
     mouse_move_x_ = x;
     mouse_move_y_ = y;
     auto component = find_top_clickable(x, y);

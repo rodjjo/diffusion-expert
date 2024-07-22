@@ -27,43 +27,43 @@ void Panel::paint(void *render_window) {
 }
 
 void Panel::bg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    bg_color_ = (r << 24) | (g << 16) | (b << 8)  | a;
+    bg_color_ = RGBA_TO_COLOR(r, g, b, a);
 }
 
 void Panel::fg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    fg_color_ = (r << 24) | (g << 16) | (b << 8) | a;
+    fg_color_ = RGBA_TO_COLOR(r, g, b, a);
 }
 
 uint8_t Panel::bg_color_r() {
-    return (bg_color_ >> 24) & 255;
+    return RGBA_R(bg_color_);
 }
 
 uint8_t Panel::bg_color_g() {
-    return (bg_color_ >> 16) & 255;
+    return RGBA_G(bg_color_);
 }
 
 uint8_t Panel::bg_color_b() {
-    return (bg_color_ >> 8) & 255;
+    return RGBA_B(bg_color_);
 }
 
 uint8_t Panel::bg_color_a() {
-    return bg_color_ & 255;
+    return RGBA_A(bg_color_);
 }
 
 uint8_t Panel::fg_color_r() {
-    return (fg_color_ >> 24) & 255;    
+    return RGBA_R(fg_color_);    
 }
 
 uint8_t Panel::fg_color_g() {
-    return (fg_color_ >> 16) & 255;    
+    return RGBA_G(fg_color_);    
 }
 
 uint8_t Panel::fg_color_b() {
-    return (fg_color_ >> 8) && 255;    
+    return RGBA_B(fg_color_);    
 }
 
 uint8_t Panel::fg_color_a() {
-    return fg_color_ & 255;    
+    return RGBA_A(fg_color_);    
 }
 
 void Panel::set_on_mouse_enter(cb_event_t cb) {

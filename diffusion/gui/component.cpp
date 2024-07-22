@@ -4,6 +4,7 @@
 
 #include <SFML/OpenGL.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Text.hpp>
 
 #include "simple-ui/component.h"
 
@@ -11,6 +12,8 @@ namespace dfe_ui {
 
 namespace {
     bool global_damaged_ = true;
+    int64_t time_counter = 0;
+    sf::Clock clock;
 }
 
 ScissorContext::ScissorContext(int target_h, Component *component) {
@@ -200,6 +203,13 @@ int Component::h() {
     return h_;
 }
 
+bool Component::abs_enabled() {
+    if (parent_) {
+        return enabled() && parent_->enabled();
+    }
+    return enabled();
+}
+
 bool Component::enabled() {
     return enabled_;
 }
@@ -272,7 +282,7 @@ void Component::parent_changed() {
 void Component::handle_parent_resized() {
 }
 
-void Component::handle_textentered(uint32_t unicode) {
+void Component::handle_textentered(wchar_t unicode) {
 }
 
 void Component::handle_mouse_left_pressed(int x, int y) {
@@ -496,7 +506,33 @@ Component *Component::parent() {
     return parent_;
 }
 
+void Component::restart_clock() {
+    time_counter = clock.restart().asMicroseconds();
+}
 
+int64_t Component::microseconds() {
+    return clock.getElapsedTime().asMicroseconds();
+}
 
+int32_t Component::miliseconds() {
+    return clock.getElapsedTime().asMicroseconds();
+}
+
+int Component::compute_text_min_y(void *text_shape) {
+  sf::Text & text = *static_cast<sf::Text *>(text_shape);
+  // all the characters has a coordinate to render (x, y)
+  // this function return the minimal y's coordinate of the text, so we can center it correctly.
+  int minY = 0;
+  unsigned int csz = text.getCharacterSize();
+  bool b = (text.getStyle() & sf::Text::Bold) != 0;
+  minY = (int)csz;
+  for (unsigned char c = 33; c <= 128; ++c) {
+    const sf::Glyph& glp = text.getFont().getGlyph(c, csz , b);
+    if (glp.bounds.position.y + static_cast<int>(csz) < minY)
+      minY = glp.bounds.position.y + csz;
+  }
+  minY = abs(minY);
+  return minY;
+}
 
 }  // namespace dfe 

@@ -3,6 +3,12 @@
 #include <vector>
 #include <memory>
 
+#define RGBA_TO_COLOR(r, g, b, a) ((r) << 24) | ((g) << 16) | ((b) << 8)  | (a)
+#define RGBA_R(color) ((color) >> 24) & 255
+#define RGBA_G(color) ((color) >> 16) & 255
+#define RGBA_B(color) ((color) >> 8) & 255
+#define RGBA_A(color) (color) & 255
+
 namespace dfe_ui {
 
 
@@ -62,6 +68,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     void visible(bool value);
     bool enabled();
     void enabled(bool value);
+    bool abs_enabled();
 
     virtual bool drag_enabled();
     virtual bool drop_enabled();
@@ -118,9 +125,14 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     virtual component_status_t status();
 
+    static int compute_text_min_y(void *text_shape);
+    static void restart_clock();
+    static int64_t microseconds();
+    static int32_t miliseconds();
+
    public:
     virtual void handle_parent_resized();
-    virtual void handle_textentered(uint32_t unicode);
+    virtual void handle_textentered(wchar_t unicode);
     virtual void handle_mouse_left_pressed(int x, int y);
     virtual void handle_mouse_middle_pressed(int x, int y);
     virtual void handle_mouse_right_pressed(int x, int y);

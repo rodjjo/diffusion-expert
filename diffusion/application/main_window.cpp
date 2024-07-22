@@ -3,25 +3,30 @@
 #include "simple-ui/win.h"
 #include "simple-ui/panel.h"
 #include "simple-ui/dragdrop.h"
+#include "simple-ui/edit.h"
 
 namespace dfe
 {
     void run_application() {
-        auto win = dfe_ui::window_new(640, 480, "Stable Diffusion");
+        auto win = dfe_ui::window_new(1280, 720, "Stable Diffusion");
         auto panel = std::make_shared<dfe_ui::DragDrop>(65, 50, 180, 180);
         auto panel2 = std::make_shared<dfe_ui::DragDrop>(65, 180 + 51, 180, 180);
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(-5, 25, 180 + 10, 50);
+
+        auto editor = std::make_shared<dfe_ui::Edit>(65 + 185, 50, 300, 50);
         
+        editor->text(std::wstring(L"Vaz"));
+
         panel3->drag_enabled(true);
         panel2->drop_enabled(true);
         panel->drop_enabled(true);
 
         auto on_mouse_enter = [](dfe_ui::Component *comp) {
-            printf("Mouse enter %lu\n", comp->tag());
+            // printf("Mouse enter %lu\n", comp->tag());
         };
 
         auto on_mouse_exit = [](dfe_ui::Component *comp) {
-            printf("Mouse exit %lu\n", comp->tag());
+            // printf("Mouse exit %lu\n", comp->tag());
         };
 
         panel->tag(1);
@@ -76,10 +81,11 @@ namespace dfe
 
         panel3->bg_color(255, 100, 100, 255);
         panel->add(panel3);
-
+        
         win->add(panel);
         win->add(panel2);
-        win->scale(0.75);
+        win->add(editor);
+        win->scale(1.25);
         win->run();
     }
 } // namespace dfe
