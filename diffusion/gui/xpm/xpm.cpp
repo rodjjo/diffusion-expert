@@ -175,13 +175,6 @@ xpm_data_t xpm_parse_image(const char * const* data) {
     return result;
 }
 
-/*
-"  	c None",
-"XX	c #ffffff",
-"++	c #1599ea",
-"..	c #9fe3fa",
-*/
-
 uint32_t xpm_optimal_width(std::map<icon_type_t, const char * const*>& db) {
     uint64_t area = 0;
     for (auto item: db) {
@@ -269,7 +262,6 @@ TextureData::TextureData() {
         texture_.reset(new sf::Texture(std::move(*texture)));
         texture_->update((uint8_t *) data.get());
         auto i = texture_->copyToImage();
-        i.saveToFile("test.jpg");
     }
     
 }
