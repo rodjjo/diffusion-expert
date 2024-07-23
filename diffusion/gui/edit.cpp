@@ -404,7 +404,7 @@ void Edit::backspace_pressed(bool control_pressed) {
     if (readonly_ || !text_.get()) return;
 
     if (sel_start_ == sel_end_) {
-        if (sel_start_ < 0) return;
+        if (sel_start_ <= 0) return;
             --sel_start_;
     }
 
