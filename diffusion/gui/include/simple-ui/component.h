@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include "simple-ui/icons.h"
+
 #define RGBA_TO_COLOR(r, g, b, a) ((r) << 24) | ((g) << 16) | ((b) << 8)  | (a)
 #define RGBA_R(color) ((color) >> 24) & 255
 #define RGBA_G(color) ((color) >> 16) & 255
@@ -127,8 +129,11 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     static int compute_text_min_y(void *text_shape);
     static void restart_clock();
+    static TextureDataBase* load_texture(const void *render_window);
     static int64_t microseconds();
     static int32_t miliseconds();
+
+
 
    public:
     virtual void handle_parent_resized();

@@ -13,6 +13,7 @@ set(APP_NAME simple-ui)
 
 file(GLOB Sources
     "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/xpm/*.cpp"
 )
 
 add_library(${APP_NAME} STATIC ${Sources})

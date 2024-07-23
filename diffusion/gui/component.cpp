@@ -1,5 +1,7 @@
+
 #include <algorithm>
 #include <string>
+#include <map>
 #include <stdexcept>
 
 #include <SFML/OpenGL.hpp>
@@ -516,6 +518,17 @@ int64_t Component::microseconds() {
 
 int32_t Component::miliseconds() {
     return clock.getElapsedTime().asMicroseconds();
+}
+
+TextureDataBase* Component::load_texture(const void *render_window) {
+    static std::map<const void *, std::shared_ptr<TextureDataBase> > textures;
+    auto it = textures.find(render_window);
+    if (it != textures.end()) {
+        return it->second.get();
+    }
+    auto loaded = dfe_ui::load_texture();
+    textures[render_window] = loaded;
+    return loaded.get();
 }
 
 int Component::compute_text_min_y(void *text_shape) {
