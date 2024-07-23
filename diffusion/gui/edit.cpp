@@ -76,14 +76,14 @@ void Edit::paint(void *render_window) {
     // else if (vertAlign_ == 2)
     //    ttop += abs_h() - char_sz;
 
-    txt.setPosition({left, ttop});
+    txt.setPosition({(float)left, (float)ttop});
 
     if (sel_start_ != sel_end_) {
         int x1, x2;
         sf::RectangleShape sel_rect;
         sel_rect.setFillColor(sf::Color(64, 64, 64, 128));
         get_selection_area(x1, x2);
-        sel_rect.setPosition({x1, top});
+        sel_rect.setPosition({(float)x1, (float)top});
         sel_rect.setSize(sf::Vector2f(x2 - x1, abs_h()));
         wnd->draw(sel_rect);
     }
@@ -233,15 +233,15 @@ void Edit::handle_textentered(wchar_t unicode) {
 
     char c[MB_CUR_MAX];
     int len = wctomb(c, unicode);
-    if (len < 1) return;
-    unsigned char u = static_cast<unsigned char>(c[0]);
-    if (u < 32 /*|| u > 126*/) {
-        return;
+    if (len > 0) {
+        unsigned char u = static_cast<unsigned char>(c[0]);
+        if (u < 32 || u > 126) {
+            return;
+        }
     }
 
     clear_selection();
     sf::Text &txt = *static_cast<sf::Text*>(text_.get());
-
 
     if ((maxlen_ > 0)&&(txt.getString().getSize() >= maxlen_)) {
         return;
@@ -274,7 +274,7 @@ void Edit::clear_selection() {
       }
 
       sf::Text &txt = *static_cast<sf::Text*>(text_.get());
-      std::string data = txt.getString();
+      std::wstring data = txt.getString();
       data.erase(sel_start_, sel_end_ - sel_start_);
       txt.setString(data);
       text_changed();
