@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
+#include "simple-ui/clock.h"
 #include "simple-ui/edit.h"
 #include "simple-ui/default_font.h"
 
@@ -10,11 +11,9 @@ namespace dfe_ui
 
 Edit::Edit(int x, int y, int w, int h) : Component() {
     this->coordinates(x, y, w, h);
-    unsigned int bytes = 0;
-    const void *font_buffer = load_default_font(bytes);
-    if (auto fnt = sf::Font::openFromMemory(font_buffer, bytes)) {
-        font_.reset(new sf::Font(*fnt), [] (void *f){ delete (sf::Font *) f;});
-        text_.reset(new sf::Text(*(sf::Font *)font_.get()));
+    auto font = static_cast<sf::Font *>(load_default_font());
+    if (font) {
+        text_.reset(new sf::Text(*font));
         update_font_min_y_coord();
     }
 }
@@ -41,22 +40,14 @@ void Edit::paint(void *render_window) {
         new_charsize = 1;
     }
     if (txt.getCharacterSize() != new_charsize) {
-        txt.setCharacterSize(new_charsize * abs_scale());
+        txt.setCharacterSize(new_charsize);
+        update_font_min_y_coord();
     }
+
+    txt.setFillColor(sf::Color(text_color_));
+    txt.setOutlineColor(sf::Color(text_color_));
     
     auto wnd = static_cast<sf::RenderWindow *>(render_window);
-
-
-    int64_t current_time = microseconds();
-    
-    bool blink = false;
-    if (abs_enabled() && focused_){
-        if (abs((last_blink_ + 120000) - current_time) < 120000) {
-            blink = true;
-        } else if (abs((last_blink_ + 240000) - current_time) > 240000) {
-            last_blink_ = current_time;
-        }
-    }
 
     sf::Color targetColor = txt.getFillColor(); // (abs_enabled()) ? color_ : disabledColor_;
     sf::CircleShape pw_shape;
@@ -67,21 +58,21 @@ void Edit::paint(void *render_window) {
 
 
     int left = abs_x(), top = abs_y();
-    int ttop = top - min_y_coord_;
+    int ttop = top - text_min_y_;
 
     int char_sz = txt.getCharacterSize();
 
-    // if (vertAlign_ == 1)
+     if (text_valign_ == text_alignment_middle)
         ttop += abs_h() / 2 - char_sz / 2;
-    // else if (vertAlign_ == 2)
-    //    ttop += abs_h() - char_sz;
+    else if (text_valign_ == text_alligment_bottom)
+        ttop += abs_h() - char_sz;
 
     txt.setPosition({(float)left, (float)ttop});
 
     if (sel_start_ != sel_end_) {
         int x1, x2;
         sf::RectangleShape sel_rect;
-        sel_rect.setFillColor(sf::Color(64, 64, 64, 128));
+        sel_rect.setFillColor(sf::Color(selection_color_));
         get_selection_area(x1, x2);
         sel_rect.setPosition({(float)x1, (float)top});
         sel_rect.setSize(sf::Vector2f(x2 - x1, abs_h()));
@@ -103,11 +94,11 @@ void Edit::paint(void *render_window) {
     wnd->draw(txt);
   }
 
-  if (blink) {
+  if (abs_enabled() && focused_ && clock::editor_cursor_visible()) {
     int ipos = get_insert_coord();
     sf::Vertex line[] = {
-        {sf::Vector2f(ipos, top), sf::Color::Black},
-        {sf::Vector2f(ipos, top + abs_h()), sf::Color::White}
+        {sf::Vector2f(ipos, top), sf::Color(cursor_color_)},
+        {sf::Vector2f(ipos, top + abs_h()), sf::Color(cursor_color_)}
     };
     wnd->draw(line, 2, sf::PrimitiveType::Lines);
   }
@@ -291,7 +282,6 @@ void Edit::text_changed() {
 }
 
 void Edit::handle_keypressed(int key) {
-    last_blink_ = 0;
     bool control_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RControl);
     bool shift_pressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RShift);
 
@@ -463,7 +453,7 @@ void Edit::delete_pressed(bool shift_pressed) {
 
 void Edit::update_font_min_y_coord() {
     if (text_) {
-        min_y_coord_ = compute_text_min_y(text_.get());
+        text_min_y_ = compute_text_min_y(text_.get());
     }
 }
 
@@ -479,6 +469,14 @@ bool Edit::password() {
 
 void Edit::password(bool value) {
     password_ = value;
+}
+
+vertical_text_alignment_t Edit::text_valign() {
+    return text_valign_;
+}
+
+void Edit::text_valign(vertical_text_alignment_t value) {
+    text_valign_ = value;
 }
 
 void Edit::handle_mouse_left_pressed(int x, int y) {

@@ -1,3 +1,6 @@
+#include <memory>
+#include <SFML/Graphics/Font.hpp>
+
 // array size is 709600
 static const unsigned char my_font[] = {
   0x00, 0x01, 0x00, 0x00, 0x00, 0x17, 0x01, 0x00, 0x00, 0x04, 0x00, 0x70, 0x44, 0x53, 0x49, 0x47, 
@@ -44352,7 +44355,19 @@ static const unsigned char my_font[] = {
   0xc1, 0x69, 0x47, 0x7f, 0x68, 0x46, 0xf5, 0x69, 0x6d, 0x71, 0xf1, 0xab, 0xc4, 0xa6, 0x00, 0x00
 };
 
-const void *load_default_font(unsigned int &size) {
-  size = sizeof(my_font);
-  return &my_font[0];
+namespace dfe_ui {
+
+  namespace {
+    std::shared_ptr<sf::Font> default_font;
+  }
+
+  void *load_default_font() {
+    if (!default_font) {
+      if (auto fnt = sf::Font::openFromMemory(my_font, sizeof(my_font))) {
+        default_font.reset(new sf::Font(std::move(*fnt)));
+      }
+    }
+    return default_font.get();
+  }
+
 }

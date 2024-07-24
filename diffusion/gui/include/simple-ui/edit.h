@@ -24,6 +24,8 @@ class Edit : public Component {
     int character_size();
     void character_size(int value);
     bool password();
+    vertical_text_alignment_t text_valign();
+    void text_valign(vertical_text_alignment_t value);
     void password(bool value);
     void cursor_color(uint32_t color);
     void text_color(uint32_t color);
@@ -68,21 +70,20 @@ class Edit : public Component {
   private:
     cb_text_changed_t cb_text_changed_;
     size_t  maxlen_ = 0;
+    vertical_text_alignment_t    text_valign_ = text_alignment_middle;
     bool    mouse_down_ = false;
     bool    readonly_ = false;
     bool    focused_ = false;
     bool    password_ = false;
-    int     min_y_coord_ = 0;
+    int     text_min_y_ = 0;
     int     character_size_ = 30;
     size_t  sel_start_ = 0;
     size_t  sel_end_ = 0;
     size_t  cursor_pos_ = 0;
-    int64_t last_blink_ = 0;
     int     mouse_down_x_ = 0;
-    uint32_t text_color_ = RGBA_TO_COLOR(0, 0, 0, 255);
+    uint32_t text_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
     uint32_t selection_color_ = RGBA_TO_COLOR(64, 64, 64, 128);
     uint32_t cursor_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
-    std::shared_ptr<void> font_;
     std::shared_ptr<void> text_;
 };
     

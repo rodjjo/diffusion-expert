@@ -14,8 +14,6 @@ namespace dfe_ui {
 
 namespace {
     bool global_damaged_ = true;
-    int64_t time_counter = 0;
-    sf::Clock clock;
 }
 
 ScissorContext::ScissorContext(int target_h, Component *component) {
@@ -506,29 +504,6 @@ component_status_t Component::status() {
 
 Component *Component::parent() {
     return parent_;
-}
-
-void Component::restart_clock() {
-    time_counter = clock.restart().asMicroseconds();
-}
-
-int64_t Component::microseconds() {
-    return clock.getElapsedTime().asMicroseconds();
-}
-
-int32_t Component::miliseconds() {
-    return clock.getElapsedTime().asMicroseconds();
-}
-
-TextureDataBase* Component::load_texture(const void *render_window) {
-    static std::map<const void *, std::shared_ptr<TextureDataBase> > textures;
-    auto it = textures.find(render_window);
-    if (it != textures.end()) {
-        return it->second.get();
-    }
-    auto loaded = dfe_ui::load_texture();
-    textures[render_window] = loaded;
-    return loaded.get();
 }
 
 int Component::compute_text_min_y(void *text_shape) {

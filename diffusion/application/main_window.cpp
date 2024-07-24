@@ -4,6 +4,7 @@
 #include "simple-ui/panel.h"
 #include "simple-ui/dragdrop.h"
 #include "simple-ui/edit.h"
+#include "simple-ui/label.h"
 
 namespace dfe
 {
@@ -14,6 +15,7 @@ namespace dfe
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(-5, 25, 180 + 10, 50);
 
         auto editor = std::make_shared<dfe_ui::Edit>(65 + 185, 50, 300, 50);
+        auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
         
         editor->text(std::wstring(L"Vaz"));
 
@@ -80,12 +82,14 @@ namespace dfe
         panel2->set_on_drop_end(turn_gray);
 
         panel3->bg_color(255, 100, 100, 255);
+
         panel->add(panel3);
-        
         win->add(panel);
         win->add(panel2);
         win->add(editor);
-        win->scale(1.25);
+        win->add(label);
+
+        win->scale(1);
         win->run();
     }
 } // namespace dfe

@@ -1,9 +1,10 @@
 #include <SFML/Graphics.hpp>
 
+#include "simple-ui/clock.h"
+#include "simple-ui/icons.h"
 #include "simple-ui/win.h"
 
 namespace dfe_ui {
-
 
 
 Window::Window(unsigned int w, unsigned int h, const char *title) {
@@ -17,15 +18,18 @@ Window::Window(unsigned int w, unsigned int h, const char *title) {
     int x = 0;
     int y = 0;
     static_cast<sf::RenderWindow*>(window_.get())->setPosition(sf::Vector2i(x, y));
+    load_icons_texture(window_.get());
 }
 
 Window::~Window() {
-
+    unload_icons_texture(window_.get());
 }
 
 void Window::run() {
     auto window = static_cast<sf::RenderWindow*>(window_.get());
-    restart_clock();
+    
+    clock::restart_clock();
+
     while (window->isOpen())
     {
         // Handle events
