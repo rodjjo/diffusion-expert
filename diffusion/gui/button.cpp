@@ -97,9 +97,10 @@ void Button::handle_mouse_left_pressed(int x, int y) {
 
 void Button::handle_mouse_left_released(int x, int y) {
     mouse_pressed_ = false;
+    if (checked_icon_ != img_none) {
+        checked_ = !checked_;
+    }
 }
-
-
 
 uint32_t Button::pressed_color() {
     return pressed_color_;
@@ -130,6 +131,22 @@ component_cursor_t Button::cursor() {
     return cursor_hand;
 }
 
+void Button::checked_icon(icon_type_t icon_type) {
+    checked_icon_ = icon_type;
+}
+
+icon_type_t Button::checked_icon() {
+    return checked_icon_;
+}
+
+bool Button::checked() {
+    return checked_;
+}
+
+void Button::checked(bool value) {
+    checked_ = value;
+}
+
 void Button::paint(void *render_window) {
     if (!text_) return;
     auto txt = *static_cast<sf::Text *>(text_.get());
@@ -156,9 +173,10 @@ void Button::paint(void *render_window) {
     std::pair<int, int> icon_size(0, 0);
 
     if (icon_type_ != img_none) {
+        auto icon = checked_ && (checked_icon_ != img_none) ? checked_icon_ :  icon_type_;
         icons = load_icons_texture();
-        icon_coord = icons->get_coords(icon_type_);
-        icon_size = icons->get_size(icon_type_);
+        icon_coord = icons->get_coords(icon);
+        icon_size = icons->get_size(icon);
     }
 
     if (!txt.getString().isEmpty()) {

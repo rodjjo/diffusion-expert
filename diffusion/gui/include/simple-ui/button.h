@@ -36,6 +36,11 @@ namespace dfe_ui
             uint32_t pressed_color();
             void pressed_color(uint32_t value);
 
+            void checked_icon(icon_type_t icon_type);
+            icon_type_t checked_icon();
+            bool checked();
+            void checked(bool value);
+
         protected:
             virtual void mouse_enter() override;
             virtual void mouse_exit() override;
@@ -48,6 +53,8 @@ namespace dfe_ui
             void update_text_min_y();
 
         private:
+            icon_type_t             checked_icon_ = img_none;
+            bool                    checked_ = false;
             bool                    mouse_pressed_ = false;
             bool                    mouse_inside_ = false;
             icon_position_t         icon_pos_ = icon_center;

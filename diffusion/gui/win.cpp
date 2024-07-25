@@ -178,13 +178,16 @@ void Window::handle_mouse_right_pressed(int x, int y) {
 }
 
 void Window::handle_mouse_left_released(int x, int y) {
+    auto released_ptr = component_in_mouse_down_left_.get();
     if (component_in_mouse_down_left_) {
         component_in_mouse_down_left_->handle_mouse_left_released(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
         component_in_mouse_down_left_.reset();
     }
     auto component = find_top_clickable(x, y);
     if (component) {
-        component->handle_mouse_left_released(x, y);
+        if (released_ptr != released_ptr) {
+            component->handle_mouse_left_released(x, y);
+        }
         complete_drag(component);
     }
     remove_drag();
@@ -222,24 +225,30 @@ void Window::complete_drag(Component *component) {
 }
 
 void Window::handle_mouse_middle_released(int x, int y) {
+    auto released_ptr = component_in_mouse_down_middle_.get();
     if (component_in_mouse_down_middle_) {
         component_in_mouse_down_middle_->handle_mouse_middle_released(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
         component_in_mouse_down_middle_.reset();
     }
     auto component = find_top_clickable(x, y);
     if (component) {
-        component->handle_mouse_middle_released(x, y);
+        if (component != released_ptr) {
+            component->handle_mouse_middle_released(x, y);
+        }
     }
 }
 
 void Window::handle_mouse_right_released(int x, int y) {
+    auto released_ptr = component_in_mouse_down_right_.get();
     if (component_in_mouse_down_right_) {
         component_in_mouse_down_right_->handle_mouse_middle_released(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
         component_in_mouse_down_right_.reset();
     }
     auto component = find_top_clickable(x, y);
     if (component) {
-        component->handle_mouse_right_released(x, y);
+        if (component != released_ptr) {
+            component->handle_mouse_right_released(x, y);
+        }
     }
 }
 

@@ -7,6 +7,7 @@
 #include "simple-ui/text_box.h"
 #include "simple-ui/label.h"
 #include "simple-ui/button.h"
+#include "simple-ui/arrow_button.h"
 
 namespace dfe
 {
@@ -19,7 +20,9 @@ namespace dfe
         auto editor = std::make_shared<dfe_ui::TextBox>(65 + 185, 50, 300, 50);
         auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
         auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
+        auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
         button->icon_position(dfe_ui::Button::icon_center);
+        button->checked_icon(dfe_ui::img_24x24_bee);
         
         editor->text(std::wstring(L"Editor"));
         editor->outline_color(0xFF0000FF);
@@ -97,6 +100,7 @@ namespace dfe
         win->add(editor);
         win->add(label);
         win->add(button);
+        win->add(arrow_button);
 
         win->scale(1.0);
         win->run();
