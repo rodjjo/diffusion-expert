@@ -24,6 +24,13 @@ typedef enum {
   text_alligment_bottom
 } vertical_text_alignment_t;
 
+typedef enum {
+  cursor_arrow,
+  cursor_drag,
+  cursor_hand,
+  cursor_edit
+} component_cursor_t;
+
 class Component;
 
 class ScissorContext {
@@ -130,6 +137,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     void tag(size_t value);
 
     virtual component_status_t status();
+    virtual component_cursor_t cursor();
 
     static int compute_text_min_y(void *text_shape);
 

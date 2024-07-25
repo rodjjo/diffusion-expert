@@ -30,6 +30,7 @@ typedef enum {
     img_24x24_green_pin,
     img_24x24_heart,
     img_24x24_medium_rating,
+    cur_24x24_arrow,
     // keep img_none at the end
     img_none
 } icon_type_t;

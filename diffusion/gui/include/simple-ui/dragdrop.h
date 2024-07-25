@@ -27,7 +27,7 @@ class DragDrop : public Panel {
         bool drag_enabled() override;
         bool drop_enabled() override;
         component_status_t status() override;
-
+        component_cursor_t cursor() override;
     protected:
         bool accept_drag(Component *comp) override;
         bool accept_drop(Component *comp) override;

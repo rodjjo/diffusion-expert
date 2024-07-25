@@ -111,5 +111,9 @@ namespace dfe_ui
         }
     }
 
+    component_cursor_t DragDrop::cursor() {
+        return drag_enabled_ ? cursor_drag : cursor_arrow;
+    }
+
 
 } // namespace dfe_ui

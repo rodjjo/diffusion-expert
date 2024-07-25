@@ -34,6 +34,7 @@ class Edit : public Component {
     uint32_t cursor_color();
     uint32_t text_color();
     uint32_t selection_color();
+    component_cursor_t cursor() override;
 
   protected:
     bool clickable() override;

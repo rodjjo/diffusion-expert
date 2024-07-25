@@ -33,6 +33,7 @@ class Window : public Component {
     void replace_mouse(Component *component);
     void complete_drag(Component *component);
     void update_drag_coord();
+    void update_cursor(void *render_window);
 
   private:
     std::shared_ptr<void> window_;

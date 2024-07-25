@@ -502,6 +502,10 @@ component_status_t Component::status() {
     return component_status_normal;
 }
 
+component_cursor_t Component::cursor() {
+    return cursor_arrow;
+}
+
 Component *Component::parent() {
     return parent_;
 }

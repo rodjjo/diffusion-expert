@@ -83,6 +83,7 @@ void Window::run() {
                     mouse_middle_pressed_ = false;
                     this->handle_mouse_middle_released(mouse_moved_event->position.x, mouse_moved_event->position.y);
                 }
+                update_cursor(window);
             } else if (event->is<sf::Event::MouseEntered>()) {
                 /*
                     mouse enters the window
@@ -303,6 +304,34 @@ void Window::remove_mouse() {
         component_in_mouse_.reset();
     }
 }
+
+void Window::update_cursor(void *render_window) {
+    static auto cur_arrow = sf::Cursor::loadFromSystem(sf::Cursor::Type::Arrow);
+    static auto cur_hand = sf::Cursor::loadFromSystem(sf::Cursor::Type::Hand);
+    static auto cur_sizeall = sf::Cursor::loadFromSystem(sf::Cursor::Type::SizeAll);
+    static auto cur_edit = sf::Cursor::loadFromSystem(sf::Cursor::Type::Text);
+    
+    auto wnd = static_cast<sf::RenderWindow *>(render_window);
+    sf::Cursor::Type cursor_type = sf::Cursor::Type::Arrow;
+    if (cur_arrow && cur_hand && cur_sizeall && cur_edit) {
+        if (component_in_drag_) {
+            wnd->setMouseCursor(*cur_sizeall);
+        } else if (component_in_mouse_) {
+            if (component_in_mouse_->cursor() == cursor_drag) {
+                wnd->setMouseCursor(*cur_sizeall);
+            } else if (component_in_mouse_->cursor() == cursor_hand) {
+                wnd->setMouseCursor(*cur_hand);
+            } else if (component_in_mouse_->cursor() == cursor_edit) {
+                wnd->setMouseCursor(*cur_edit);
+            } else {
+                wnd->setMouseCursor(*cur_arrow);
+            }
+        } else {
+            wnd->setMouseCursor(*cur_arrow);
+        }
+    }
+}
+
 
 std::shared_ptr<Window> window_new(int w, int h, const char *title) {
     return std::make_shared<Window>(Window(w, h, title));

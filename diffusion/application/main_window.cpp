@@ -18,10 +18,10 @@ namespace dfe
 
         auto editor = std::make_shared<dfe_ui::TextBox>(65 + 185, 50, 300, 50);
         auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
-        auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L""), dfe_ui::img_24x24_open);
+        auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
         button->icon_position(dfe_ui::Button::icon_center);
         
-        editor->text(std::wstring(L"Vaz"));
+        editor->text(std::wstring(L"Editor"));
         editor->outline_color(0xFF0000FF);
 
         panel3->drag_enabled(true);
@@ -87,7 +87,9 @@ namespace dfe
         panel2->set_on_drop_end(turn_gray);
 
         panel3->bg_color(255, 100, 100, 255);
-
+        auto l = std::make_shared<dfe_ui::Label>(5, 1,  150, 50, std::wstring(L"Drag me"));
+        l->character_size(15);
+        panel3->add(l);
         panel->add(panel3);
 
         win->add(panel);

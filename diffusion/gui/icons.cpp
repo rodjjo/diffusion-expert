@@ -39,6 +39,7 @@
 #include "xpm/24x24/new_document.xpm"
 #include "xpm/24x24/flash_drive.xpm"
 #include "xpm/24x24/green_pin.xpm"
+#include "xpm/24x24_cursors/arrow_cursor.xpm"
 
 #pragma GCC diagnostic pop
 
@@ -82,7 +83,8 @@ auto load_db() {
         { img_24x24_back, xpm_back },
         { img_24x24_forward, xpm_forward },
         { img_24x24_heart, xpm_heart },
-        { img_24x24_medium_rating, xpm_medium_rating }
+        { img_24x24_medium_rating, xpm_medium_rating },
+        { cur_24x24_arrow, arrow_cursor},
     };
     return xpm_db;
 }

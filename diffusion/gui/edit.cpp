@@ -33,6 +33,10 @@ void Edit::handle_focus_got() {
     focused_ = true;
 }
 
+component_cursor_t Edit::cursor() {
+    return cursor_edit;
+}
+
 
 void Edit::paint(void *render_window) {
     if (!text_.get()) return;

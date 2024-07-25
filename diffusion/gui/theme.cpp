@@ -12,12 +12,16 @@ namespace {
 
     // button
     uint32_t button_text_color_     = 0x111111FF;
-    uint32_t button_fill_color_     = 0x111111FF;
+    uint32_t button_fill_color_     = 0x444444FF;
+    uint32_t button_pressed_color_  = 0x555555FF;
     uint32_t button_out_color_      = 0xFF0000FF;
     uint32_t button_highlighted_color_ = 0x222222FF;
 
     // label
     uint32_t label_text_color_      = 0x000000FF;
+
+    // icons
+    uint8_t icon_margin_ = 3;
     
 }
 
@@ -57,15 +61,25 @@ uint32_t button_outline_color() {
     return button_out_color_;
 }
 
-void editor_text_color(uint32_t value) {
-    editor_text_color_ = value;
+uint32_t button_pressed_color() {
+    return button_pressed_color_;
 }
 
-void button_color(uint32_t text_color, uint32_t fill_color, uint32_t outline_color, uint32_t highlighted_color) {
-    button_text_color_ = text_color;
-    button_fill_color_ = fill_color;
-    button_out_color_ = outline_color;
-    button_highlighted_color_ = highlighted_color;
+void editor_color(uint32_t text_color, uint32_t fill_color, uint32_t outline_color, 
+    uint32_t cursor_color, uint32_t selection_color) {
+    editor_text_color_ = text_color;
+    editor_cursor_color_ = cursor_color;
+    editor_fill_color_ = fill_color;
+    editor_out_color_ = outline_color;
+    editor_selection_color_ = selection_color;
+}
+
+void button_color(uint32_t text, uint32_t fill, uint32_t outline, uint32_t highlighted, uint32_t pressed){
+    button_text_color_ = text;
+    button_fill_color_ = fill;
+    button_out_color_ = outline;
+    button_highlighted_color_ = highlighted;
+    button_pressed_color_ = pressed;
 }
 
 uint32_t button_highlighted_color() {
@@ -74,6 +88,15 @@ uint32_t button_highlighted_color() {
 
 void label_text_color(uint32_t value) {
     label_text_color_ = value;
+}
+
+
+uint8_t icon_margin() {
+    return icon_margin_;
+}
+
+void icon_margin(uint8_t value) {
+    icon_margin_ = value;
 }
 
     

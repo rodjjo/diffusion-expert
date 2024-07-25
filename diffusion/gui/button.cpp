@@ -21,6 +21,7 @@ Button::Button(int x, int y, int w, int h, const std::wstring &text, icon_type_t
     color(dfe_ui::theme::button_fill_color());
     outline_color(dfe_ui::theme::button_outline_color());
     highlighted_color(dfe_ui::theme::button_highlighted_color());
+    pressed_color(dfe_ui::theme::button_pressed_color());
 }
 
 void Button::update_text_min_y() {
@@ -34,7 +35,7 @@ Button::~Button() {
 
 std::wstring Button::text() {
     if (text_) {
-        static_cast<sf::Text *>(text_.get())->getString();
+        return static_cast<sf::Text *>(text_.get())->getString();
     }
     return std::wstring();
 }
@@ -90,6 +91,25 @@ uint32_t Button::highlighted_color() {
     return highlighted_color_;
 }
 
+void Button::handle_mouse_left_pressed(int x, int y) {
+    mouse_pressed_ = true;
+}
+
+void Button::handle_mouse_left_released(int x, int y) {
+    mouse_pressed_ = false;
+}
+
+
+
+uint32_t Button::pressed_color() {
+    return pressed_color_;
+}
+
+void Button::pressed_color(uint32_t value) {
+    pressed_color_ = value;
+}
+
+
 void Button::icon_position(Button::icon_position_t value) {
     icon_pos_ = value;
 }
@@ -106,13 +126,25 @@ bool Button::clickable() {
     return true;
 }
 
+component_cursor_t Button::cursor() {
+    return cursor_hand;
+}
+
 void Button::paint(void *render_window) {
     if (!text_) return;
     auto txt = *static_cast<sf::Text *>(text_.get());
     
     Drawing dw(Drawing::drawing_flat_box);
     dw.outline_color(outline_color_);
-    dw.color(mouse_inside_ ? highlighted_color_ : color_);
+
+    if (mouse_pressed_) {
+        dw.color(pressed_color_);
+    } else if (mouse_inside_) {
+        dw.color(highlighted_color_);
+    } else {
+        dw.color(color_);  
+    }
+    
     dw.size(abs_w(), abs_h());
     dw.position(abs_x(), abs_y());
     dw.margin(0);
@@ -155,6 +187,10 @@ void Button::paint(void *render_window) {
                 icon.setPosition({abs_x() + abs_w() / 2 - (icon_size.first / 2) * scale, y - icon_size.second * scale});
             } else if (icon_pos_ == icon_left) { 
                 icon.setPosition({x - icon_size.first * scale, abs_y() + abs_h() / 2  - (icon_size.second / 2) * scale });
+            } else if (icon_pos_ == icon_left_most) { 
+                icon.setPosition({abs_x() + theme::icon_margin() * scale, abs_y() + abs_h() / 2  - (icon_size.second / 2) * scale });
+            } else if (icon_pos_ == icon_right_most) { 
+                icon.setPosition({abs_x() + abs_w() - icon_size.first * scale - theme::icon_margin() * scale, abs_y() + abs_h() / 2  - (icon_size.second / 2) * scale });
             } else { 
                 icon.setPosition({x + text_w, abs_y() + abs_h() / 2  - (icon_size.second / 2) * scale });
             }
@@ -169,13 +205,7 @@ void Button::paint(void *render_window) {
         if (icons) {
             sf::Sprite icon(*static_cast<sf::Texture *>(icons->sfml_texture()), {{icon_coord.first, icon_coord.second}, { icon_size.first, icon_size.second}});
             icon.setScale({abs_scale(), abs_scale()});
-            if (icon_pos_ == icon_center) {
-                icon.setPosition({abs_x() + abs_w() / 2 - (icon_size.first / 2) * scale, abs_y() + abs_h() / 2 - (icon_size.second / 2) * scale});
-            } else if (icon_pos_ == icon_left) { 
-                icon.setPosition({abs_x(), abs_y() + abs_h() / 2 - (icon_size.second / 2) * scale });
-            } else { 
-                icon.setPosition({abs_x() + abs_w() - icon_size.first * scale, abs_y() + abs_h() / 2 - (icon_size.second / 2) * scale });
-            }
+            icon.setPosition({abs_x() + abs_w() / 2 - (icon_size.first / 2) * scale, abs_y() + abs_h() / 2 - (icon_size.second / 2) * scale});
             static_cast<sf::RenderWindow *>(render_window)->draw(icon);
         }
     }
