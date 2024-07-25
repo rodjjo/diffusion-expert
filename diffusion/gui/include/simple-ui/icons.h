@@ -36,14 +36,14 @@ typedef enum {
 
 
 class IconTextureBase {
-   public:
+    public:
         virtual ~IconTextureBase() {}
         virtual void *sfml_texture() = 0;
         virtual std::pair<int, int> get_coords(icon_type_t xpm_id) = 0;
         virtual std::pair<int, int> get_size(icon_type_t xpm_id) = 0;
 };
 
-IconTextureBase* load_icons_texture(const void *render_window);
-void unload_icons_texture(const void *render_window);
+IconTextureBase* load_icons_texture();
+void unload_icons_texture();
 
 } // namespace dfe_ui

@@ -5,6 +5,7 @@
 #include "simple-ui/clock.h"
 #include "simple-ui/edit.h"
 #include "simple-ui/default_font.h"
+#include "simple-ui/theme.h"
 
 namespace dfe_ui
 {
@@ -16,6 +17,9 @@ Edit::Edit(int x, int y, int w, int h) : Component() {
         text_.reset(new sf::Text(*font));
         update_font_min_y_coord();
     }
+    cursor_color(dfe_ui::theme::editor_selection_color());
+    selection_color(dfe_ui::theme::editor_selection_color());
+    text_color(dfe_ui::theme::editor_text_color());
 }
 
 Edit::~Edit() {

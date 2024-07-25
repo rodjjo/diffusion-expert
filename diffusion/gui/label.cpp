@@ -32,17 +32,17 @@ void Label::paint(void *render_window) {
         update_text_min_y();
     }
 
-    int left = abs_x(), top = abs_y();
-    int ttop = top - text_min_y_;
+    int x = abs_x(), top = abs_y();
+    int y = top - text_min_y_;
 
     int char_sz = txt.getCharacterSize();
 
      if (text_valign_ == text_alignment_middle)
-        ttop += abs_h() / 2 - char_sz / 2;
+        y += abs_h() / 2 - char_sz / 2;
     else if (text_valign_ == text_alligment_bottom)
-        ttop += abs_h() - char_sz;
+        y += abs_h() - char_sz;
 
-    txt.setPosition({(float)left, (float)ttop});
+    txt.setPosition({(float)x, (float)y});
     txt.setFillColor(sf::Color(text_color_));
     txt.setOutlineColor(sf::Color(text_color_));
     static_cast<sf::RenderWindow *>(render_window)->draw(txt);

@@ -18,11 +18,11 @@ Window::Window(unsigned int w, unsigned int h, const char *title) {
     int x = 0;
     int y = 0;
     static_cast<sf::RenderWindow*>(window_.get())->setPosition(sf::Vector2i(x, y));
-    load_icons_texture(window_.get());
+    load_icons_texture();
 }
 
 Window::~Window() {
-    unload_icons_texture(window_.get());
+    unload_icons_texture();
 }
 
 void Window::run() {

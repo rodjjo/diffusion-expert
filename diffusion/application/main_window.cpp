@@ -4,7 +4,9 @@
 #include "simple-ui/panel.h"
 #include "simple-ui/dragdrop.h"
 #include "simple-ui/edit.h"
+#include "simple-ui/text_box.h"
 #include "simple-ui/label.h"
+#include "simple-ui/button.h"
 
 namespace dfe
 {
@@ -14,10 +16,13 @@ namespace dfe
         auto panel2 = std::make_shared<dfe_ui::DragDrop>(65, 180 + 51, 180, 180);
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(-5, 25, 180 + 10, 50);
 
-        auto editor = std::make_shared<dfe_ui::Edit>(65 + 185, 50, 300, 50);
+        auto editor = std::make_shared<dfe_ui::TextBox>(65 + 185, 50, 300, 50);
         auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
+        auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L""), dfe_ui::img_24x24_open);
+        button->icon_position(dfe_ui::Button::icon_center);
         
         editor->text(std::wstring(L"Vaz"));
+        editor->outline_color(0xFF0000FF);
 
         panel3->drag_enabled(true);
         panel2->drop_enabled(true);
@@ -84,12 +89,14 @@ namespace dfe
         panel3->bg_color(255, 100, 100, 255);
 
         panel->add(panel3);
+
         win->add(panel);
         win->add(panel2);
         win->add(editor);
         win->add(label);
+        win->add(button);
 
-        win->scale(1);
+        win->scale(1.0);
         win->run();
     }
 } // namespace dfe

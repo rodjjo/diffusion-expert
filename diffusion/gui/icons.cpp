@@ -287,24 +287,18 @@ std::pair<int, int> IconTexture::get_size(icon_type_t xpm_id) {
 }
 
 namespace {
-    std::map<const void *, std::shared_ptr<IconTextureBase> > textures;
+    std::shared_ptr<IconTextureBase> textures;
 }
 
-IconTextureBase* load_icons_texture(const void *render_window) {
-    auto it = textures.find(render_window);
-    if (it != textures.end()) {
-        return it->second.get();
+IconTextureBase* load_icons_texture() {
+    if (!textures) {
+        textures = std::make_shared<IconTexture>();;
     }
-    auto loaded = std::make_shared<IconTexture>();
-    textures[render_window] = loaded;
-    return loaded.get();
+    return textures.get();
 }
 
-void unload_icons_texture(const void *render_window) {
-    auto it = textures.find(render_window);
-    if (it != textures.end()) {
-        textures.erase(it);
-    }
+void unload_icons_texture() {
+    textures.reset();
 }
 
 
