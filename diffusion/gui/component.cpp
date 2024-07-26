@@ -277,68 +277,6 @@ bool Component::focusable() {
     return false;
 }
 
-void Component::parent_changed() {
-}
-
-void Component::handle_parent_resized() {
-}
-
-void Component::handle_textentered(wchar_t unicode) {
-}
-
-void Component::handle_mouse_left_pressed(int x, int y) {
-}
-
-void Component::handle_mouse_middle_pressed(int x, int y) {
-}
-
-void Component::handle_mouse_right_pressed(int x, int y) {
-}
-
-void Component::handle_mouse_left_released(int x, int y) {
-}
-
-void Component::handle_mouse_middle_released(int x, int y) {
-}
-
-void Component::handle_mouse_right_released(int x, int y) {
-}
-
-void Component::handle_mouse_moved(int x, int y) {
-}
-
-void Component::handle_keypressed(int key) {
-}
-
-void Component::handle_mouse_wheel(int8_t direction, int x, int y) {
-}
-
-void Component::handle_focus_lost() {
-}
-
-void Component::handle_focus_got() {
-}
-
-void Component::drag_begin() {
-}
-
-void Component::drag_end() {
-}
-
-void Component::drop_begin() {
-}
-
-void Component::drop_end() {
-}
-
-void Component::mouse_enter() {
-}
-
-void Component::mouse_exit() {
-}
-
-void Component::complete_drop(Component *comp) {
-}
 
 size_t Component::tag() {
     return tag_;
@@ -367,13 +305,13 @@ void Component::drop_end(Component *source) {
     }
 }
 
-void Component::float_off() {
+void Component::float_on() {
     if (window_ != NULL && window_ != this) {
         window_->add_floating_commponent(this);
     }
 }
 
-void Component::float_on() {
+void Component::float_off() {
     if (window_ != NULL && window_ != this) {
         window_->remove_floating_commponent(this);
     }

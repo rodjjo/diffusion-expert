@@ -1,11 +1,14 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include "simple-ui/icons.h"
 #include "simple-ui/component.h"
 
 namespace dfe_ui
 {
+    typedef std::function<void(Component* self)> cb_button_click_t;
+
     class Button : public Component {
         public:
             enum icon_position_t {
@@ -41,6 +44,8 @@ namespace dfe_ui
             bool checked();
             void checked(bool value);
 
+            void onclick(cb_button_click_t value);
+
         protected:
             virtual void mouse_enter() override;
             virtual void mouse_exit() override;
@@ -67,5 +72,6 @@ namespace dfe_ui
             uint32_t                outline_color_ = 0x000000FF;
             uint32_t                highlighted_color_ = 0xFFFFFFFF;
             uint32_t                pressed_color_ = 0x666666FF;
+            cb_button_click_t       on_click_;
     };
 } // namespace dfe_ui

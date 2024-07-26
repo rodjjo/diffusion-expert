@@ -30,9 +30,7 @@ class Window : public Component {
     void handle_mouse_moved(int x, int y) override;
     void handle_keypressed(int key) override;
     void handle_mouse_wheel(int8_t direction, int x, int y) override;
-    Component *component_at_mouse(int &x, int &y, bool &floating);
-    Component *component_at_mouse(int &x, int &y);
-    
+
   private:
     void remove_focus();
     void remove_drag();
@@ -43,6 +41,9 @@ class Window : public Component {
     void complete_drag(Component *component);
     void update_drag_coord();
     void update_cursor(void *render_window);
+    Component *component_at_mouse(int &x, int &y, Component **floatting);
+    Component *component_at_mouse(int &x, int &y);
+    void pop_front_floatting_components(Component *floatting);
 
   private:
     std::list<std::shared_ptr<Component> > floating_components_;

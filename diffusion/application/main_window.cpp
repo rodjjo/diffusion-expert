@@ -17,6 +17,7 @@ namespace dfe
         auto panel = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 50, 180, 180);
         auto panel2 = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 180 + 51, 180, 180);
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(win.get(), -5, 25, 180 + 10, 50);
+        auto panel4 = std::make_shared<dfe_ui::DragDrop>(win.get(), 300, 25, 180 + 10, 50);
 
         auto editor = std::make_shared<dfe_ui::TextBox>(win.get(), 65 + 185, 50, 300, 50);
         auto label = std::make_shared<dfe_ui::Label>(win.get(), 65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
@@ -25,6 +26,10 @@ namespace dfe
         auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50, 280, 45, false);
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
+
+        button->onclick([comp{panel4.get()}] (dfe_ui::Component *self){
+            comp->float_on();
+        });
         
         editor->text(std::wstring(L"Editor"));
         editor->outline_color(0xFF0000FF);

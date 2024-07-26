@@ -101,6 +101,9 @@ void Button::handle_mouse_left_released(int x, int y) {
     if (checked_icon_ != img_none) {
         checked_ = !checked_;
     }
+    if (on_click_) {
+        on_click_(this);
+    }
 }
 
 uint32_t Button::pressed_color() {
@@ -228,6 +231,10 @@ void Button::paint(void *render_window) {
             static_cast<sf::RenderWindow *>(render_window)->draw(icon);
         }
     }
+}
+
+void Button::onclick(cb_button_click_t value) {
+    on_click_ = value;
 }
 
 

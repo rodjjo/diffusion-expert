@@ -102,6 +102,9 @@ void Window::run() {
         }
         window->clear(sf::Color::Black, 0);
         paint_children(window, true);
+        for (auto it = floating_components_.rbegin(); it != floating_components_.rend(); it++) {
+            it->get()->paint_children(window);
+        }
         if (component_in_drag_) {
             component_in_drag_->paint_children(window, false);
         }
@@ -116,23 +119,6 @@ void Window::handle_parent_resized() {
 void Window::handle_textentered(wchar_t unicode) {
     if (this->component_in_focus_) {
         this->component_in_focus_->handle_textentered(unicode);
-    }
-}
-
-void Window::handle_mouse_left_pressed(int x, int y) {
-    mouse_down_x_ = x;
-    mouse_down_y_ = y;
-    mouse_move_x_ = x;
-    mouse_move_y_ = y;
-    auto component = component_at_mouse(x, y);
-    if (component) {
-        replace_focus(component);
-        component->handle_mouse_left_pressed(x, y);
-        replace_drag(component);
-        update_drag_coord();
-        component_in_mouse_down_left_ = component->share();
-    } else {
-        remove_drag();
     }
 }
 
@@ -159,8 +145,31 @@ void Window::remove_focus() {
     }
 }
 
+void Window::handle_mouse_left_pressed(int x, int y) {
+    mouse_down_x_ = x;
+    mouse_down_y_ = y;
+    mouse_move_x_ = x;
+    mouse_move_y_ = y;
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
+    if (component) {
+        replace_focus(component);
+        component->handle_mouse_left_pressed(x, y);
+        replace_drag(component);
+        update_drag_coord();
+        component_in_mouse_down_left_ = component->share();
+    } else {
+        remove_drag();
+    }
+}
+
 void Window::handle_mouse_middle_pressed(int x, int y) {
-    auto component = find_top_clickable(x, y);
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
     if (component) {
         replace_focus(component);
         component->handle_mouse_middle_pressed(x, y);
@@ -169,7 +178,11 @@ void Window::handle_mouse_middle_pressed(int x, int y) {
 }
 
 void Window::handle_mouse_right_pressed(int x, int y) {
-    auto component = find_top_clickable(x, y);
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
+    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_right_pressed(x, y);
@@ -183,7 +196,7 @@ void Window::handle_mouse_left_released(int x, int y) {
         component_in_mouse_down_left_->handle_mouse_left_released(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
         component_in_mouse_down_left_.reset();
     }
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         if (released_ptr != released_ptr) {
             component->handle_mouse_left_released(x, y);
@@ -341,13 +354,21 @@ void Window::update_cursor(void *render_window) {
     }
 }
 
-Component *Window::component_at_mouse(int &x, int &y, bool &floating) {
+Component *Window::component_at_mouse(int &x, int &y, Component **floatting) {
+    if (floatting) {
+        *floatting = NULL;
+    }
+
     int x_save = x;
     int y_save = y;
     for (auto & i : floating_components_) {
-        if (auto c = i->find_top_clickable(x, y)) {
-            floating = true;
-            return c;
+        if (x >= i->abs_x() && y >= i->abs_y() && x <= i->abs_x() + i->abs_w() && y <= i->abs_y() + i->abs_h()) {
+            if (auto c = i->find_top_clickable(x, y)) {
+                if (floatting) {
+                    *floatting = i.get();
+                }
+                return c;
+            }
         }
         x = x_save;
         y = y_save;
@@ -359,8 +380,7 @@ Component *Window::component_at_mouse(int &x, int &y, bool &floating) {
 }
 
 Component *Window::component_at_mouse(int &x, int &y) {
-    bool _;
-    return component_at_mouse(x, y, _);
+    return component_at_mouse(x, y, NULL);
 }
 
 
@@ -378,9 +398,20 @@ void Window::remove_floating_commponent(Component *comp) {
     if (comp == this) return;
     for (auto it = floating_components_.begin(); it != floating_components_.end(); it++) {
         if (it->get() == comp) {
+            it->get()->handle_float_off();
             floating_components_.erase(it);
             return;
         }
+    }
+}
+
+void Window::pop_front_floatting_components(Component *floatting) {
+    while(floating_components_.begin() != floating_components_.end()) {
+        if (floating_components_.begin()->get() == floatting) {
+            return;
+        }
+        floating_components_.begin()->get()->handle_float_off();
+        floating_components_.erase(floating_components_.begin());
     }
 }
 

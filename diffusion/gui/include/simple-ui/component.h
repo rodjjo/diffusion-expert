@@ -89,20 +89,20 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     virtual bool accept_drag(Component *comp);
     virtual bool accept_drop(Component *comp);
-    virtual void complete_drop(Component *comp);
+    virtual void complete_drop(Component *comp) {};
     
-    virtual void drag_begin();
-    virtual void drag_end();
-    virtual void drop_begin();
-    virtual void drop_end();
+    virtual void drag_begin() {};
+    virtual void drag_end() {};
+    virtual void drop_begin() {};
+    virtual void drop_end() {};
 
-    virtual void mouse_enter();
-    virtual void mouse_exit();
+    virtual void mouse_enter() {};
+    virtual void mouse_exit() {};
     
     void drop_begin(Component *source);
     void drop_end(Component *source);
 
-    virtual void parent_changed();
+    virtual void parent_changed() {};
 
     int x();
     int y();
@@ -146,19 +146,20 @@ class Component : public std::enable_shared_from_this<Component>  {
     static int compute_text_min_y(void *text_shape);
 
    public:
-    virtual void handle_parent_resized();
-    virtual void handle_textentered(wchar_t unicode);
-    virtual void handle_mouse_left_pressed(int x, int y);
-    virtual void handle_mouse_middle_pressed(int x, int y);
-    virtual void handle_mouse_right_pressed(int x, int y);
-    virtual void handle_mouse_left_released(int x, int y);
-    virtual void handle_mouse_middle_released(int x, int y);
-    virtual void handle_mouse_right_released(int x, int y);
-    virtual void handle_mouse_moved(int x, int y);
-    virtual void handle_keypressed(int key);
-    virtual void handle_mouse_wheel(int8_t direction, int x, int y);
-    virtual void handle_focus_lost();
-    virtual void handle_focus_got();
+    virtual void handle_parent_resized() {};
+    virtual void handle_textentered(wchar_t unicode) {};
+    virtual void handle_mouse_left_pressed(int x, int y) {};
+    virtual void handle_mouse_middle_pressed(int x, int y) {};
+    virtual void handle_mouse_right_pressed(int x, int y) {};
+    virtual void handle_mouse_left_released(int x, int y) {};
+    virtual void handle_mouse_middle_released(int x, int y) {};
+    virtual void handle_mouse_right_released(int x, int y) {};
+    virtual void handle_mouse_moved(int x, int y) {};
+    virtual void handle_keypressed(int key) {};
+    virtual void handle_mouse_wheel(int8_t direction, int x, int y) {};
+    virtual void handle_focus_lost() {};
+    virtual void handle_focus_got() {};
+    virtual void handle_float_off() {};
 
   protected:
     void fire_parent_resized();
