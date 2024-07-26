@@ -7,7 +7,7 @@
 namespace dfe_ui {
 
 
-Window::Window(unsigned int w, unsigned int h, const char *title) {
+Window::Window(unsigned int w, unsigned int h, const char *title) : Component(this) {
     window_.reset(
         new sf::RenderWindow(sf::VideoMode({w, h}),
                             title,
@@ -124,7 +124,7 @@ void Window::handle_mouse_left_pressed(int x, int y) {
     mouse_down_y_ = y;
     mouse_move_x_ = x;
     mouse_move_y_ = y;
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
@@ -230,7 +230,7 @@ void Window::handle_mouse_middle_released(int x, int y) {
         component_in_mouse_down_middle_->handle_mouse_middle_released(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
         component_in_mouse_down_middle_.reset();
     }
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         if (component != released_ptr) {
             component->handle_mouse_middle_released(x, y);
@@ -244,7 +244,7 @@ void Window::handle_mouse_right_released(int x, int y) {
         component_in_mouse_down_right_->handle_mouse_middle_released(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
         component_in_mouse_down_right_.reset();
     }
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         if (component != released_ptr) {
             component->handle_mouse_right_released(x, y);
@@ -264,7 +264,7 @@ void Window::handle_mouse_moved(int x, int y) {
     }
     mouse_move_x_ = x;
     mouse_move_y_ = y;
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         component->handle_mouse_moved(x, y);
         replace_mouse(component);
@@ -290,7 +290,7 @@ void Window::handle_keypressed(int key) {
 }
 
 void Window::handle_mouse_wheel(int8_t direction, int x, int y) {
-    auto component = find_top_clickable(x, y);
+    auto component = component_at_mouse(x, y);
     if (component) {
         component->handle_mouse_wheel(direction, x, y);
     }
@@ -337,6 +337,49 @@ void Window::update_cursor(void *render_window) {
             }
         } else {
             wnd->setMouseCursor(*cur_arrow);
+        }
+    }
+}
+
+Component *Window::component_at_mouse(int &x, int &y, bool &floating) {
+    int x_save = x;
+    int y_save = y;
+    for (auto & i : floating_components_) {
+        if (auto c = i->find_top_clickable(x, y)) {
+            floating = true;
+            return c;
+        }
+        x = x_save;
+        y = y_save;
+    }
+
+    x = x_save;
+    y = y_save;
+    return find_top_clickable(x, y);
+}
+
+Component *Window::component_at_mouse(int &x, int &y) {
+    bool _;
+    return component_at_mouse(x, y, _);
+}
+
+
+void Window::add_floating_commponent(Component *comp) {
+    if (comp == this) return;
+    for (auto & i : floating_components_) {
+        if (comp == i.get()) {
+            return;
+        }
+    }
+    floating_components_.push_front(comp->share());
+}
+
+void Window::remove_floating_commponent(Component *comp) {
+    if (comp == this) return;
+    for (auto it = floating_components_.begin(); it != floating_components_.end(); it++) {
+        if (it->get() == comp) {
+            floating_components_.erase(it);
+            return;
         }
     }
 }

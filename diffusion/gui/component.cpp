@@ -9,6 +9,7 @@
 #include <SFML/Graphics/Text.hpp>
 
 #include "simple-ui/component.h"
+#include "simple-ui/win.h"
 
 namespace dfe_ui {
 
@@ -121,7 +122,7 @@ void ComponentList::sort() {
     std::sort(items_.begin(), items_.end(), [](const std::shared_ptr<Component>& a, const std::shared_ptr<Component>& b) {return a->zorder() > b->zorder();});
 }
 
-Component::Component() : items_(this) {
+Component::Component(Window *window) : window_(window), items_(this) {
 }
 
 Component::~Component() {
@@ -366,7 +367,17 @@ void Component::drop_end(Component *source) {
     }
 }
 
+void Component::float_off() {
+    if (window_ != NULL && window_ != this) {
+        window_->add_floating_commponent(this);
+    }
+}
 
+void Component::float_on() {
+    if (window_ != NULL && window_ != this) {
+        window_->remove_floating_commponent(this);
+    }
+}
 
 ComponentList & Component::items() {
     return items_;

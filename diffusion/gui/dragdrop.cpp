@@ -4,7 +4,7 @@
 
 namespace dfe_ui
 {
-    DragDrop::DragDrop(int x, int y, int w, int h) : Panel(x, y, w, h) {
+    DragDrop::DragDrop(Window * window, int x, int y, int w, int h) : Panel(window, x, y, w, h) {
     }
 
     DragDrop::~DragDrop() {

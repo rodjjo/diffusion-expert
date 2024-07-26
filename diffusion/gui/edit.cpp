@@ -10,7 +10,7 @@
 namespace dfe_ui
 {
 
-Edit::Edit(int x, int y, int w, int h) : Component() {
+Edit::Edit(Window * window, int x, int y, int w, int h) : Component(window) {
     this->coordinates(x, y, w, h);
     auto font = static_cast<sf::Font *>(load_default_font());
     if (font) {

@@ -7,7 +7,7 @@
 namespace dfe_ui
 {
     
-Panel::Panel(int x, int y, int w, int h) : Component() {
+Panel::Panel(Window * window, int x, int y, int w, int h) : Component(window) {
     this->coordinates(x, y, w, h);
     this->bg_color(100, 100, 100, 255);
 }

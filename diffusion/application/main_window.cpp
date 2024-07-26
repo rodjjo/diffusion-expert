@@ -14,15 +14,15 @@ namespace dfe
 {
     void run_application() {
         auto win = dfe_ui::window_new(1280, 720, "Stable Diffusion");
-        auto panel = std::make_shared<dfe_ui::DragDrop>(65, 50, 180, 180);
-        auto panel2 = std::make_shared<dfe_ui::DragDrop>(65, 180 + 51, 180, 180);
-        auto panel3 = std::make_shared<dfe_ui::DragDrop>(-5, 25, 180 + 10, 50);
+        auto panel = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 50, 180, 180);
+        auto panel2 = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 180 + 51, 180, 180);
+        auto panel3 = std::make_shared<dfe_ui::DragDrop>(win.get(), -5, 25, 180 + 10, 50);
 
-        auto editor = std::make_shared<dfe_ui::TextBox>(65 + 185, 50, 300, 50);
-        auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
-        auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
-        auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
-        auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(65 + 185, 270 + 50, 280, 45, false);
+        auto editor = std::make_shared<dfe_ui::TextBox>(win.get(), 65 + 185, 50, 300, 50);
+        auto label = std::make_shared<dfe_ui::Label>(win.get(), 65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
+        auto button = std::make_shared<dfe_ui::Button>(win.get(), 65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
+        auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(win.get(), 65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
+        auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50, 280, 45, false);
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
         
@@ -92,7 +92,7 @@ namespace dfe
         panel2->set_on_drop_end(turn_gray);
 
         panel3->bg_color(255, 100, 100, 255);
-        auto l = std::make_shared<dfe_ui::Label>(5, 1,  150, 50, std::wstring(L"Drag me"));
+        auto l = std::make_shared<dfe_ui::Label>(win.get(), 5, 1,  150, 50, std::wstring(L"Drag me"));
         l->character_size(15);
         panel3->add(l);
         panel->add(panel3);

@@ -8,7 +8,7 @@
 namespace dfe_ui
 {
 
-Scrollbar::Scrollbar(int x, int y, int w, int h, bool vertical) : vertical_(vertical) {
+Scrollbar::Scrollbar(Window * window, int x, int y, int w, int h, bool vertical) : Component(window), vertical_(vertical) {
     coordinates(x, y, w, h);
     arrow_color(theme::button_text_color());
     color(theme::button_fill_color());
@@ -250,7 +250,7 @@ void Scrollbar::handle_mouse_moved(int x, int y) {
     compute_mouse_region(x, y);
     scrool_regions_t regions;
     compute_regions(regions);
-    
+
     if (mouse_in_region_ == 0 || mouse_in_region_ == 4) {
         current_cursor_ = cursor_hand;
     } else if (mouse_in_region_ == 2) {

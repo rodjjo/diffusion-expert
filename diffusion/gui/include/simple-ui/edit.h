@@ -12,7 +12,7 @@ typedef std::function<void(Component*)> cb_text_changed_t;
 
 class Edit : public Component {
   public:
-    Edit(int x, int y, int w, int h);
+    Edit(Window * window, int x, int y, int w, int h);
     virtual ~Edit();
     virtual void paint(void *render_window) override;
     bool readonly();

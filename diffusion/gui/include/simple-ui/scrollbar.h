@@ -9,7 +9,7 @@ namespace dfe_ui
 class Scrollbar : public Component {
     
     public:
-        Scrollbar(int x, int y, int w, int h, bool vertical);
+        Scrollbar(Window * window, int x, int y, int w, int h, bool vertical);
         virtual ~Scrollbar();
 
         int min();

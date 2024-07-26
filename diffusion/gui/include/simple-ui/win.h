@@ -1,6 +1,8 @@
 #pragma once
 
+#include <list>
 #include "component.h"
+
 
 namespace dfe_ui
 {
@@ -10,6 +12,11 @@ class Window : public Component {
     Window(unsigned int w, unsigned int h, const char *title);
     virtual ~Window();
     void run();
+
+  private:
+    friend class Component;
+    void add_floating_commponent(Component *comp);
+    void remove_floating_commponent(Component *comp);
 
   protected:
     void handle_parent_resized() override;
@@ -23,7 +30,9 @@ class Window : public Component {
     void handle_mouse_moved(int x, int y) override;
     void handle_keypressed(int key) override;
     void handle_mouse_wheel(int8_t direction, int x, int y) override;
-
+    Component *component_at_mouse(int &x, int &y, bool &floating);
+    Component *component_at_mouse(int &x, int &y);
+    
   private:
     void remove_focus();
     void remove_drag();
@@ -36,6 +45,7 @@ class Window : public Component {
     void update_cursor(void *render_window);
 
   private:
+    std::list<std::shared_ptr<Component> > floating_components_;
     std::shared_ptr<void> window_;
     bool mouse_left_pressed_ = false;
     bool mouse_middle_pressed_ = false;

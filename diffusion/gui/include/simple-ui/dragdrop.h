@@ -13,7 +13,7 @@ typedef std::function<void(Component *self)> cb_dragdrop_hint_t;
 
 class DragDrop : public Panel {
     public:
-        DragDrop(int x, int y, int w, int h);
+        DragDrop(Window * window, int x, int y, int w, int h);
         virtual ~DragDrop();
         void set_on_accept_drop(cb_accept_component_t cb);
         void set_on_accept_drag(cb_accept_component_t cb);

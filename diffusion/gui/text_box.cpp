@@ -6,7 +6,7 @@
 namespace dfe_ui
 {
 
-TextBox::TextBox(int x, int y, int w, int h) : Edit(x, y, w, h) {
+TextBox::TextBox(Window * window, int x, int y, int w, int h) : Edit(window, x, y, w, h) {
     text_color(dfe_ui::theme::editor_text_color());
     cursor_color(dfe_ui::theme::editor_cursor_color());
     selection_color(dfe_ui::theme::editor_selection_color());

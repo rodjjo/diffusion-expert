@@ -1,10 +1,11 @@
 #include "simple-ui/arrow_button.h"
 #include "simple-ui/theme.h"
+#include "simple-ui/win.h"
 #include "drawings.h"
 
 namespace dfe_ui {
         
-ArrowButton::ArrowButton(int x, int y, int w, int h, arrow_direction_t direction) : direction_(direction) {
+ArrowButton::ArrowButton(Window * window, int x, int y, int w, int h, arrow_direction_t direction) : Component(window), direction_(direction) {
     this->coordinates(x, y, w, h);
     arrow_color(dfe_ui::theme::button_text_color());
     color(dfe_ui::theme::button_fill_color());

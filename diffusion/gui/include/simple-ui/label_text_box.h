@@ -8,7 +8,7 @@ namespace dfe_ui
 
 class LabelTextbox : public Component {
    public:
-    LabelTextbox(int x, int y, int w, int h, const char *label);
+    LabelTextbox(Window * window, int x, int y, int w, int h, const char *label);
     ~LabelTextbox();
 
 };

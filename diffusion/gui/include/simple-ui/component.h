@@ -32,6 +32,7 @@ typedef enum {
 } component_cursor_t;
 
 class Component;
+class Window;
 
 class ScissorContext {
   public:
@@ -67,7 +68,7 @@ class ComponentList {
 
 class Component : public std::enable_shared_from_this<Component>  {
   public:
-    Component();
+    Component(Window *window);
     virtual ~Component();
     std::shared_ptr<Component> share();
     virtual void add(std::shared_ptr<Component> child);
@@ -128,7 +129,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual bool editable();
     virtual bool focusable();
     Component *parent();
-    Component *find_top_clickable(int &x, int &y);
+    virtual Component *find_top_clickable(int &x, int &y);
     void paint_children(void *render_window, bool check_status=true);
     void set_drag_coord(int x, int y);
 
@@ -138,6 +139,9 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     virtual component_status_t status();
     virtual component_cursor_t cursor();
+    
+    void float_on();
+    void float_off();
 
     static int compute_text_min_y(void *text_shape);
 
@@ -160,6 +164,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     void fire_parent_resized();
   
   private:
+    Window                    *window_;
     ComponentList             items_;
     bool                      enabled_ = true;
     bool                      visible_ = true;

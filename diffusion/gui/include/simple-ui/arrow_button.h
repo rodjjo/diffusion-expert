@@ -15,7 +15,7 @@ class ArrowButton : public Component {
             arrow_left
         };
         
-        ArrowButton(int x, int y, int w, int h, arrow_direction_t direction);
+        ArrowButton(Window * window, int x, int y, int w, int h, arrow_direction_t direction);
         virtual ~ArrowButton();
         int arrow_size();
         void arrow_size(int value);

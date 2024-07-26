@@ -4,12 +4,13 @@
 #include "simple-ui/default_font.h"
 #include "simple-ui/theme.h"
 #include "simple-ui/button.h"
+#include "simple-ui/win.h"
 #include "drawings.h"
 
 namespace dfe_ui
 {
 
-Button::Button(int x, int y, int w, int h, const std::wstring &text, icon_type_t icon_type) : Component(), icon_type_(icon_type) {
+Button::Button(Window * window, int x, int y, int w, int h, const std::wstring &text, icon_type_t icon_type) : Component(window), icon_type_(icon_type) {
     this->coordinates(x, y, w, h);
     auto font = static_cast<sf::Font *>(load_default_font());
     if (font) {

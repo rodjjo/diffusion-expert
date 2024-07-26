@@ -16,7 +16,7 @@ namespace dfe_ui
                 icon_right_most
             };
 
-            Button(int x, int y, int w, int h, const std::wstring &text, icon_type_t icon_type=img_none);
+            Button(Window * window, int x, int y, int w, int h, const std::wstring &text, icon_type_t icon_type=img_none);
             virtual ~Button();
             std::wstring text();
             void text(const std::wstring &value);

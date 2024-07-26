@@ -6,7 +6,7 @@
 namespace dfe_ui
 {
 
-Label::Label(int x, int y, int w, int h, const std::wstring &text) {
+Label::Label(Window * window, int x, int y, int w, int h, const std::wstring &text) : Component(window) {
     this->coordinates(x, y, w, h);
     auto font = static_cast<sf::Font *>(load_default_font());
     if (font) {

@@ -11,7 +11,7 @@ namespace dfe_ui
 
 class TextBox : public Edit {
   public:
-    TextBox(int x, int y, int w, int h);
+    TextBox(Window * window, int x, int y, int w, int h);
     virtual ~TextBox();
     virtual void paint(void *render_window) override;
     void color(uint32_t value);

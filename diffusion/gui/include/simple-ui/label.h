@@ -8,7 +8,7 @@ namespace dfe_ui
 
 class Label : public Component {
   public:
-    Label(int x, int y, int w, int h, const std::wstring &text);
+    Label(Window * window, int x, int y, int w, int h, const std::wstring &text);
     virtual ~Label();
     virtual void paint(void *render_window) override;
     std::wstring text();
