@@ -8,6 +8,7 @@
 #include "simple-ui/label.h"
 #include "simple-ui/button.h"
 #include "simple-ui/arrow_button.h"
+#include "simple-ui/scrollbar.h"
 
 namespace dfe
 {
@@ -21,6 +22,7 @@ namespace dfe
         auto label = std::make_shared<dfe_ui::Label>(65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
         auto button = std::make_shared<dfe_ui::Button>(65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
         auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
+        auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(65 + 185, 270 + 50, 280, 45, false);
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
         
@@ -101,6 +103,7 @@ namespace dfe
         win->add(label);
         win->add(button);
         win->add(arrow_button);
+        win->add(scrollbar);
 
         win->scale(1.0);
         win->run();

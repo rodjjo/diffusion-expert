@@ -21,7 +21,11 @@ namespace {
     uint32_t label_text_color_      = 0x000000FF;
 
     // icons
-    uint8_t icon_margin_ = 3;
+    uint8_t icon_margin_            = 5;
+
+    // scrollbar
+    uint32_t scrollbar_color_               = 0xAAAAAAFF;
+    uint32_t scrollbar_highlighted_color_   = 0xBBBBBBFF;
     
 }
 
@@ -97,6 +101,14 @@ uint8_t icon_margin() {
 
 void icon_margin(uint8_t value) {
     icon_margin_ = value;
+}
+
+uint32_t scroolbar_color() {
+    return scrollbar_color_;
+}
+
+uint32_t scroolbar_highlighted_color() {
+    return scrollbar_highlighted_color_;
 }
 
     

@@ -31,6 +31,10 @@ void button_color(uint32_t text, uint32_t fill, uint32_t outline, uint32_t highl
 uint8_t icon_margin();
 void icon_margin(uint8_t value);
 
+// scrollbar
+uint32_t scroolbar_color();
+uint32_t scroolbar_highlighted_color();
+
 };
 
 } // namespace dfe_ui
