@@ -24,6 +24,7 @@ namespace dfe
         auto button = std::make_shared<dfe_ui::Button>(win.get(), 65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
         auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(win.get(), 65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
         auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50, 280, 45, false);
+        auto scrollbar2 = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50 + 55, 45, 280, true);
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
 
@@ -109,8 +110,9 @@ namespace dfe
         win->add(button);
         win->add(arrow_button);
         win->add(scrollbar);
+        win->add(scrollbar2);
 
-        win->scale(1.0);
+        win->scale(0.75);
         win->run();
     }
 } // namespace dfe

@@ -54,7 +54,7 @@ void Window::run() {
                 } else if (mouse_pressed_event->button == sf::Mouse::Button::Middle) {
                     this->mouse_middle_pressed_ = true;
                     this->handle_mouse_middle_pressed(mouse_pressed_event->position.x, mouse_pressed_event->position.y);
-                } else if (mouse_pressed_event->button == sf::Mouse::Button::Middle) {
+                } else if (mouse_pressed_event->button == sf::Mouse::Button::Right) {
                     this->mouse_middle_pressed_ = true;
                     this->handle_mouse_right_pressed(mouse_pressed_event->position.x, mouse_pressed_event->position.y);
                 } 
@@ -65,7 +65,7 @@ void Window::run() {
                 } else if (mouse_released_event->button == sf::Mouse::Button::Middle) {
                     this->mouse_middle_pressed_ = false;
                     this->handle_mouse_middle_released(mouse_released_event->position.x, mouse_released_event->position.y);
-                } else if (mouse_released_event->button == sf::Mouse::Button::Middle) {
+                } else if (mouse_released_event->button == sf::Mouse::Button::Right) {
                     this->mouse_middle_pressed_ = false;
                     this->handle_mouse_right_released(mouse_released_event->position.x, mouse_released_event->position.y);
                 } 
@@ -182,7 +182,6 @@ void Window::handle_mouse_right_pressed(int x, int y) {
     auto component = component_at_mouse(x, y, &floatting);
     pop_front_floatting_components(floatting);
 
-    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_right_pressed(x, y);
