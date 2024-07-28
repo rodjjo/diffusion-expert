@@ -165,7 +165,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     void fire_parent_resized();
   
   private:
-    Window                    *window_;
+    Window                    *window_ = NULL;
     ComponentList             items_;
     bool                      enabled_ = true;
     bool                      visible_ = true;

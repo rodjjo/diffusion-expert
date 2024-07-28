@@ -9,6 +9,8 @@
 #include "simple-ui/button.h"
 #include "simple-ui/arrow_button.h"
 #include "simple-ui/scrollbar.h"
+#include "simple-ui/progress.h"
+#include "simple-ui/listbox.h"
 
 namespace dfe
 {
@@ -25,8 +27,20 @@ namespace dfe
         auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(win.get(), 65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);
         auto scrollbar = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50, 280, 45, false);
         auto scrollbar2 = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50 + 55, 45, 280, true);
+        auto progress = std::make_shared<dfe_ui::ProgressBar>(win.get(), 65 + 185 + 50, 270 + 50 + 55, 280, 45);
+        auto listbox = std::make_shared<dfe_ui::Listbox>(win.get(), 65 + 185 + 50, 270 + 110 + 55, 280, 45 * 5);
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
+
+        char buffer[1024] = "";
+        for (int i = 0; i < 100; i++) {
+            sprintf(buffer, "Item %04d", i);
+            std::string text(buffer);
+            listbox->add(std::wstring(text.begin(), text.end()));
+        }
+
+
+        progress->progress(45);
 
         button->onclick([comp{panel4.get()}] (dfe_ui::Component *self){
             comp->float_on();
@@ -111,8 +125,11 @@ namespace dfe
         win->add(arrow_button);
         win->add(scrollbar);
         win->add(scrollbar2);
+        win->add(progress);
+        win->add(listbox);
 
-        win->scale(0.75);
+        win->scale(1.0);
         win->run();
     }
 } // namespace dfe
+

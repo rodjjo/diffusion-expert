@@ -7,7 +7,7 @@
 namespace dfe_ui {
 
 
-Window::Window(unsigned int w, unsigned int h, const char *title) : Component(this) {
+Window::Window(unsigned int w, unsigned int h, const char *title) : Component(NULL) {
     window_.reset(
         new sf::RenderWindow(sf::VideoMode({w, h}),
                             title,

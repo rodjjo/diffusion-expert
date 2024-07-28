@@ -79,11 +79,9 @@ bool ScissorContext::visible() {
 }
 
 ComponentList::ComponentList(Component *parent) : parent_(parent) {
-
 }
 
 ComponentList::~ComponentList() {
-
 }
 
 Component & ComponentList::operator[] (size_t index) {
@@ -383,6 +381,9 @@ int Component::abs_x() {
     if (parent_) {
         return (x_ * scale)  + parent_->abs_x() - (scroll_x_ * scale) + dx;
     }
+    if (window_ && window_ != this) {
+        return (x_ * scale)  + window_->abs_x() - (scroll_x_ * scale) + dx;
+    }
     return (x_ * scale) - (scroll_x_ * scale) + dx;
 }
 
@@ -391,6 +392,9 @@ int Component::abs_y() {
     float scale = abs_scale();
     if (parent_) {
         return (y_ * scale)  + parent_->abs_y() - (scroll_y_ * scale) + dy;
+    }
+    if (window_ && window_ != this) {
+        return (y_ * scale)  + window_->abs_y() - (scroll_y_ * scale) + dy;
     }
     return (y_ * scale) - (scroll_y_ * scale) + dy;
 }
@@ -410,6 +414,9 @@ float Component::scale() {
 float Component::abs_scale() {
     if (parent_) {
         return scale_ * parent_->abs_scale();
+    }
+    if (window_ && window_ != this) {
+        return scale_ * window_->abs_scale();
     }
     return scale_;
 }

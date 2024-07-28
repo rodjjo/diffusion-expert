@@ -1,7 +1,9 @@
 #include <SFML/Graphics.hpp>
 
 #include "simple-ui/default_font.h"
+#include "simple-ui/theme.h"
 #include "simple-ui/label.h"
+
 
 namespace dfe_ui
 {
@@ -14,6 +16,7 @@ Label::Label(Window * window, int x, int y, int w, int h, const std::wstring &te
         update_text_min_y();
         this->text(text);
     }
+    text_color(theme::label_text_color());
 }
 
 Label::~Label() {

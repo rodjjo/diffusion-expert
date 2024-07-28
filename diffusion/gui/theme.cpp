@@ -26,6 +26,17 @@ namespace {
     // scrollbar
     uint32_t scrollbar_color_               = 0xAAAAAAFF;
     uint32_t scrollbar_highlighted_color_   = 0xBBBBBBFF;
+
+    // progressbar
+    uint32_t progress_bar_color_            = 0xFFFFFFFF;
+    uint32_t progress_bar_outline_color_    = 0x000000FF;
+    uint32_t progress_bar_text_color_       = 0x888888FF;
+    uint32_t progress_bar_progress_color_   = 0x1100DDFF;
+
+    // listbox
+    uint8_t listbox_item_margin_            = 3;
+    uint32_t listbox_selected_color_         = 0x000000FF;
+    uint32_t listbox_selected_text_color_    = 0xFFFFFFFF;
     
 }
 
@@ -111,6 +122,33 @@ uint32_t scroolbar_highlighted_color() {
     return scrollbar_highlighted_color_;
 }
 
+uint32_t progress_bar_color() {
+    return progress_bar_color_;
+}
+
+uint32_t progress_bar_outline_color() {
+    return progress_bar_outline_color_;
+}
+
+uint32_t progress_bar_text_color() {
+    return progress_bar_text_color_;
+}
+
+uint32_t progress_bar_progress_color() {
+    return progress_bar_progress_color_;
+}
+
+uint8_t listbox_item_margin() {
+    return listbox_item_margin_;
+}
+
+uint32_t listbox_selected_color() {
+    return listbox_selected_color_;
+}
+
+uint32_t listbox_selected_text_color() {
+    return listbox_selected_text_color_;
+}
     
 } // namespace theme
 } // namespace dfe_ui

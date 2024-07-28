@@ -35,6 +35,18 @@ void icon_margin(uint8_t value);
 uint32_t scroolbar_color();
 uint32_t scroolbar_highlighted_color();
 
+// progressbar
+uint32_t progress_bar_color();
+uint32_t progress_bar_outline_color();
+uint32_t progress_bar_text_color();
+uint32_t progress_bar_progress_color();
+
+// listbox
+uint8_t listbox_item_margin();
+uint32_t listbox_selected_color();
+uint32_t listbox_selected_text_color();
+    
+
 };
 
 } // namespace dfe_ui
