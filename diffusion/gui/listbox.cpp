@@ -206,7 +206,11 @@ uint32_t Listbox::selected_color() {
 
 void Listbox::handle_mouse_left_pressed(int x, int y) {
     if (!text_.get()) return;
-    int item_height = this->item_height();
+    float scale = abs_scale();
+    if (scale == 0) {
+        return;
+    }
+    int item_height = this->item_height() / scale;
     int item_count = y / item_height;
     selected(top_element_ + item_count);
     if (onclick_) {
