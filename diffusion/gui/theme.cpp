@@ -4,24 +4,24 @@ namespace dfe_ui {
 namespace theme {
 namespace {
     // editor
-    uint32_t editor_text_color_     = 0x000000FF;
-    uint32_t editor_out_color_      = 0xFF0000FF;
-    uint32_t editor_fill_color_     = 0xFFFFFFFF;
-    uint32_t editor_cursor_color_   = 0x000000FF;
-    uint32_t editor_selection_color_= 0x11111133;
+    uint32_t editor_text_color_             = 0x000000FF;
+    uint32_t editor_out_color_              = 0xFF0000FF;
+    uint32_t editor_fill_color_             = 0xFFFFFFFF;
+    uint32_t editor_cursor_color_           = 0x000000FF;
+    uint32_t editor_selection_color_        = 0x11111133;
 
     // button
-    uint32_t button_text_color_     = 0x111111FF;
-    uint32_t button_fill_color_     = 0x444444FF;
-    uint32_t button_pressed_color_  = 0x555555FF;
-    uint32_t button_out_color_      = 0xFF0000FF;
-    uint32_t button_highlighted_color_ = 0x222222FF;
+    uint32_t button_text_color_             = 0x111111FF;
+    uint32_t button_fill_color_             = 0x444444FF;
+    uint32_t button_pressed_color_          = 0x555555FF;
+    uint32_t button_out_color_              = 0xFF0000FF;
+    uint32_t button_highlighted_color_      = 0x222222FF;
 
     // label
-    uint32_t label_text_color_      = 0x000000FF;
+    uint32_t label_text_color_              = 0x000000FF;
 
     // icons
-    uint8_t icon_margin_            = 5;
+    uint8_t icon_margin_                    = 5;
 
     // scrollbar
     uint32_t scrollbar_color_               = 0xAAAAAAFF;
@@ -34,10 +34,15 @@ namespace {
     uint32_t progress_bar_progress_color_   = 0x1100DDFF;
 
     // listbox
-    uint8_t listbox_item_margin_            = 3;
+    uint8_t listbox_item_margin_             = 3;
     uint32_t listbox_selected_color_         = 0x000000FF;
     uint32_t listbox_selected_text_color_    = 0xFFFFFFFF;
-    
+
+    // scrollbox
+    uint32_t scrollbox_margin_               = 10;    
+    uint32_t scrollbox_scrollbar_size_       = 20;
+    uint32_t scrollbox_color_                = 0xBCBCBCFF;
+    uint32_t scrollbox_outline_color_        = 0xCCCCCCFF;
 }
 
 uint32_t editor_text_color() {
@@ -148,6 +153,22 @@ uint32_t listbox_selected_color() {
 
 uint32_t listbox_selected_text_color() {
     return listbox_selected_text_color_;
+}
+
+uint32_t scrollbox_margin() {
+    return scrollbox_margin_;
+}
+
+uint32_t scrollbox_scrollbar_size() {
+    return scrollbox_scrollbar_size_;
+}
+
+uint32_t scrollbox_color() {
+    return scrollbox_color_;
+}
+
+uint32_t scrollbox_outline_color() {
+    return scrollbox_outline_color_;
 }
     
 } // namespace theme

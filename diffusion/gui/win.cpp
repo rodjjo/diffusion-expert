@@ -19,6 +19,7 @@ Window::Window(unsigned int w, unsigned int h, const char *title) : Component(NU
     int y = 0;
     static_cast<sf::RenderWindow*>(window_.get())->setPosition(sf::Vector2i(x, y));
     load_icons_texture();
+    coordinates(x, y, w, h);
 }
 
 Window::~Window() {
@@ -150,10 +151,7 @@ void Window::handle_mouse_left_pressed(int x, int y) {
     mouse_down_y_ = y;
     mouse_move_x_ = x;
     mouse_move_y_ = y;
-    Component *floatting = NULL;
-    auto component = component_at_mouse(x, y, &floatting);
-    pop_front_floatting_components(floatting);
-
+    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
@@ -166,10 +164,7 @@ void Window::handle_mouse_left_pressed(int x, int y) {
 }
 
 void Window::handle_mouse_middle_pressed(int x, int y) {
-    Component *floatting = NULL;
-    auto component = component_at_mouse(x, y, &floatting);
-    pop_front_floatting_components(floatting);
-
+    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_middle_pressed(x, y);
@@ -178,31 +173,12 @@ void Window::handle_mouse_middle_pressed(int x, int y) {
 }
 
 void Window::handle_mouse_right_pressed(int x, int y) {
-    Component *floatting = NULL;
-    auto component = component_at_mouse(x, y, &floatting);
-    pop_front_floatting_components(floatting);
-
+    auto component = component_at_mouse(x, y);
     if (component) {
         replace_focus(component);
         component->handle_mouse_right_pressed(x, y);
         component_in_mouse_down_right_ = component->share();
     }
-}
-
-void Window::handle_mouse_left_released(int x, int y) {
-    auto released_ptr = component_in_mouse_down_left_.get();
-    if (component_in_mouse_down_left_) {
-        component_in_mouse_down_left_->handle_mouse_left_released(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
-        component_in_mouse_down_left_.reset();
-    }
-    auto component = component_at_mouse(x, y);
-    if (component) {
-        if (released_ptr != released_ptr) {
-            component->handle_mouse_left_released(x, y);
-        }
-        complete_drag(component);
-    }
-    remove_drag();
 }
 
 void Window::replace_drag(Component *component) {
@@ -236,13 +212,41 @@ void Window::complete_drag(Component *component) {
     }
 }
 
+
+void Window::handle_mouse_left_released(int x, int y) {
+    auto released_ptr = component_in_mouse_down_left_.get();
+    if (component_in_mouse_down_left_) {
+        component_in_mouse_down_left_->handle_mouse_left_released(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
+        component_in_mouse_down_left_.reset();
+    }
+    
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
+    if (component) {
+        if (released_ptr != released_ptr) {
+            component->handle_mouse_left_released(x, y);
+        } else {
+            component->handle_click();
+        }
+        complete_drag(component);
+    }
+    remove_drag();
+}
+
+
 void Window::handle_mouse_middle_released(int x, int y) {
     auto released_ptr = component_in_mouse_down_middle_.get();
     if (component_in_mouse_down_middle_) {
         component_in_mouse_down_middle_->handle_mouse_middle_released(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
         component_in_mouse_down_middle_.reset();
     }
-    auto component = component_at_mouse(x, y);
+    
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
     if (component) {
         if (component != released_ptr) {
             component->handle_mouse_middle_released(x, y);
@@ -256,7 +260,11 @@ void Window::handle_mouse_right_released(int x, int y) {
         component_in_mouse_down_right_->handle_mouse_middle_released(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
         component_in_mouse_down_right_.reset();
     }
-    auto component = component_at_mouse(x, y);
+    
+    Component *floatting = NULL;
+    auto component = component_at_mouse(x, y, &floatting);
+    pop_front_floatting_components(floatting);
+
     if (component) {
         if (component != released_ptr) {
             component->handle_mouse_right_released(x, y);
@@ -361,13 +369,11 @@ Component *Window::component_at_mouse(int &x, int &y, Component **floatting) {
     int x_save = x;
     int y_save = y;
     for (auto & i : floating_components_) {
-        if (x >= i->abs_x() && y >= i->abs_y() && x <= i->abs_x() + i->abs_w() && y <= i->abs_y() + i->abs_h()) {
-            if (auto c = i->find_top_clickable(x, y)) {
-                if (floatting) {
-                    *floatting = i.get();
-                }
-                return c;
+        if (auto c = i->find_top_clickable(x, y)) {
+            if (floatting) {
+                *floatting = i.get();
             }
+            return c;
         }
         x = x_save;
         y = y_save;
@@ -402,6 +408,16 @@ void Window::remove_floating_commponent(Component *comp) {
             return;
         }
     }
+}
+
+bool Window::is_floatting_component(Component *comp) {
+    if (comp == this) return false;
+    for (auto it = floating_components_.begin(); it != floating_components_.end(); it++) {
+        if (it->get() == comp) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Window::pop_front_floatting_components(Component *floatting) {

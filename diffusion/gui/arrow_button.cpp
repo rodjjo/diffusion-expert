@@ -49,6 +49,12 @@ component_cursor_t ArrowButton::cursor() {
     return cursor_hand;
 }
 
+ void ArrowButton::handle_click() {
+    if (onclick_) {
+        onclick_(this);
+    }
+ }
+
 void ArrowButton::paint(void *render_window) {
     Drawing::Direction dir = Drawing::direction_top;
     if (direction_ == arrow_down) {
@@ -132,6 +138,15 @@ int ArrowButton::arrow_size() {
 void ArrowButton::arrow_size(int value) {
     arrow_size_ = value;
 }
+
+void  ArrowButton::onclick(component_event_t value) {
+    onclick_ = value;
+}
+
+component_event_t  ArrowButton::onclick() {
+    return onclick_;
+}
+
 
 
 } // namespace dfe_ui

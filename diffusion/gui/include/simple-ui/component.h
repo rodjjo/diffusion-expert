@@ -55,6 +55,7 @@ class ComponentList {
     size_t size();
     Component & at(size_t index);
     bool empty();
+
   private:
     Component *parent_;
     std::vector<std::shared_ptr<Component> > items_;
@@ -71,7 +72,6 @@ class Component : public std::enable_shared_from_this<Component>  {
     Component(Window *window);
     virtual ~Component();
     std::shared_ptr<Component> share();
-    virtual void add(std::shared_ptr<Component> child);
     int zorder() const;
     void zorder(int value);
     virtual void paint(void *render_window);
@@ -120,8 +120,8 @@ class Component : public std::enable_shared_from_this<Component>  {
     int abs_y();
     int abs_w();
     int abs_h();
-    void scroll_x(int value);
-    void scroll_y(int value);
+    virtual void scroll_x(int value);
+    virtual void scroll_y(int value);
     void scale(float value);
     void size(int w, int h);
     void coordinates(int x, int y, int w, int h);
@@ -133,20 +133,24 @@ class Component : public std::enable_shared_from_this<Component>  {
     void paint_children(void *render_window, bool check_status=true);
     void set_drag_coord(int x, int y);
 
-    ComponentList & items();
+    virtual void add(std::shared_ptr<Component> child);
+    virtual ComponentList & items();
+
     size_t tag();
     void tag(size_t value);
 
     virtual component_status_t status();
     virtual component_cursor_t cursor();
     
-    void float_on();
+    void float_on(Component *parent = NULL);
     void float_off();
 
     static int compute_text_min_y(void *text_shape);
+    bool is_floatting();
 
    public:
     virtual void handle_parent_resized() {};
+    virtual void handle_child_count_changed() {};
     virtual void handle_textentered(wchar_t unicode) {};
     virtual void handle_mouse_left_pressed(int x, int y) {};
     virtual void handle_mouse_middle_pressed(int x, int y) {};
@@ -160,10 +164,16 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual void handle_focus_lost() {};
     virtual void handle_focus_got() {};
     virtual void handle_float_off() {};
+    virtual void handle_click() {};
 
   protected:
     void fire_parent_resized();
-  
+    void fire_child_count_changed();
+
+  private:
+    int abs_scrollx();
+    int abs_scrolly();
+
   private:
     Window                    *window_ = NULL;
     ComponentList             items_;
@@ -184,6 +194,7 @@ class Component : public std::enable_shared_from_this<Component>  {
 
   private:
     friend class ComponentList;
+    Component                 *floatting_parent_ = NULL;
     Component                 *parent_ = NULL;
 };
 

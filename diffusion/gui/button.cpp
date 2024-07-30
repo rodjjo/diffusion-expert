@@ -98,6 +98,9 @@ void Button::handle_mouse_left_pressed(int x, int y) {
 
 void Button::handle_mouse_left_released(int x, int y) {
     mouse_pressed_ = false;
+}
+
+void Button::handle_click() {
     if (checked_icon_ != img_none) {
         checked_ = !checked_;
     }

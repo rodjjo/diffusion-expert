@@ -45,7 +45,12 @@ uint32_t progress_bar_progress_color();
 uint8_t listbox_item_margin();
 uint32_t listbox_selected_color();
 uint32_t listbox_selected_text_color();
-    
+
+// scrollbox
+uint32_t scrollbox_margin();    
+uint32_t scrollbox_scrollbar_size();
+uint32_t scrollbox_color();
+uint32_t scrollbox_outline_color();
 
 };
 

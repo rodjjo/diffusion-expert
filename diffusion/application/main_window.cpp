@@ -11,11 +11,17 @@
 #include "simple-ui/scrollbar.h"
 #include "simple-ui/progress.h"
 #include "simple-ui/listbox.h"
+#include "simple-ui/combobox.h"
+#include "simple-ui/scrollbox.h"
 
 namespace dfe
 {
     void run_application() {
         auto win = dfe_ui::window_new(1280, 720, "Stable Diffusion");
+        auto scrolb = std::make_shared<dfe_ui::Scrollbox>(win.get(), 50, 50, win->w() / 2, win->h() / 2);
+        scrolb->autoscroll(true);
+        win->add(scrolb);
+
         auto panel = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 50, 180, 180);
         auto panel2 = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 180 + 51, 180, 180);
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(win.get(), -5, 25, 180 + 10, 50);
@@ -29,16 +35,23 @@ namespace dfe
         auto scrollbar2 = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50 + 55, 45, 280, true);
         auto progress = std::make_shared<dfe_ui::ProgressBar>(win.get(), 65 + 185 + 50, 270 + 50 + 55, 280, 45);
         auto listbox = std::make_shared<dfe_ui::Listbox>(win.get(), 65 + 185 + 50, 270 + 110 + 55, 280, 45 * 5);
+        auto combo = std::make_shared<dfe_ui::Combobox>(win.get(), 65 + 185 + 310, 50, 300, 50);
+
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
 
         char buffer[1024] = "";
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 7; i++) {
             sprintf(buffer, "Item %04d", i);
             std::string text(buffer);
             listbox->add(std::wstring(text.begin(), text.end()));
         }
-
+        for (int i = 0; i < 16; i++) {
+            sprintf(buffer, "Item %04d", i);
+            std::string text(buffer);
+            combo->add(std::wstring(text.begin(), text.end()));
+        }
+        
 
         progress->progress(45);
 
@@ -117,18 +130,19 @@ namespace dfe
         panel3->add(l);
         panel->add(panel3);
 
-        win->add(panel);
-        win->add(panel2);
-        win->add(editor);
-        win->add(label);
-        win->add(button);
-        win->add(arrow_button);
-        win->add(scrollbar);
-        win->add(scrollbar2);
-        win->add(progress);
-        win->add(listbox);
+        scrolb->add(panel);
+        scrolb->add(panel2);
+        scrolb->add(editor);
+        scrolb->add(label);
+        scrolb->add(button);
+        scrolb->add(arrow_button);
+        scrolb->add(scrollbar);
+        scrolb->add(scrollbar2);
+        scrolb->add(progress);
+        scrolb->add(listbox);
+        scrolb->add(combo);
+        win->scale(1.3);
 
-        win->scale(1.0);
         win->run();
     }
 } // namespace dfe

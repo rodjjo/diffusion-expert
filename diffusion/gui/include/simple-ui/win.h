@@ -17,6 +17,7 @@ class Window : public Component {
     friend class Component;
     void add_floating_commponent(Component *comp);
     void remove_floating_commponent(Component *comp);
+    bool is_floatting_component(Component *comp);
 
   protected:
     void handle_parent_resized() override;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "component.h"
+#include "simple-ui/events.h"
+#include "simple-ui/component.h"
 
 namespace dfe_ui
 {
@@ -39,6 +40,8 @@ class Scrollbar : public Component {
         uint32_t scroll_highlighted_color();
         virtual void paint(void *render_window) override;
 
+        void onchange(component_event_t value);
+        component_event_t onchange();
     protected:
         virtual void mouse_enter() override;
         virtual void mouse_exit() override;
@@ -57,7 +60,9 @@ class Scrollbar : public Component {
         void compute_regions(scrool_regions_t &regions);
         void adjust_scroll();
         void compute_mouse_region(int x, int y);
+
     private:
+        component_event_t onchange_;
         component_cursor_t current_cursor_ = cursor_arrow;
         int         mouse_in_region_ = -1;
         bool        mouse_inside_ = false;

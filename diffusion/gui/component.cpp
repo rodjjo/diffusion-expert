@@ -138,11 +138,15 @@ void Component::add(std::shared_ptr<Component> child) {
     if (child->parent_) {
         child->parent_->damaged(true);
         child->parent_->items_.remove(child.get());
+        if (child->parent_) {
+            child->parent_->fire_child_count_changed();
+        }
     }
     this->items_.add(child);
     child->parent_ = this;
     child->parent_changed();
     child->damaged(true);
+    fire_child_count_changed();
 }
 
 int Component::zorder() const {
@@ -204,7 +208,7 @@ int Component::h() {
 
 bool Component::abs_enabled() {
     if (parent_) {
-        return enabled() && parent_->enabled();
+        return enabled() && parent()->enabled();
     }
     return enabled();
 }
@@ -303,8 +307,9 @@ void Component::drop_end(Component *source) {
     }
 }
 
-void Component::float_on() {
+void Component::float_on(Component *parent) {
     if (window_ != NULL && window_ != this) {
+        floatting_parent_ = parent;
         window_->add_floating_commponent(this);
     }
 }
@@ -332,30 +337,75 @@ Component *Component::find_top_clickable(int &x, int &y) {
     }
     Component *result = NULL, *next = NULL;
 
+    if (this->scale_ == 0) {
+        return NULL;
+    }
+
+    int this_x = this->x();
+    int this_y = this->y();
+
+    float this_scale = this->scale();
+    if (this_scale == 0) {
+        return NULL;
+    }
+
+    if (floatting_parent_) {
+        int px = 0;
+        int py = 0;
+        auto p = floatting_parent_;
+        while (p) {
+            px += p->x() - p->scroll_x_;
+            py += p->y() - p->scroll_y_;
+            p = p->parent();
+        }
+        this_scale *= floatting_parent_->abs_scale();
+        if (this_scale == 0) {
+            return NULL;
+        }
+        this_x += px;
+        this_y += py;
+    }
+    
+    x /= this_scale;
+    y /= this_scale;
+
+    int sx = 0;
+    int sy = 0;
+    if (parent_) {
+        sx = parent_->scroll_x_;
+        sy = parent_->scroll_y_;
+    }  else if (window_ && window_ != this) {
+        sx = window_->scroll_x_;
+        sy = window_->scroll_y_;
+    }
+
+    int current_x = this_x - sx;
+    int current_y = this_y - sy;
+    int current_x2 = current_x + this->w();
+    int current_y2 = current_y + this->h();
+    if (x < current_x || x > current_x2 ||
+        y < current_y || y > current_y2) {
+        return NULL;
+    }
+
     if (clickable()) {
         result = this;
     }
 
-    float abs_scale = this->abs_scale();
-    //if (abs_scale != 0) {
-        // abs_scale = 1.0 / abs_scale;
-    //}
+    x -= current_x;
+    y -= current_y;
+    int saved_x = x;
+    int saved_y = y;
 
-    x -= this->x() * abs_scale;
-    y -= this->y() * abs_scale;
-
-    for (size_t i = 0; i < items_.size() && next == NULL; i++) {
-        if (!items_[i].enabled()) continue;   
-        if (!items_[i].visible()) continue;   
-        if (items_[i].x() * abs_scale > x) continue;   
-        if (items_[i].y() * abs_scale > y) continue;
-        if ((items_[i].x() + items_[i].w()) * abs_scale < x) continue;
-        if ((items_[i].y() + items_[i].h()) * abs_scale < y) continue;
-        next = items_[i].find_top_clickable(x, y);
-    }
-
-    if (next) {
-        result = next;
+    Component *sub;
+    for (size_t i = 0; i < items().size(); i++) {
+        sub = items().at(i).find_top_clickable(x, y);
+        if (sub) {
+            result = sub;
+            break;
+        }
+        x = saved_x;
+        y = saved_y;
     }
 
     return result;
@@ -378,26 +428,84 @@ void Component::paint_children(void *render_window, bool check_status) {
 int Component::abs_x() {
     int dx = status() == component_status_dragging ? drag_x_ : 0;
     float scale = abs_scale();
-    if (parent_) {
-        return (x_ * scale)  + parent_->abs_x() - (scroll_x_ * scale) + dx;
+    int vx = dx + x_ * scale;
+    auto p = parent();
+    while (p) {
+        dx = p->status() == component_status_dragging ? p->drag_x_ : 0;
+        vx +=  dx + p->x_ * scale;         
+        p = p->parent();
     }
-    if (window_ && window_ != this) {
-        return (x_ * scale)  + window_->abs_x() - (scroll_x_ * scale) + dx;
+    p = window_ != this ? window_ : NULL;
+    if (p) {
+        vx += p->x_ * scale;         
     }
-    return (x_ * scale) - (scroll_x_ * scale) + dx;
+    vx -= abs_scrollx();
+    return vx + dx;
 }
 
 int Component::abs_y() {
     int dy = status() == component_status_dragging ? drag_y_ : 0;
     float scale = abs_scale();
-    if (parent_) {
-        return (y_ * scale)  + parent_->abs_y() - (scroll_y_ * scale) + dy;
+    int vy = dy + y_ * scale;
+    auto p = parent();
+    while (p) {
+        dy = p->status() == component_status_dragging ? p->drag_y_ : 0;
+        vy += dy + p->y_ * scale;         
+        p = p->parent();
     }
-    if (window_ && window_ != this) {
-        return (y_ * scale)  + window_->abs_y() - (scroll_y_ * scale) + dy;
+    p = window_ != this ? window_ : NULL;
+    if (p) {
+        vy += p->y_ * scale;         
     }
-    return (y_ * scale) - (scroll_y_ * scale) + dy;
+    vy -= abs_scrolly();
+    return vy + dy;
 }
+
+int Component::abs_scrollx() {
+    int sx = 0;
+    auto p = parent_;
+    if (!p) {
+        p = floatting_parent_;
+    }
+    while (p) {
+        sx += p->scroll_x_;
+        if (!p->parent_) {
+            p = p->floatting_parent_;
+        } else {
+            p = p->parent_;
+        }
+    }
+    p = window_ != NULL && window_ != this && window_ != p ? window_ : NULL;
+    while (p) {
+        sx += p->scroll_x_;
+        p = p->parent_;
+    }
+    return sx * abs_scale();
+}
+
+int Component::abs_scrolly() {
+    int sy = 0;
+    auto p = parent_;
+    if (!p) {
+        p = floatting_parent_;
+    }
+    while (p) {
+        sy += p->scroll_y_;
+        if (!p->parent_) {
+            p = p->floatting_parent_;
+        } else {
+            p = p->parent_;
+        }
+    }
+    p = window_ != NULL && window_ != this && window_ != p ? window_ : NULL;
+    while (p) {
+        sy += p->scroll_y_;
+        p = p->parent_;
+    }
+    return sy * abs_scale();
+
+}
+
 
 int Component::scroll_x() {
     return scroll_x_;
@@ -413,7 +521,10 @@ float Component::scale() {
 
 float Component::abs_scale() {
     if (parent_) {
-        return scale_ * parent_->abs_scale();
+        return scale_ * parent()->abs_scale();
+    }
+    if (floatting_parent_) {
+        return scale_ * floatting_parent_->abs_scale();
     }
     if (window_ && window_ != this) {
         return scale_ * window_->abs_scale();
@@ -463,7 +574,17 @@ component_cursor_t Component::cursor() {
 }
 
 Component *Component::parent() {
-    return parent_;
+    if (parent_) {
+        return parent_;
+    }
+    return floatting_parent_;
+}
+
+bool Component::is_floatting() {
+    if (window_) {
+        return window_->is_floatting_component(this);
+    }
+    return false;
 }
 
 int Component::compute_text_min_y(void *text_shape) {
@@ -482,5 +603,11 @@ int Component::compute_text_min_y(void *text_shape) {
   minY = abs(minY);
   return minY;
 }
+
+void Component::fire_child_count_changed() {
+    handle_child_count_changed();
+}
+
+
 
 }  // namespace dfe 

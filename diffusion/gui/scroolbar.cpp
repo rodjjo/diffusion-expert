@@ -40,6 +40,9 @@ void Scrollbar::adjust_scroll() {
     if (value_ > max_) {
         value_ = max_;
     }
+    if (onchange_) {
+        onchange_(this);
+    }
 }
 
 void Scrollbar::min(int value) {
@@ -158,8 +161,8 @@ component_cursor_t Scrollbar::cursor() {
 
 void Scrollbar::compute_regions(scrool_regions_t &regions) {
     float scale = abs_scale();
-    auto x = (vertical_ ? w() : h()) * scale;
-    auto y = (vertical_ ? h() : w()) * scale;
+    auto x = (vertical_ ? w() : h());
+    auto y = (vertical_ ? h() : w());
     
     int button_size;
     int barsize;
@@ -300,6 +303,14 @@ void Scrollbar::page_size(int value) {
     page_size_ = value;
 }
 
+void Scrollbar::onchange(component_event_t value) {
+    onchange_ = value;
+}
+
+component_event_t Scrollbar::onchange() {
+    return onchange_;
+}
+
 void Scrollbar::click_scroll() {
     if (!mouse_pressed_) return;
     if (mouse_down_time_ > clock::current_microseconds()) return;
@@ -342,6 +353,10 @@ void Scrollbar::paint(void *render_window) {
 
     for (int i = 0; i < 5; i++) { 
         reg = draw_order[i];
+        regions[reg].h *= abs_scale();
+        regions[reg].w *= abs_scale();
+        regions[reg].x *= abs_scale();
+        regions[reg].y *= abs_scale();
         focused = mouse_in_region_ == reg;
         pressed = mouse_pressed_ && focused;
 

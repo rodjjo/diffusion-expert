@@ -51,6 +51,8 @@ namespace dfe_ui
             virtual void mouse_exit() override;
             virtual void handle_mouse_left_pressed(int x, int y) override;
             virtual void handle_mouse_left_released(int x, int y) override;
+            virtual void handle_click() override;
+            
             bool clickable() override;
             component_cursor_t cursor() override;
 

@@ -24,6 +24,9 @@ Listbox::Listbox(Window * window, int x, int y, int w, int h) : Component(window
     scrollbar_.reset(new Scrollbar(window, w - 25, 0, 25, h, true));
     Component::add(scrollbar_);
     scrollbar_->visible(false);
+    scrollbar_->onchange([this](Component *self) {
+        scrollbar_changed();
+    });
 }
 
 Listbox::~Listbox() {
@@ -144,15 +147,33 @@ void Listbox::add(const std::wstring& value) {
     if (items_.size() > visible_items()) {
         scrollbar_->visible(true);
     }
+    update_scrollbar();
+}
+
+void Listbox::scrollbar_changed() {
+    if (changing_scrollbar_) return;
+    if (items_.size() < 1) {
+        top_element_ = 0;
+        selected_index_ = 0;
+        return;
+    }
+    top_element_ = scrollbar_->value();
 }
 
 void Listbox::remove(size_t index) {
     items_.erase(items_.begin() + index);
+    if (selected() > 0 && selected() >= items_.size()) {
+        selected(selected() - 1);
+    }
+    update_scrollbar();
 }
 
 void Listbox::clear() {
     items_.clear();
+    selected_index_ = 0;
+    top_element_ = 0;
     scrollbar_->visible(false);
+    update_scrollbar();
 }
 
 int Listbox::item_height() {
@@ -188,6 +209,18 @@ void Listbox::handle_mouse_left_pressed(int x, int y) {
     int item_height = this->item_height();
     int item_count = y / item_height;
     selected(top_element_ + item_count);
+    if (onclick_) {
+        onclick_(this);
+    }
+}
+
+void Listbox::update_scrollbar() {
+    if (changing_scrollbar_) return;
+    changing_scrollbar_ = true;
+    scrollbar_->min(0);
+    scrollbar_->max(items_.size() - visible_items());
+    scrollbar_->value(top_element_);
+    changing_scrollbar_ = false;
 }
 
 void Listbox::selected(size_t value) {
@@ -198,6 +231,10 @@ void Listbox::selected(size_t value) {
             top_element_ = value;
         } else if (value + 1 > top_element_ + visible_items) {
             top_element_ = (value - visible_items) + 1;
+        }
+        update_scrollbar();
+        if (onchange_) {
+            onchange_(this);
         }
     }
 }
@@ -228,6 +265,22 @@ void Listbox::scrollbar_width(int value) {
 
 int Listbox::scrollbar_width() {
     return scrollbar_->w();
+}
+
+void Listbox::onchange(component_event_t value) {
+    onchange_ = value;
+}
+
+component_event_t Listbox::onchange() {
+    return onchange_;
+}
+
+void Listbox::onclick(component_event_t value) {
+    onclick_ = value;
+}
+
+component_event_t Listbox::onclick() {
+    return onclick_;
 }
 
 void Listbox::handle_parent_resized() {

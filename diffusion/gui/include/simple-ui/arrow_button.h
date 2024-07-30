@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+
+#include "simple-ui/events.h"
 #include "simple-ui/component.h"
 
 namespace dfe_ui
@@ -30,16 +32,20 @@ class ArrowButton : public Component {
         uint32_t highlighted_color();
         uint32_t pressed_color();
         void pressed_color(uint32_t value);
+        void onclick(component_event_t value);
+        component_event_t onclick();
 
     protected:
         virtual void mouse_enter() override;
         virtual void mouse_exit() override;
+        virtual void handle_click() override;
         virtual void handle_mouse_left_pressed(int x, int y) override;
         virtual void handle_mouse_left_released(int x, int y) override;
         bool clickable() override;
         component_cursor_t cursor() override;
 
     private:
+        component_event_t   onclick_;
         bool                mouse_inside_ = false;
         bool                mouse_pressed_ = false;
         arrow_direction_t   direction_ = arrow_up;

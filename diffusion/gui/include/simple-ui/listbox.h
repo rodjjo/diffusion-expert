@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 
+#include "simple-ui/events.h"
 #include "simple-ui/component.h"
 #include "simple-ui/scrollbar.h"
 
@@ -31,6 +32,10 @@ class Listbox : public Component {
     size_t selected();
     void scrollbar_width(int value);
     int scrollbar_width();
+    void onchange(component_event_t value);
+    component_event_t onchange();
+    void onclick(component_event_t value);
+    component_event_t onclick();
 
  protected:
     void handle_parent_resized() override;
@@ -40,6 +45,8 @@ class Listbox : public Component {
     bool focusable() override;
 
  private:
+   void scrollbar_changed();
+   void update_scrollbar();
    void update_text_min_y();
    int item_height();
    int visible_items();
@@ -49,6 +56,9 @@ class Listbox : public Component {
    uint32_t outline_color();
 
  private:
+   component_event_t             onchange_;
+   component_event_t             onclick_;
+   bool                          changing_scrollbar_ = false;
    uint32_t                      fill_color_ = 0xFFFFFFFF;
    uint32_t                      outline_color_ = 0x000000FF;
    std::shared_ptr<void>         text_;
