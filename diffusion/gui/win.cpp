@@ -153,6 +153,8 @@ void Window::handle_mouse_left_pressed(int x, int y) {
     mouse_move_y_ = y;
     auto component = component_at_mouse(x, y);
     if (component) {
+        mouse_move_ref_x_ = x;
+        mouse_move_ref_y_ = y;
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
         replace_drag(component);
@@ -160,6 +162,7 @@ void Window::handle_mouse_left_pressed(int x, int y) {
         component_in_mouse_down_left_ = component->share();
     } else {
         remove_drag();
+        component_in_mouse_down_left_.reset();
     }
 }
 
@@ -274,13 +277,20 @@ void Window::handle_mouse_right_released(int x, int y) {
 
 void Window::handle_mouse_moved(int x, int y) {
     if (component_in_mouse_down_right_) {
-        component_in_mouse_down_right_->handle_mouse_moved(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
+        // component_in_mouse_down_right_->handle_mouse_moved(x - component_in_mouse_down_right_->abs_x(), y - component_in_mouse_down_right_->abs_y());
     }
     if (component_in_mouse_down_left_) {
-        component_in_mouse_down_left_->handle_mouse_moved(x - component_in_mouse_down_left_->abs_x(), y - component_in_mouse_down_left_->abs_y());
+        float s = component_in_mouse_down_left_->abs_scale();
+        if (s != 0) {
+            int xcoord = x / s - component_in_mouse_down_left_->abs_x() / s;
+            int ycoord = y / s - component_in_mouse_down_left_->abs_y() / s;
+            // xcoord = xcoord / s;
+            // ycoord = ycoord / s;
+            component_in_mouse_down_left_->handle_mouse_moved(xcoord, ycoord);
+        }
     }
     if (component_in_mouse_down_middle_) {
-        component_in_mouse_down_middle_->handle_mouse_moved(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
+        // component_in_mouse_down_middle_->handle_mouse_moved(x - component_in_mouse_down_middle_->abs_x(), y - component_in_mouse_down_middle_->abs_y());
     }
     mouse_move_x_ = x;
     mouse_move_y_ = y;

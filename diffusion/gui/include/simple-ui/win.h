@@ -56,6 +56,8 @@ class Window : public Component {
     int mouse_down_y_ = 0;
     int mouse_move_x_ = 0;
     int mouse_move_y_ = 0;
+    int mouse_move_ref_x_ = 0;
+    int mouse_move_ref_y_ = 0;
     std::shared_ptr<Component> component_in_focus_;
     std::shared_ptr<Component> component_in_drag_;
     std::shared_ptr<Component> component_in_drop_;
