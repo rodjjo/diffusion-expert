@@ -153,8 +153,6 @@ void Window::handle_mouse_left_pressed(int x, int y) {
     mouse_move_y_ = y;
     auto component = component_at_mouse(x, y);
     if (component) {
-        mouse_move_ref_x_ = x;
-        mouse_move_ref_y_ = y;
         replace_focus(component);
         component->handle_mouse_left_pressed(x, y);
         replace_drag(component);
