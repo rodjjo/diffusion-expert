@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <functional>
 #include <string>
 
@@ -15,7 +16,7 @@ class Edit : public Component {
   public:
     Edit(Window * window, int x, int y, int w, int h);
     virtual ~Edit();
-    virtual void paint(void *render_window) override;
+    virtual void paint(sf::RenderTarget *render_target) override;
     bool readonly();
     void readonly(bool value);
     size_t maxlen();
@@ -36,6 +37,8 @@ class Edit : public Component {
     uint32_t text_color();
     uint32_t selection_color();
     component_cursor_t cursor() override;
+    bool line_wrap_enabled();
+    void line_wrap_enabled(bool value);
 
   protected:
     bool clickable() override;
@@ -53,6 +56,7 @@ class Edit : public Component {
 
 
   private:
+    void compute_wrap();
     void update_font_min_y_coord();
     void clear_selection();
     void text_changed();
@@ -70,23 +74,26 @@ class Edit : public Component {
     int get_character_pos_at_coord(int x);
 
   private:
-    component_event_t             cb_text_changed_;
-    size_t                        maxlen_ = 0;
-    vertical_text_alignment_t     text_valign_ = text_alignment_middle;
-    bool                          mouse_down_ = false;
-    bool                          readonly_ = false;
-    bool                          focused_ = false;
-    bool                          password_ = false;
-    int                           text_min_y_ = 0;
-    int                           character_size_ = 30;
-    size_t                        sel_start_ = 0;
-    size_t                        sel_end_ = 0;
-    size_t                        cursor_pos_ = 0;
-    int                           mouse_down_x_ = 0;
-    uint32_t                      text_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
-    uint32_t                      selection_color_ = RGBA_TO_COLOR(64, 64, 64, 128);
-    uint32_t                      cursor_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
-    std::shared_ptr<void>         text_;
+    float                         m_last_scale = 0.0;
+    bool                          m_line_wrap_enabled = false;
+    component_event_t             m_cb_text_changed;
+    size_t                        m_maxlen = 0;
+    vertical_text_alignment_t     m_text_valign = text_alignment_middle;
+    bool                          m_mouse_down = false;
+    bool                          m_readonly = false;
+    bool                          m_focused = false;
+    bool                          m_password = false;
+    int                           m_text_min_y = 0;
+    int                           m_character_size = 30;
+    size_t                        m_sel_start = 0;
+    size_t                        m_sel_end = 0;
+    size_t                        m_cursor_pos = 0;
+    int                           m_mouse_down_x = 0;
+    uint32_t                      m_text_color = RGBA_TO_COLOR(255, 255, 255, 255);
+    uint32_t                      m_selection_color = RGBA_TO_COLOR(64, 64, 64, 128);
+    uint32_t                      m_cursor_color = RGBA_TO_COLOR(255, 255, 255, 255);
+    std::shared_ptr<void>         m_text;
+    std::vector<int>              m_lines_offset;
 };
     
 } // namespace dfe_ui

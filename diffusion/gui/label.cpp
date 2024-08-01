@@ -12,7 +12,7 @@ Label::Label(Window * window, int x, int y, int w, int h, const std::wstring &te
     this->coordinates(x, y, w, h);
     auto font = static_cast<sf::Font *>(load_default_font());
     if (font) {
-        text_.reset(new sf::Text(*font));
+        m_text.reset(new sf::Text(*font));
         update_text_min_y();
         this->text(text);
     }
@@ -22,11 +22,11 @@ Label::Label(Window * window, int x, int y, int w, int h, const std::wstring &te
 Label::~Label() {
 }
 
-void Label::paint(void *render_window) {
-    if (!text_.get()) return;
-    sf::Text &txt = *static_cast<sf::Text*>(text_.get());
+void Label::paint(sf::RenderTarget *render_target) {
+    if (!m_text.get()) return;
+    sf::Text &txt = *static_cast<sf::Text*>(m_text.get());
     
-    int new_charsize = character_size_ * abs_scale();
+    int new_charsize = m_character_size * abs_scale();
     if (new_charsize < 1) {
         new_charsize = 1;
     }
@@ -36,54 +36,54 @@ void Label::paint(void *render_window) {
     }
 
     int x = abs_x(), top = abs_y();
-    int y = top - text_min_y_;
+    int y = top - m_text_min_y;
 
     int char_sz = txt.getCharacterSize();
 
-     if (text_valign_ == text_alignment_middle)
+     if (m_text_valign == text_alignment_middle)
         y += abs_h() / 2 - char_sz / 2;
-    else if (text_valign_ == text_alligment_bottom)
+    else if (m_text_valign == text_alligment_bottom)
         y += abs_h() - char_sz;
 
     txt.setPosition({(float)x, (float)y});
-    txt.setFillColor(sf::Color(text_color_));
-    txt.setOutlineColor(sf::Color(text_color_));
-    static_cast<sf::RenderWindow *>(render_window)->draw(txt);
+    txt.setFillColor(sf::Color(m_text_color));
+    txt.setOutlineColor(sf::Color(m_text_color));
+    render_target->draw(txt);
 };
 
 std::wstring Label::text() {
-    if (text_) {
-        return static_cast<sf::Text *>(text_.get())->getString();
+    if (m_text) {
+        return static_cast<sf::Text *>(m_text.get())->getString();
     }
     return std::wstring();
 }
 
 int Label::character_size() {
-    return character_size_;
+    return m_character_size;
 }
 
 void Label::character_size(int value) {
-    character_size_ = value;
+    m_character_size = value;
 }
 
 void Label::text(const std::wstring &value) {
-    if (text_) {
-        static_cast<sf::Text *>(text_.get())->setString(value);
+    if (m_text) {
+        static_cast<sf::Text *>(m_text.get())->setString(value);
     }
 }
 
 void Label::update_text_min_y() {
-    if (text_) {
-        text_min_y_ = compute_text_min_y(text_.get());
+    if (m_text) {
+        m_text_min_y = compute_text_min_y(m_text.get());
     }
 }
 
 void Label::text_color(uint32_t color) {
-    text_color_ = color;
+    m_text_color = color;
 }
 
 uint32_t Label::text_color() {
-    return text_color_;
+    return m_text_color;
 }
 
 

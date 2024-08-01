@@ -198,10 +198,10 @@ class IconTexture: public IconTextureBase {
     std::pair<int, int> get_coords(icon_type_t xpm_id);
     std::pair<int, int> get_size(icon_type_t xpm_id);
   private:
-    size_t memosize_ = 0;
-    std::shared_ptr<sf::Texture> texture_;
-    std::map<icon_type_t, std::pair<uint32_t, uint32_t> > coordinates_;
-    std::map<icon_type_t, std::pair<uint32_t, uint32_t> > sizes_;
+    size_t m_memosize = 0;
+    std::shared_ptr<sf::Texture> m_texture;
+    std::map<icon_type_t, std::pair<uint32_t, uint32_t> > m_coordinates;
+    std::map<icon_type_t, std::pair<uint32_t, uint32_t> > m_sizes;
 };
 
 IconTexture::IconTexture() {
@@ -229,8 +229,8 @@ IconTexture::IconTexture() {
                 current_h = info.h;
             }
             if (pass == 2) {
-                coordinates_[item.first] = std::make_pair(current_x, current_y);
-                sizes_[item.first] = std::make_pair(info.w, info.h);
+                m_coordinates[item.first] = std::make_pair(current_x, current_y);
+                m_sizes[item.first] = std::make_pair(info.w, info.h);
                 auto xpm_image = xpm_parse_image(item.second);
                 uint8_t *source = xpm_image.data.get();
                 size_t target_stride = (4 * img_width);
@@ -254,35 +254,35 @@ IconTexture::IconTexture() {
         if (pass == 1) {
             width = img_width;
             height = current_y;
-            memosize_ = 4 * width * height;
-            data.reset((uint8_t *)malloc(memosize_));
-            memset(data.get(), 0, memosize_);
+            m_memosize = 4 * width * height;
+            data.reset((uint8_t *)malloc(m_memosize));
+            memset(data.get(), 0, m_memosize);
         }
     }
     auto texture = sf::Texture::create({width, height});
     if (texture) {
-        texture_.reset(new sf::Texture(std::move(*texture)));
-        texture_->update((uint8_t *) data.get());
-        auto i = texture_->copyToImage();
+        m_texture.reset(new sf::Texture(std::move(*texture)));
+        m_texture->update((uint8_t *) data.get());
+        auto i = m_texture->copyToImage();
     }
     
 }
 
 void *IconTexture::sfml_texture() {
-    return texture_.get();
+    return m_texture.get();
 }
 
 std::pair<int, int> IconTexture::get_coords(icon_type_t xpm_id) {
-    auto it = coordinates_.find(xpm_id);
-    if (it != coordinates_.end()) {
+    auto it = m_coordinates.find(xpm_id);
+    if (it != m_coordinates.end()) {
         return it->second;
     }
     return std::make_pair(0, 0);
 }
 
 std::pair<int, int> IconTexture::get_size(icon_type_t xpm_id) {
-    auto it = sizes_.find(xpm_id);
-    if (it != sizes_.end()) {
+    auto it = m_sizes.find(xpm_id);
+    if (it != m_sizes.end()) {
         return it->second;
     }
     return std::make_pair(0, 0);

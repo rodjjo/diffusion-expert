@@ -19,30 +19,30 @@ TextBox::~TextBox() {
 }
 
 void TextBox::color(uint32_t value) {
-    color_ = value;
+    m_color = value;
 }
 
 uint32_t TextBox::color() {
-    return color_;
+    return m_color;
 }
 
 void TextBox::outline_color(uint32_t value) {
-    outline_color_ = value;
+    m_outline_color = value;
 }
 
 uint32_t TextBox::outline_color() {
-    return outline_color_;
+    return m_outline_color;
 }
 
-void TextBox::paint(void *render_window) {
+void TextBox::paint(sf::RenderTarget *render_target) {
     Drawing dw(Drawing::drawing_flat_box);
-    dw.outline_color(outline_color_);
-    dw.color(color_);
+    dw.outline_color(m_outline_color);
+    dw.color(m_color);
     dw.size(abs_w(), abs_h());
     dw.position(abs_x(), abs_y());
     dw.margin(0);
-    dw.draw(render_window);
-    Edit::paint(render_window);
+    dw.draw(render_target);
+    Edit::paint(render_target);
 };
 
 } // namespace dfe_ui

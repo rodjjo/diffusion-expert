@@ -11,7 +11,7 @@ ProgressBar::ProgressBar(Window * window, int x, int y, int w, int h) : Componen
     this->coordinates(x, y, w, h);
     auto font = static_cast<sf::Font *>(load_default_font());
     if (font) {
-        text_.reset(new sf::Text(*font));
+        m_text.reset(new sf::Text(*font));
         update_text_min_y();
     }
     text_color(theme::progress_bar_text_color());
@@ -24,51 +24,51 @@ ProgressBar::~ProgressBar() {
 }
 
 int64_t ProgressBar::progress() {
-    return progress_;
+    return m_progress;
 }
 
 void ProgressBar::progress(int64_t value) {
-    if (value > progress_max_)  {
-        value = progress_max_;
+    if (value > m_progress_max)  {
+        value = m_progress_max;
     }
     if (value < 0) {
         value = 0;
     }
-    progress_ = value;
+    m_progress = value;
 }
 
 int ProgressBar::progress_max(int64_t value) {
     if (value < 1) {
         value = 1;
     }
-    progress_max_ = value;
+    m_progress_max = value;
 }
 
 int64_t ProgressBar::progress_max() {
-    return progress_max_;
+    return m_progress_max;
 }
 
 int ProgressBar::character_size() {
-    return character_size_;
+    return m_character_size;
 }
 
 void ProgressBar::character_size(int value) {
-    character_size_ = value;
+    m_character_size = value;
 }
 
 void ProgressBar::text_color(uint32_t color) {
-    text_color_ = color;
+    m_text_color = color;
 }
 
 uint32_t ProgressBar::text_color() {
-    return text_color_;
+    return m_text_color;
 }
 
-void ProgressBar::paint(void *render_window) {
-    if (!text_.get()) return;
-    sf::Text &txt = *static_cast<sf::Text*>(text_.get());
+void ProgressBar::paint(sf::RenderTarget *render_target) {
+    if (!m_text.get()) return;
+    sf::Text &txt = *static_cast<sf::Text*>(m_text.get());
     
-    int new_charsize = character_size_ * abs_scale();
+    int new_charsize = m_character_size * abs_scale();
     if (new_charsize < 1) {
         new_charsize = 1;
     }
@@ -78,10 +78,10 @@ void ProgressBar::paint(void *render_window) {
     }
 
     char buffer[100] = "";
-    if (progress_max_ < 1) 
-        progress_max_ = 1;
+    if (m_progress_max < 1) 
+        m_progress_max = 1;
 
-    float progress = static_cast<float>(progress_ * (100.0 / progress_max_));
+    float progress = static_cast<float>(m_progress * (100.0 / m_progress_max));
     sprintf(buffer, "%0.0f %%", progress);
 
     if (txt.getString() != buffer) {
@@ -89,7 +89,7 @@ void ProgressBar::paint(void *render_window) {
     }
 
     int x = abs_x(), top = abs_y();
-    int y = top - text_min_y_;
+    int y = top - m_text_min_y;
 
     x += (abs_w() / 2) - (txt.getLocalBounds().size.y / 2);
     int char_sz = txt.getCharacterSize();
@@ -98,50 +98,50 @@ void ProgressBar::paint(void *render_window) {
 
     sf::RectangleShape rect(sf::Vector2f(abs_w(), abs_h()));
     rect.setPosition(sf::Vector2f(abs_x(), abs_y()));
-    rect.setFillColor(sf::Color(fill_color_));
-    rect.setOutlineColor(sf::Color(outline_color_));
-    static_cast<sf::RenderWindow *>(render_window)->draw(rect);
+    rect.setFillColor(sf::Color(m_fill_color));
+    rect.setOutlineColor(sf::Color(m_outline_color));
+    render_target->draw(rect);
 
     rect.setSize({(abs_w() / 100.0) * progress, abs_h()});
     rect.setPosition(sf::Vector2f(abs_x(), abs_y()));
-    rect.setFillColor(sf::Color(progress_color_));
-    rect.setOutlineColor(sf::Color(outline_color_));
-    static_cast<sf::RenderWindow *>(render_window)->draw(rect);
+    rect.setFillColor(sf::Color(m_progress_color));
+    rect.setOutlineColor(sf::Color(m_outline_color));
+    render_target->draw(rect);
 
     txt.setPosition({(float)x, (float)y});
-    txt.setFillColor(sf::Color(text_color_));
-    txt.setOutlineColor(sf::Color(text_color_));
-    static_cast<sf::RenderWindow *>(render_window)->draw(txt);
+    txt.setFillColor(sf::Color(m_text_color));
+    txt.setOutlineColor(sf::Color(m_text_color));
+    render_target->draw(txt);
 
 };
 
 void ProgressBar::fill_color(uint32_t color) {
-    fill_color_ = color;
+    m_fill_color = color;
 }
 
 uint32_t ProgressBar::fill_color() {
-    return fill_color_;
+    return m_fill_color;
 }
 
 void ProgressBar::outline_color(uint32_t value) {
-    outline_color_ = value;
+    m_outline_color = value;
 }
 
 uint32_t ProgressBar::outline_color() {
-    return outline_color_;
+    return m_outline_color;
 }
 
 void ProgressBar::progress_color(uint32_t color) {
-    progress_color_ = color;
+    m_progress_color = color;
 }
 
 uint32_t ProgressBar::progress_color() {
-    return progress_color_;
+    return m_progress_color;
 }
 
 void ProgressBar::update_text_min_y() {
-    if (text_) {
-        text_min_y_ = compute_text_min_y(text_.get());
+    if (m_text) {
+        m_text_min_y = compute_text_min_y(m_text.get());
     }
 }
 

@@ -38,7 +38,7 @@ class Scrollbar : public Component {
         uint32_t scroll_color();
         void scroll_highlighted_color(uint32_t value);
         uint32_t scroll_highlighted_color();
-        virtual void paint(void *render_window) override;
+        virtual void paint(sf::RenderTarget *render_target) override;
 
         void onchange(component_event_t value);
         component_event_t onchange();
@@ -62,28 +62,28 @@ class Scrollbar : public Component {
         void compute_mouse_region(int x, int y);
 
     private:
-        component_event_t onchange_;
-        component_cursor_t current_cursor_ = cursor_arrow;
-        int         mouse_in_region_ = -1;
-        bool        mouse_inside_ = false;
-        bool        mouse_pressed_ = false;
-        bool        vertical_ = false;
-        int         page_size_ = 5;
-        int         min_ = 0;
-        int         max_ = 100;
-        int         value_ = 0;
-        int         mouse_down_value_ = 0;
-        int         mouse_down_coord_ = 0;
-        int         mouse_down_region_ = -1;
-        int64_t     mouse_down_time_ = 0;
-        uint32_t    arrow_size_ = 30;
-        uint32_t    scroll_color_ = 0;
-        uint32_t    scroll_highlighted_color_ = 0;
-        uint32_t    arrow_color_ = 0xFFFFFFFF;
-        uint32_t    color_ = 0xFFFFFFFF;
-        uint32_t    outline_color_ = 0x000000FF;
-        uint32_t    highlighted_color_ = 0xFFFFFFFF;
-        uint32_t    pressed_color_ = 0x666666FF;
+        component_event_t m_onchange;
+        component_cursor_t m_current_cursor = cursor_arrow;
+        int         m_mouse_in_region = -1;
+        bool        m_mouse_inside = false;
+        bool        m_mouse_pressed = false;
+        bool        m_vertical = false;
+        int         m_page_size = 5;
+        int         m_min = 0;
+        int         m_max = 100;
+        int         m_value = 0;
+        int         m_mouse_down_value = 0;
+        int         m_mouse_down_coord = 0;
+        int         m_mouse_down_region = -1;
+        int64_t     m_mouse_down_time = 0;
+        uint32_t    m_arrow_size = 30;
+        uint32_t    m_scroll_color = 0;
+        uint32_t    m_scroll_highlighted_color = 0;
+        uint32_t    m_arrow_color = 0xFFFFFFFF;
+        uint32_t    m_color = 0xFFFFFFFF;
+        uint32_t    m_outline_color = 0x000000FF;
+        uint32_t    m_highlighted_color = 0xFFFFFFFF;
+        uint32_t    m_pressed_color = 0x666666FF;
         
 };
 

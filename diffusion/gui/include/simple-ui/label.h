@@ -10,7 +10,7 @@ class Label : public Component {
   public:
     Label(Window * window, int x, int y, int w, int h, const std::wstring &text);
     virtual ~Label();
-    virtual void paint(void *render_window) override;
+    virtual void paint(sf::RenderTarget *render_target) override;
     std::wstring text();
     void text(const std::wstring &value);
     int character_size();
@@ -22,11 +22,11 @@ class Label : public Component {
     void update_text_min_y();
 
   private:
-    vertical_text_alignment_t     text_valign_ = text_alignment_middle;
-    std::shared_ptr<void>         text_;
-    int                           text_min_y_ = 0;
-    int                           character_size_ = 30;
-    uint32_t                      text_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
+    vertical_text_alignment_t     m_text_valign = text_alignment_middle;
+    std::shared_ptr<void>         m_text;
+    int                           m_text_min_y = 0;
+    int                           m_character_size = 30;
+    uint32_t                      m_text_color = RGBA_TO_COLOR(255, 255, 255, 255);
 };
 
 } // namespace dfe_ui

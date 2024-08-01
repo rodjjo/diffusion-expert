@@ -13,6 +13,7 @@
 #include "simple-ui/listbox.h"
 #include "simple-ui/combobox.h"
 #include "simple-ui/scrollbox.h"
+#include "simple-ui/text_editor.h"
 
 namespace dfe
 {
@@ -35,7 +36,9 @@ namespace dfe
         auto scrollbar2 = std::make_shared<dfe_ui::Scrollbar>(win.get(), 65 + 185, 270 + 50 + 55, 45, 280, true);
         auto progress = std::make_shared<dfe_ui::ProgressBar>(win.get(), 65 + 185 + 50, 270 + 50 + 55, 280, 45);
         auto listbox = std::make_shared<dfe_ui::Listbox>(win.get(), 65 + 185 + 50, 270 + 110 + 55, 280, 45 * 5);
-        auto combo = std::make_shared<dfe_ui::Combobox>(win.get(), 65 + 185 + 310, 50, 300, 50);
+        auto combo = std::make_shared<dfe_ui::Combobox>(win.get(), 65 + 185 + 310, 50, 300, 35);
+        auto edito_wrap = std::make_shared<dfe_ui::TextEditor>(win.get(), combo->x() + combo->w() + 5, 50, 300, 300, dfe_ui::editor_type_t::editor_multiline);
+        edito_wrap->content(std::wstring(L"Esse é um texto muito longo com quebra de linha"));
 
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
@@ -141,7 +144,8 @@ namespace dfe
         scrolb->add(progress);
         scrolb->add(listbox);
         scrolb->add(combo);
-        win->scale(1.3);
+        scrolb->add(edito_wrap);
+        win->scale(1.0);
 
         win->run();
     }

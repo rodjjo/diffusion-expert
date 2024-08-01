@@ -41,28 +41,28 @@ class Window : public Component {
     void replace_mouse(Component *component);
     void complete_drag(Component *component);
     void update_drag_coord();
-    void update_cursor(void *render_window);
+    void update_cursor(sf::RenderTarget *render_target);
     Component *component_at_mouse(int &x, int &y, Component **floatting);
     Component *component_at_mouse(int &x, int &y);
     void pop_front_floatting_components(Component *floatting);
 
   private:
-    std::list<std::shared_ptr<Component> > floating_components_;
-    std::shared_ptr<void> window_;
-    bool mouse_left_pressed_ = false;
-    bool mouse_middle_pressed_ = false;
-    bool mouse_right_pressed_ = false;
-    int mouse_down_x_ = 0;
-    int mouse_down_y_ = 0;
-    int mouse_move_x_ = 0;
-    int mouse_move_y_ = 0;
-    std::shared_ptr<Component> component_in_focus_;
-    std::shared_ptr<Component> component_in_drag_;
-    std::shared_ptr<Component> component_in_drop_;
-    std::shared_ptr<Component> component_in_mouse_;
-    std::shared_ptr<Component> component_in_mouse_down_left_;
-    std::shared_ptr<Component> component_in_mouse_down_middle_;
-    std::shared_ptr<Component> component_in_mouse_down_right_;
+    std::list<std::shared_ptr<Component> > m_floating_components;
+    std::shared_ptr<sf::RenderWindow> m_window;
+    bool m_mouse_left_pressed = false;
+    bool m_mouse_middle_pressed = false;
+    bool m_mouse_right_pressed = false;
+    int m_mouse_down_x = 0;
+    int m_mouse_down_y = 0;
+    int m_mouse_move_x = 0;
+    int m_mouse_move_y = 0;
+    std::shared_ptr<Component> m_component_in_focus;
+    std::shared_ptr<Component> m_component_in_drag;
+    std::shared_ptr<Component> m_component_in_drop;
+    std::shared_ptr<Component> m_component_in_mouse;
+    std::shared_ptr<Component> m_component_in_mouse_down_left;
+    std::shared_ptr<Component> m_component_in_mouse_down_middle;
+    std::shared_ptr<Component> m_component_in_mouse_down_right;
 
 };
 

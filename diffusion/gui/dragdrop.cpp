@@ -12,84 +12,84 @@ namespace dfe_ui
     }
 
     void DragDrop::set_on_accept_drop(cb_accept_component_t cb) {
-        cb_accept_drop_ = cb;
+        m_cb_accept_drop = cb;
     }
 
     void DragDrop::set_on_accept_drag(cb_accept_component_t cb) {
-        cb_accept_drag_ = cb;
+        m_cb_accept_drag = cb;
     }
 
     void DragDrop::drag_enabled(bool value) {
-        drag_enabled_ = value;
+        m_drag_enabled = value;
     }
 
     void DragDrop::drop_enabled(bool value) {
-        drop_enabled_ = value;
+        m_drop_enabled = value;
     }
 
     bool DragDrop::drag_enabled() {
-        return drag_enabled_;
+        return m_drag_enabled;
     }
 
     bool DragDrop::drop_enabled() {
-        return drop_enabled_;
+        return m_drop_enabled;
     }
 
     bool DragDrop::accept_drag(Component *comp) {
-        if (cb_accept_drag_) {
-            return cb_accept_drag_(this, comp);
+        if (m_cb_accept_drag) {
+            return m_cb_accept_drag(this, comp);
         }
         return false;
     }
 
     bool DragDrop::accept_drop(Component *comp) {
-        if (cb_accept_drop_) {
-            return cb_accept_drop_(this, comp);
+        if (m_cb_accept_drop) {
+            return m_cb_accept_drop(this, comp);
         }
         return false;
     }
 
     void DragDrop::set_on_drag_begin(cb_dragdrop_hint_t cb) {
-        cb_drag_begin_ = cb;
+        m_cb_drag_begin = cb;
     }
 
     void DragDrop::set_on_drag_end(cb_dragdrop_hint_t cb) {
-        cb_drag_end_ = cb;
+        m_cb_drag_end = cb;
     }
 
     void DragDrop::set_on_drop_begin(cb_dragdrop_hint_t cb) {
-        cb_drop_begin_ = cb;
+        m_cb_drop_begin = cb;
     }
 
     void DragDrop::set_on_drop_end(cb_dragdrop_hint_t cb) {
-        cb_drop_end_ = cb;
+        m_cb_drop_end = cb;
     }
 
     void DragDrop::drag_begin() {
-        status_ = component_status_dragging;
-        if (cb_drag_begin_) {
-            cb_drag_begin_(this);
+        m_status = component_status_dragging;
+        if (m_cb_drag_begin) {
+            m_cb_drag_begin(this);
         }
     }
 
     void DragDrop::drag_end() {
-        status_ = component_status_normal;
-        if (cb_drag_end_) {
-            cb_drag_end_(this);
+        m_status = component_status_normal;
+        if (m_cb_drag_end) {
+            m_cb_drag_end(this);
         }
     }
 
     void DragDrop::drop_begin() {
-        status_ = component_status_dropping;
-        if (cb_drop_begin_) {
-            cb_drop_begin_(this);
+        m_status = component_status_dropping;
+        if (m_cb_drop_begin) {
+            m_cb_drop_begin(this);
         }
     }
 
     void DragDrop::drop_end() {
-        status_ = component_status_normal;
-        if (cb_drop_end_) {
-            cb_drop_end_(this);
+        m_status = component_status_normal;
+        if (m_cb_drop_end) {
+            m_cb_drop_end(this);
         }
     }
     
@@ -98,21 +98,21 @@ namespace dfe_ui
     };
 
     component_status_t DragDrop::status() {
-        return status_;
+        return m_status;
     }
 
     void DragDrop::set_on_complete_drop(cb_complete_drop_t cb) {
-        cb_on_complete_drop_ = cb;
+        m_cb_on_complete_drop = cb;
     }
 
     void DragDrop::complete_drop(Component *comp) {
-        if (cb_on_complete_drop_) {
-            cb_on_complete_drop_(this, comp);
+        if (m_cb_on_complete_drop) {
+            m_cb_on_complete_drop(this, comp);
         }
     }
 
     component_cursor_t DragDrop::cursor() {
-        return drag_enabled_ ? cursor_drag : cursor_arrow;
+        return m_drag_enabled ? cursor_drag : cursor_arrow;
     }
 
 

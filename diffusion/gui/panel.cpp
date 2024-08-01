@@ -15,74 +15,74 @@ Panel::Panel(Window * window, int x, int y, int w, int h) : Component(window) {
 Panel::~Panel() {
 }
 
-void Panel::paint(void *render_window) {
+void Panel::paint(sf::RenderTarget *render_target) {
     if (!visible()) {
         return;
     }
     sf::RectangleShape rect(sf::Vector2f(abs_w(), abs_h()));
     rect.setPosition(sf::Vector2f(abs_x(), abs_y()));
-    rect.setFillColor(sf::Color(bg_color_));
-    rect.setOutlineColor(sf::Color(fg_color_));
-    static_cast<sf::RenderWindow *>(render_window)->draw(rect);
+    rect.setFillColor(sf::Color(m_bg_color));
+    rect.setOutlineColor(sf::Color(m_fg_color));
+    render_target->draw(rect);
 }
 
 void Panel::bg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    bg_color_ = RGBA_TO_COLOR(r, g, b, a);
+    m_bg_color = RGBA_TO_COLOR(r, g, b, a);
 }
 
 void Panel::fg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    fg_color_ = RGBA_TO_COLOR(r, g, b, a);
+    m_fg_color = RGBA_TO_COLOR(r, g, b, a);
 }
 
 uint8_t Panel::bg_color_r() {
-    return RGBA_R(bg_color_);
+    return RGBA_R(m_bg_color);
 }
 
 uint8_t Panel::bg_color_g() {
-    return RGBA_G(bg_color_);
+    return RGBA_G(m_bg_color);
 }
 
 uint8_t Panel::bg_color_b() {
-    return RGBA_B(bg_color_);
+    return RGBA_B(m_bg_color);
 }
 
 uint8_t Panel::bg_color_a() {
-    return RGBA_A(bg_color_);
+    return RGBA_A(m_bg_color);
 }
 
 uint8_t Panel::fg_color_r() {
-    return RGBA_R(fg_color_);    
+    return RGBA_R(m_fg_color);    
 }
 
 uint8_t Panel::fg_color_g() {
-    return RGBA_G(fg_color_);    
+    return RGBA_G(m_fg_color);    
 }
 
 uint8_t Panel::fg_color_b() {
-    return RGBA_B(fg_color_);    
+    return RGBA_B(m_fg_color);    
 }
 
 uint8_t Panel::fg_color_a() {
-    return RGBA_A(fg_color_);    
+    return RGBA_A(m_fg_color);    
 }
 
 void Panel::set_on_mouse_enter(cb_event_t cb) {
-    on_mouse_enter_ = cb;
+    m_on_mouse_enter = cb;
 }
 
 void Panel::set_on_mouse_exit(cb_event_t cb) {
-    on_mouse_exit_ = cb;
+    m_on_mouse_exit = cb;
 }
 
 void Panel::mouse_enter()  {
-    if (on_mouse_enter_) {
-        on_mouse_enter_(this);
+    if (m_on_mouse_enter) {
+        m_on_mouse_enter(this);
     }
 }
 
 void Panel::mouse_exit() {
-    if (on_mouse_exit_) {
-        on_mouse_exit_(this);
+    if (m_on_mouse_exit) {
+        m_on_mouse_exit(this);
     }
 }
 

@@ -12,66 +12,66 @@ namespace
 
 
 
-Drawing::Drawing(Type drawing_type) : drawing_type_(drawing_type), direction_(direction_top) {
+Drawing::Drawing(Type drawing_type) : m_drawing_type(drawing_type), m_direction(direction_top) {
 }
 
-Drawing::Drawing(Type drawing_type, Direction direction) : drawing_type_(drawing_type), direction_(direction)  {
+Drawing::Drawing(Type drawing_type, Direction direction) : m_drawing_type(drawing_type), m_direction(direction)  {
 }
 
 Drawing::~Drawing() {
 }
 
 void Drawing::color(uint32_t value) {
-    color_ = value;
+    m_color = value;
 }
 
 uint32_t Drawing::color() {
-    return color_;
+    return m_color;
 }
 
 void Drawing::outline_color(uint32_t value) {
-    outline_color_ = value;   
+    m_outline_color = value;   
 }
 
 uint32_t Drawing::outline_color() {
-    return outline_color_;
+    return m_outline_color;
 }
 
 void Drawing::size(int w, int h) {
-    w_ = w;
-    h_ = h;
+    m_w = w;
+    m_h = h;
 }
 
 void Drawing::position(int x, int y) {
-    x_ = x;
-    y_ = y;
+    m_x = x;
+    m_y = y;
 }
 
 int Drawing::x() {
-    return x_;
+    return m_x;
 }
 
 int Drawing::y() {
-    return y_;
+    return m_y;
 }
 
 int Drawing::h() {
-    return h_;
+    return m_h;
 }
 
 int Drawing::w() {
-    return w_;
+    return m_w;
 }
 
-void Drawing::draw(void *render_window) {
-    switch (drawing_type_)
+void Drawing::draw(sf::RenderTarget *render_target) {
+    switch (m_drawing_type)
     {
         case drawing_arrow:
-            draw_arrow(render_window);
+            draw_arrow(render_target);
         break;
 
         case drawing_flat_box:
-            draw_box(render_window);
+            draw_box(render_target);
         break;
 
         default:
@@ -79,57 +79,55 @@ void Drawing::draw(void *render_window) {
     }
 }
 
-void Drawing::draw_box(void *render_window) {
-    auto wnd = static_cast<sf::RenderWindow *>(render_window);
-    sf::RectangleShape shape({(float)w_, (float)h_});
-    shape.setPosition({x_, y_});
-    shape.setFillColor(sf::Color(color_));
-    shape.setOutlineColor(sf::Color(outline_color_));
+void Drawing::draw_box(sf::RenderTarget *render_target) {
+    sf::RectangleShape shape({(float)m_w, (float)m_h});
+    shape.setPosition({m_x, m_y});
+    shape.setFillColor(sf::Color(m_color));
+    shape.setOutlineColor(sf::Color(m_outline_color));
     shape.setOutlineThickness(-1.0);
-    wnd->draw(shape);
+    render_target->draw(shape);
 }
 
-void Drawing::draw_arrow(void *render_window) {
-    auto wnd = static_cast<sf::RenderWindow *>(render_window);
+void Drawing::draw_arrow(sf::RenderTarget *render_target) {
     sf::Vertex line[3];
-    switch (direction_)
+    switch (m_direction)
     {
         case direction_top: {
-            line[0] = {sf::Vector2f(x_, y_ + h_), sf::Color(color_)};
-            line[1] = {sf::Vector2f(x_ + (w_ >> 1), y_), sf::Color(color_)};
-            line[2] = {sf::Vector2f(x_ + w_, y_ + h_), sf::Color(color_)};
+            line[0] = {sf::Vector2f(m_x, m_y + m_h), sf::Color(m_color)};
+            line[1] = {sf::Vector2f(m_x + (m_w >> 1), m_y), sf::Color(m_color)};
+            line[2] = {sf::Vector2f(m_x + m_w, m_y + m_h), sf::Color(m_color)};
         } break;
         case direction_bottom: {
-            line[0] = {sf::Vector2f(x_, y_), sf::Color(color_)};
-            line[1] = {sf::Vector2f(x_ + (w_ >> 1), y_  + h_), sf::Color(color_)};
-            line[2] = {sf::Vector2f(x_ + w_, y_), sf::Color(color_)};
+            line[0] = {sf::Vector2f(m_x, m_y), sf::Color(m_color)};
+            line[1] = {sf::Vector2f(m_x + (m_w >> 1), m_y  + m_h), sf::Color(m_color)};
+            line[2] = {sf::Vector2f(m_x + m_w, m_y), sf::Color(m_color)};
         } break;
         case direction_left: {
-            line[0] = {sf::Vector2f(x_, y_ + (h_ >> 1)), sf::Color(color_)};
-            line[1] = {sf::Vector2f(x_ + w_, y_), sf::Color(color_)};
-            line[2] = {sf::Vector2f(x_ + w_, y_ + h_), sf::Color(color_)};
+            line[0] = {sf::Vector2f(m_x, m_y + (m_h >> 1)), sf::Color(m_color)};
+            line[1] = {sf::Vector2f(m_x + m_w, m_y), sf::Color(m_color)};
+            line[2] = {sf::Vector2f(m_x + m_w, m_y + m_h), sf::Color(m_color)};
         } break;
         case direction_right: {
-            line[0] = {sf::Vector2f(x_ + w_, y_ + (h_ >> 1)), sf::Color(color_)};
-            line[1] = {sf::Vector2f(x_, y_), sf::Color(color_)};
-            line[2] = {sf::Vector2f(x_, y_ + h_), sf::Color(color_)};
+            line[0] = {sf::Vector2f(m_x + m_w, m_y + (m_h >> 1)), sf::Color(m_color)};
+            line[1] = {sf::Vector2f(m_x, m_y), sf::Color(m_color)};
+            line[2] = {sf::Vector2f(m_x, m_y + m_h), sf::Color(m_color)};
         } break;
         default:
             break;
     }
-    wnd->draw(line, 3, sf::PrimitiveType::Triangles);
-    line[0].color = sf::Color(outline_color_);
-    line[1].color = sf::Color(outline_color_);
-    line[2].color = sf::Color(outline_color_);
-    wnd->draw(line, 3, sf::PrimitiveType::LineStrip);
+    render_target->draw(line, 3, sf::PrimitiveType::Triangles);
+    line[0].color = sf::Color(m_outline_color);
+    line[1].color = sf::Color(m_outline_color);
+    line[2].color = sf::Color(m_outline_color);
+    render_target->draw(line, 3, sf::PrimitiveType::LineStrip);
 }
 
 void Drawing::margin(int value) {
-    margin_ = value;
+    m_margin = value;
 }
 
 int Drawing::margin() {
-    return margin_;
+    return m_margin;
 }
     
 } // namespace dfe_ui

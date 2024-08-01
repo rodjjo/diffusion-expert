@@ -5,7 +5,7 @@
 
 namespace dfe_ui {
         
-ArrowButton::ArrowButton(Window * window, int x, int y, int w, int h, arrow_direction_t direction) : Component(window), direction_(direction) {
+ArrowButton::ArrowButton(Window * window, int x, int y, int w, int h, arrow_direction_t direction) : Component(window), m_direction(direction) {
     this->coordinates(x, y, w, h);
     arrow_color(dfe_ui::theme::button_text_color());
     color(dfe_ui::theme::button_fill_color());
@@ -18,27 +18,27 @@ ArrowButton::~ArrowButton() {
 }
 
 void ArrowButton::handle_mouse_left_pressed(int x, int y) {
-    mouse_pressed_ = true;
+    m_mouse_pressed = true;
 }
 
 void ArrowButton::handle_mouse_left_released(int x, int y) {
-    mouse_pressed_ = false;
+    m_mouse_pressed = false;
 }
 
 void ArrowButton::arrow_color(uint32_t color) {
-    arrow_color_ = color;
+    m_arrow_color = color;
 }
 
 uint32_t ArrowButton::arrow_color() {
-    return arrow_color_;
+    return m_arrow_color;
 }
 
 void ArrowButton::mouse_enter() {
-    mouse_inside_ = true;
+    m_mouse_inside = true;
 }
 
 void ArrowButton::mouse_exit() {
-    mouse_inside_ = false;
+    m_mouse_inside = false;
 }
 
 bool ArrowButton::clickable() {
@@ -50,101 +50,101 @@ component_cursor_t ArrowButton::cursor() {
 }
 
  void ArrowButton::handle_click() {
-    if (onclick_) {
-        onclick_(this);
+    if (m_onclick) {
+        m_onclick(this);
     }
  }
 
-void ArrowButton::paint(void *render_window) {
+void ArrowButton::paint(sf::RenderTarget *render_target) {
     Drawing::Direction dir = Drawing::direction_top;
-    if (direction_ == arrow_down) {
+    if (m_direction == arrow_down) {
         dir = Drawing::direction_bottom;
-    } else if (direction_ == arrom_right) {
+    } else if (m_direction == arrom_right) {
         dir = Drawing::direction_right;
-    } else if (direction_ == arrow_left) {
+    } else if (m_direction == arrow_left) {
         dir = Drawing::direction_left;
     }
 
     int w = abs_w();
     int h = abs_h();
-    int size = arrow_size_ * abs_scale();
+    int size = m_arrow_size * abs_scale();
 
     {  // box
         Drawing dw(Drawing::drawing_flat_box);
-        dw.outline_color(outline_color_);
+        dw.outline_color(m_outline_color);
 
-        if (mouse_pressed_) {
-            dw.color(arrow_color_);
-        } else if (mouse_inside_) {
-            dw.color(highlighted_color_);
+        if (m_mouse_pressed) {
+            dw.color(m_arrow_color);
+        } else if (m_mouse_inside) {
+            dw.color(m_highlighted_color);
         } else {
-            dw.color(color_);  
+            dw.color(m_color);  
         }
         
         dw.size(abs_w(), abs_h());
         dw.position(abs_x(), abs_y());
         dw.margin(0);
-        dw.draw(render_window);
+        dw.draw(render_target);
     }
 
     {  // arrow
         Drawing dw(Drawing::drawing_arrow, dir);
-        dw.outline_color(mouse_pressed_ ? pressed_color_ : arrow_color_ );
-        dw.color(mouse_pressed_ ? pressed_color_ : arrow_color_);
+        dw.outline_color(m_mouse_pressed ? m_pressed_color : m_arrow_color );
+        dw.color(m_mouse_pressed ? m_pressed_color : m_arrow_color);
         dw.size(size, size);
         dw.position(abs_x() + w / 2 - size / 2, abs_y() + h / 2 - size / 2);
         dw.margin(0);
-        dw.draw(render_window);
+        dw.draw(render_target);
     }
 
 }
 
 void ArrowButton::color(uint32_t value) {
-    color_ = value;
+    m_color = value;
 }
 
 uint32_t ArrowButton::color() {
-    return color_;
+    return m_color;
 }
 
 void ArrowButton::outline_color(uint32_t value) {
-    outline_color_ = value;
+    m_outline_color = value;
 }
 
 uint32_t ArrowButton::outline_color() {
-    return outline_color_;
+    return m_outline_color;
 }
 
 void ArrowButton::highlighted_color(uint32_t color) {
-    highlighted_color_ = color;
+    m_highlighted_color = color;
 }
 
 uint32_t ArrowButton::highlighted_color() {
-    return highlighted_color_;
+    return m_highlighted_color;
 }
 
 uint32_t ArrowButton::pressed_color() {
-    return pressed_color_;
+    return m_pressed_color;
 }
 
 void ArrowButton::pressed_color(uint32_t value) {
-    pressed_color_ = value;
+    m_pressed_color = value;
 }
 
 int ArrowButton::arrow_size() {
-    return arrow_size_;
+    return m_arrow_size;
 }
 
 void ArrowButton::arrow_size(int value) {
-    arrow_size_ = value;
+    m_arrow_size = value;
 }
 
 void  ArrowButton::onclick(component_event_t value) {
-    onclick_ = value;
+    m_onclick = value;
 }
 
 component_event_t  ArrowButton::onclick() {
-    return onclick_;
+    return m_onclick;
 }
 
 

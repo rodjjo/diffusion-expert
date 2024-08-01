@@ -8,7 +8,7 @@
 namespace dfe_ui
 {
 
-Scrollbar::Scrollbar(Window * window, int x, int y, int w, int h, bool vertical) : Component(window), vertical_(vertical) {
+Scrollbar::Scrollbar(Window * window, int x, int y, int w, int h, bool vertical) : Component(window), m_vertical(vertical) {
     coordinates(x, y, w, h);
     arrow_color(theme::button_text_color());
     color(theme::button_fill_color());
@@ -24,131 +24,131 @@ Scrollbar::~Scrollbar() {
 }
 
 int Scrollbar::min() {
-    return min_;
+    return m_min;
 }
 
 void Scrollbar::adjust_scroll() {
     int temp;
-    if (min_ > max_) {
-        temp = max_;
-        max_ = min_;
-        min_ = temp;
+    if (m_min > m_max) {
+        temp = m_max;
+        m_max = m_min;
+        m_min = temp;
     }
-    if (value_ < min_) {
-        value_ = min_;
+    if (m_value < m_min) {
+        m_value = m_min;
     }
-    if (value_ > max_) {
-        value_ = max_;
+    if (m_value > m_max) {
+        m_value = m_max;
     }
-    if (onchange_) {
-        onchange_(this);
+    if (m_onchange) {
+        m_onchange(this);
     }
 }
 
 void Scrollbar::min(int value) {
-    min_ = value;
+    m_min = value;
     adjust_scroll();
 }
 
 int Scrollbar::value() {
-    return value_;
+    return m_value;
 }
 
 void Scrollbar::value(int val) {
-    value_ = val;
+    m_value = val;
     adjust_scroll();
 }
 
 int Scrollbar::max() {
-    return max_;
+    return m_max;
 }
 
 void Scrollbar::max(int value) {
-    max_ = value;
+    m_max = value;
     adjust_scroll();
 }
 
 bool Scrollbar::vertical() {
-    return vertical_;
+    return m_vertical;
 }
 
 void Scrollbar::vertical(bool value) {
-    vertical_ = value;
+    m_vertical = value;
 }
 
 void Scrollbar::arrow_color(uint32_t value) {
-    arrow_color_ = value;
+    m_arrow_color = value;
 }
 
 uint32_t Scrollbar::arrow_color() {
-    return arrow_color_;
+    return m_arrow_color;
 }
 
 void Scrollbar::color(uint32_t value) {
-    color_ = value;
+    m_color = value;
 }
 
 uint32_t Scrollbar::color() {
-    return color_;
+    return m_color;
 }
 
 void Scrollbar::outline_color(uint32_t value) {
-    outline_color_ = value;
+    m_outline_color = value;
 }
 
 uint32_t Scrollbar::outline_color() {
-    return outline_color_;
+    return m_outline_color;
 }
 
 void Scrollbar::highlighted_color(uint32_t color) {
-    highlighted_color_ = color;
+    m_highlighted_color = color;
 }
 
 uint32_t Scrollbar::highlighted_color() {
-    return highlighted_color_;
+    return m_highlighted_color;
 }
 
 uint32_t Scrollbar::pressed_color() {
-    return pressed_color_;
+    return m_pressed_color;
 }
 
 void Scrollbar::pressed_color(uint32_t value) {
-    pressed_color_ = value;
+    m_pressed_color = value;
 }
 
 void Scrollbar::handle_mouse_left_pressed(int x, int y) {
-    mouse_pressed_ = true;
+    m_mouse_pressed = true;
 
     compute_mouse_region(x, y);
-    mouse_down_region_ = mouse_in_region_;
+    m_mouse_down_region = m_mouse_in_region;
 
-    if (mouse_in_region_ == 2)  {
-        mouse_down_value_ = value_;
-        if (vertical_) {
-            mouse_down_coord_ = y;
+    if (m_mouse_in_region == 2)  {
+        m_mouse_down_value = m_value;
+        if (m_vertical) {
+            m_mouse_down_coord = y;
         } else {
-            mouse_down_coord_ = x;
+            m_mouse_down_coord = x;
         }
     } 
 
-    mouse_down_time_ = 0;
+    m_mouse_down_time = 0;
     click_scroll();
-    mouse_down_time_ = clock::current_microseconds() + 500000;
+    m_mouse_down_time = clock::current_microseconds() + 500000;
 }
 
 void Scrollbar::handle_mouse_left_released(int x, int y) {
-    mouse_pressed_ = false;
-    mouse_down_coord_ = 0;
-    mouse_down_region_ = -1;
+    m_mouse_pressed = false;
+    m_mouse_down_coord = 0;
+    m_mouse_down_region = -1;
 }
 
 void Scrollbar::mouse_enter() {
-    mouse_inside_ = true;
+    m_mouse_inside = true;
 }
 
 void Scrollbar::mouse_exit() {
-    mouse_inside_ = false;
-    mouse_in_region_ = -1;
+    m_mouse_inside = false;
+    m_mouse_in_region = -1;
 }
 
 bool Scrollbar::clickable() {
@@ -156,13 +156,13 @@ bool Scrollbar::clickable() {
 }
 
 component_cursor_t Scrollbar::cursor() {
-    return current_cursor_;
+    return m_current_cursor;
 }
 
 void Scrollbar::compute_regions(scrool_regions_t &regions) {
     float scale = abs_scale();
-    auto x = (vertical_ ? w() : h());
-    auto y = (vertical_ ? h() : w());
+    auto x = (m_vertical ? w() : h());
+    auto y = (m_vertical ? h() : w());
     
     int button_size;
     int barsize;
@@ -177,8 +177,8 @@ void Scrollbar::compute_regions(scrool_regions_t &regions) {
         button_size = 0;
     }
 
-    int progess_max = (max_ - min_);
-    int slidersize = barsize - button_size * (max_ - min_);
+    int progess_max = (m_max - m_min);
+    int slidersize = barsize - button_size * (m_max - m_min);
     if (slidersize < button_size) {
         slidersize = button_size;
     }
@@ -187,7 +187,7 @@ void Scrollbar::compute_regions(scrool_regions_t &regions) {
         progess_max = 1;
     }
     double progress_factor = (double)progress_area / (double) progess_max;
-    int progress = value_ - min_;
+    int progress = m_value - m_min;
     int scroll_value = progress_factor * progress;
     
     regions[0].x = 0;
@@ -215,7 +215,7 @@ void Scrollbar::compute_regions(scrool_regions_t &regions) {
     regions[3].w = button_size;
     regions[3].h = regions[4].y - regions[3].y;
     
-    if (!vertical_) {
+    if (!m_vertical) {
         int tmp;
         for (int i = 0; i < 5; i++) {
             tmp = regions[i].x;
@@ -231,11 +231,11 @@ void Scrollbar::compute_regions(scrool_regions_t &regions) {
 void Scrollbar::compute_mouse_region(int x, int y) {
     scrool_regions_t regions;
     compute_regions(regions);
-    mouse_in_region_ = -1;
+    m_mouse_in_region = -1;
     for (int i = 0; i < 5; i++) {
         if (x >= regions[i].x && y >= regions[i].y &&
             x <= regions[i].x + regions[i].w && y <= regions[i].y + regions[i].h)  {
-            mouse_in_region_ = i;
+            m_mouse_in_region = i;
             break;
         }
     }
@@ -243,9 +243,9 @@ void Scrollbar::compute_mouse_region(int x, int y) {
 
 void Scrollbar::handle_mouse_wheel(int8_t direction, int x, int y) {
     if (direction < 0) {
-        value(value() + page_size_);
+        value(value() + m_page_size);
     } else {
-        value(value() - page_size_);
+        value(value() - m_page_size);
     }
 }
 
@@ -254,79 +254,79 @@ void Scrollbar::handle_mouse_moved(int x, int y) {
     scrool_regions_t regions;
     compute_regions(regions);
 
-    if (mouse_in_region_ == 0 || mouse_in_region_ == 4) {
-        current_cursor_ = cursor_hand;
-    } else if (mouse_in_region_ == 2) {
-        current_cursor_ = cursor_drag;
+    if (m_mouse_in_region == 0 || m_mouse_in_region == 4) {
+        m_current_cursor = cursor_hand;
+    } else if (m_mouse_in_region == 2) {
+        m_current_cursor = cursor_drag;
     } else {
-        current_cursor_ = cursor_arrow;
+        m_current_cursor = cursor_arrow;
     }
 
-    if (mouse_down_region_ == 2) {
-        int max = max_ - min_;
-        int distance = vertical_ ? y - mouse_down_coord_ : x - mouse_down_coord_;
+    if (m_mouse_down_region == 2) {
+        int max = m_max - m_min;
+        int distance = m_vertical ? y - m_mouse_down_coord : x - m_mouse_down_coord;
         int size = 0;
-        if (vertical_) {
+        if (m_vertical) {
             size = (regions[4].y - regions[0].h) - regions[2].h;
         } else {
             size = (regions[4].x - regions[0].w) - regions[2].w;
         }
         if (size != 0) {
             double value_per_pixel = max / (double)size;
-            value_ = mouse_down_value_ + (distance * value_per_pixel);
+            m_value = m_mouse_down_value + (distance * value_per_pixel);
             adjust_scroll();
         }
     } 
 }
 
 void Scrollbar::scroll_color(uint32_t value) {
-    scroll_color_ = value;
+    m_scroll_color = value;
 }
 
 uint32_t Scrollbar::scroll_color() {
-    return scroll_color_;
+    return m_scroll_color;
 }
 
 void Scrollbar::scroll_highlighted_color(uint32_t value) {
-    scroll_highlighted_color_ = value;
+    m_scroll_highlighted_color = value;
 }
 
 uint32_t Scrollbar::scroll_highlighted_color() {
-    return scroll_highlighted_color_;
+    return m_scroll_highlighted_color;
 }
 
 int Scrollbar::page_size() {
-    return page_size_;
+    return m_page_size;
 }
 
 void Scrollbar::page_size(int value) {
-    page_size_ = value;
+    m_page_size = value;
 }
 
 void Scrollbar::onchange(component_event_t value) {
-    onchange_ = value;
+    m_onchange = value;
 }
 
 component_event_t Scrollbar::onchange() {
-    return onchange_;
+    return m_onchange;
 }
 
 void Scrollbar::click_scroll() {
-    if (!mouse_pressed_) return;
-    if (mouse_down_time_ > clock::current_microseconds()) return;
-    mouse_down_time_ = clock::current_microseconds() + 125000; // 4 
+    if (!m_mouse_pressed) return;
+    if (m_mouse_down_time > clock::current_microseconds()) return;
+    m_mouse_down_time = clock::current_microseconds() + 125000; // 4 
 
-    switch (mouse_down_region_) {
+    switch (m_mouse_down_region) {
         case 0:
             value(value() - 1);
         break;
 
         case 1:
-            value(value() - page_size_);
+            value(value() - m_page_size);
         break;
 
         case 3:
-            value(value() + page_size_);
+            value(value() + m_page_size);
         break;
 
         case 4:
@@ -339,7 +339,7 @@ void Scrollbar::click_scroll() {
 
 }
 
-void Scrollbar::paint(void *render_window) {
+void Scrollbar::paint(sf::RenderTarget *render_target) {
     click_scroll();
 
     scrool_regions_t regions;
@@ -357,72 +357,72 @@ void Scrollbar::paint(void *render_window) {
         regions[reg].w *= abs_scale();
         regions[reg].x *= abs_scale();
         regions[reg].y *= abs_scale();
-        focused = mouse_in_region_ == reg;
-        pressed = mouse_pressed_ && focused;
+        focused = m_mouse_in_region == reg;
+        pressed = m_mouse_pressed && focused;
 
         if (reg == 2) {
             Drawing dw(Drawing::drawing_flat_box);
-            dw.outline_color(outline_color_);
+            dw.outline_color(m_outline_color);
 
             if (pressed) {
-                dw.color(arrow_color_);
+                dw.color(m_arrow_color);
             } else if (focused) {
-                dw.color(highlighted_color_);
+                dw.color(m_highlighted_color);
             } else {
-                dw.color(color_);  
+                dw.color(m_color);  
             }
             
             dw.size(regions[reg].w, regions[reg].h);
             dw.position(abs_x() + regions[reg].x, abs_y() + regions[reg].y);
             dw.margin(0);
-            dw.draw(render_window); 
+            dw.draw(render_target); 
         }
 
         if (reg == 1 || reg == 3) {
             Drawing dw(Drawing::drawing_flat_box);
-            dw.outline_color(scroll_color_);
+            dw.outline_color(m_scroll_color);
 
             if (pressed) {
-                dw.color(scroll_highlighted_color_);
+                dw.color(m_scroll_highlighted_color);
             } else if (focused) {
-                dw.color(scroll_highlighted_color_);
+                dw.color(m_scroll_highlighted_color);
             } else {
-                dw.color(scroll_color_);  
+                dw.color(m_scroll_color);  
             }
             
             dw.size(regions[reg].w, regions[reg].h);
             dw.position(abs_x() + regions[reg].x, abs_y() + regions[reg].y);
             dw.margin(0);
-            dw.draw(render_window); 
+            dw.draw(render_target); 
         }
 
         // draw button boxes
         if (reg == 0 || reg == 4) {
             Drawing dw(Drawing::drawing_flat_box);
-            dw.outline_color(outline_color_);
+            dw.outline_color(m_outline_color);
 
             if (pressed) {
-                dw.color(arrow_color_);
+                dw.color(m_arrow_color);
             } else if (focused) {
-                dw.color(highlighted_color_);
+                dw.color(m_highlighted_color);
             } else {
-                dw.color(color_);  
+                dw.color(m_color);  
             }
             
             dw.size(regions[reg].w, regions[reg].h);
             dw.position(abs_x() + regions[reg].x, abs_y() + regions[reg].y);
             dw.margin(0);
-            dw.draw(render_window); 
+            dw.draw(render_target); 
             
             Drawing::Direction dir = Drawing::direction_top;
             if (reg == 0) {
-                if(vertical_) {
+                if(m_vertical) {
                     dir = Drawing::direction_top;
                 } else {
                     dir = Drawing::direction_left;
                 }
             } else {
-                if(vertical_) {
+                if(m_vertical) {
                     dir = Drawing::direction_bottom;
                 } else {
                     dir = Drawing::direction_right;
@@ -430,12 +430,12 @@ void Scrollbar::paint(void *render_window) {
             }
             int margin = (theme::icon_margin() * scale);
             Drawing ar(Drawing::drawing_arrow, dir);
-            ar.outline_color(pressed ? pressed_color_ : arrow_color_ );
-            ar.color(pressed ? pressed_color_ : arrow_color_);
+            ar.outline_color(pressed ? m_pressed_color : m_arrow_color );
+            ar.color(pressed ? m_pressed_color : m_arrow_color);
             ar.size(regions[reg].w - margin * 2, regions[reg].h - margin * 2);
             ar.position(abs_x() + margin + regions[reg].x, abs_y() + margin + regions[reg].y);
             ar.margin(0);
-            ar.draw(render_window);
+            ar.draw(render_target);
         }
     }
 }

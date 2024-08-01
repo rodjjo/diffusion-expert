@@ -9,6 +9,16 @@
 #define RGBA_B(color) ((color) >> 8) & 255
 #define RGBA_A(color) (color) & 255
 
+
+namespace sf {
+    // sfml forward class declarations
+    // just to avoid sfml's header inclusion
+    class Font;
+    class Text;
+    class RenderTarget;
+    class RenderWindow;
+}
+
 namespace dfe_ui {
 
 
@@ -34,38 +44,8 @@ typedef enum {
 class Component;
 class Window;
 
-class ScissorContext {
-  public:
-    ScissorContext(int target_h, Component *component);
-    ~ScissorContext();
-    bool visible();
-  private:
-    bool disable_scissor_ = false;
-    float view_x_ = 0;
-    float view_y_ = 0;
-    float view_w_ = 0;
-    float view_h_ = 0;
-};
+typedef std::vector<std::shared_ptr<Component> > component_list_t;
 
-class ComponentList {
-  public:
-    ComponentList(Component *parent);
-    virtual ~ComponentList();
-    Component & operator[](size_t index);
-    size_t size();
-    Component & at(size_t index);
-    bool empty();
-
-  private:
-    Component *parent_;
-    std::vector<std::shared_ptr<Component> > items_;
-    void sort();
-
-  private:
-    void add(std::shared_ptr<Component> component);
-    void remove(Component *element);
-    friend class Component;
-};
 
 class Component : public std::enable_shared_from_this<Component>  {
   public:
@@ -74,15 +54,16 @@ class Component : public std::enable_shared_from_this<Component>  {
     std::shared_ptr<Component> share();
     int zorder() const;
     void zorder(int value);
-    virtual void paint(void *render_window);
-    bool damaged();
-    void damaged(bool value);
-    static bool global_damaged();
+    virtual void paint(sf::RenderTarget *render_target);
     bool visible();
     void visible(bool value);
     bool enabled();
     void enabled(bool value);
     bool abs_enabled();
+
+    Component & operator[](size_t index);
+    size_t component_count();
+    virtual Component & at(size_t index);
 
     virtual bool drag_enabled();
     virtual bool drop_enabled();
@@ -130,11 +111,10 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual bool focusable();
     Component *parent();
     virtual Component *find_top_clickable(int &x, int &y);
-    void paint_children(void *render_window, bool check_status=true);
+    void paint_children(sf::RenderTarget *render_target, bool check_status=true);
     void set_drag_coord(int x, int y);
 
     virtual void add(std::shared_ptr<Component> child);
-    virtual ComponentList & items();
 
     size_t tag();
     void tag(size_t value);
@@ -174,28 +154,31 @@ class Component : public std::enable_shared_from_this<Component>  {
     int abs_scrollx();
     int abs_scrolly();
 
+    void add_component(std::shared_ptr<Component> component);
+    void remove_component(Component *element);
+    void sort_components();
+
   private:
-    Window                    *window_ = NULL;
-    ComponentList             items_;
-    bool                      enabled_ = true;
-    bool                      visible_ = true;
-    bool                      damaged_ = true;
-    int                       z_order_ = 0;
-    int                       scroll_x_ = 0;
-    int                       scroll_y_ = 0;
-    float                     scale_ = 1.0;
-    int                       x_ = 0;
-    int                       y_ = 0;
-    int                       w_ = 0;
-    int                       h_ = 0;
-    int                       drag_x_ = 0;
-    int                       drag_y_ = 0;
-    size_t                    tag_ = 0;
+    component_list_t          m_items;
+    Window                    *m_window = NULL;
+    bool                      m_enabled = true;
+    bool                      m_visible = true;
+    int                       m_z_order = 0;
+    int                       m_scroll_x = 0;
+    int                       m_scroll_y = 0;
+    float                     m_scale = 1.0;
+    int                       m_x = 0;
+    int                       m_y = 0;
+    int                       m_w = 0;
+    int                       m_h = 0;
+    int                       m_drag_x = 0;
+    int                       m_drag_y = 0;
+    size_t                    m_tag = 0;
 
   private:
     friend class ComponentList;
-    Component                 *floatting_parent_ = NULL;
-    Component                 *parent_ = NULL;
+    Component                 *m_floatting_parent = NULL;
+    Component                 *m_parent = NULL;
 };
 
 

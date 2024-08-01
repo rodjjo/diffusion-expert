@@ -40,16 +40,16 @@ class DragDrop : public Panel {
         void drop_end() override;
 
     private:
-        cb_complete_drop_t cb_on_complete_drop_;
-        cb_accept_component_t cb_accept_drop_;
-        cb_accept_component_t cb_accept_drag_;
-        cb_dragdrop_hint_t cb_drag_begin_;
-        cb_dragdrop_hint_t cb_drag_end_;
-        cb_dragdrop_hint_t cb_drop_begin_;
-        cb_dragdrop_hint_t cb_drop_end_;
-        component_status_t status_ = component_status_normal;
-        bool drag_enabled_ = false;
-        bool drop_enabled_ = false;
+        cb_complete_drop_t m_cb_on_complete_drop;
+        cb_accept_component_t m_cb_accept_drop;
+        cb_accept_component_t m_cb_accept_drag;
+        cb_dragdrop_hint_t m_cb_drag_begin;
+        cb_dragdrop_hint_t m_cb_drag_end;
+        cb_dragdrop_hint_t m_cb_drop_begin;
+        cb_dragdrop_hint_t m_cb_drop_end;
+        component_status_t m_status = component_status_normal;
+        bool m_drag_enabled = false;
+        bool m_drop_enabled = false;
 };
     
 } // namespace dfe_ui

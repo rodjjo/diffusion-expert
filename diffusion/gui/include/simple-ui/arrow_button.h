@@ -21,7 +21,7 @@ class ArrowButton : public Component {
         virtual ~ArrowButton();
         int arrow_size();
         void arrow_size(int value);
-        virtual void paint(void *render_window) override;
+        virtual void paint(sf::RenderTarget *render_target) override;
         void arrow_color(uint32_t color);
         uint32_t arrow_color();
         void color(uint32_t value);
@@ -45,16 +45,16 @@ class ArrowButton : public Component {
         component_cursor_t cursor() override;
 
     private:
-        component_event_t   onclick_;
-        bool                mouse_inside_ = false;
-        bool                mouse_pressed_ = false;
-        arrow_direction_t   direction_ = arrow_up;
-        uint32_t            arrow_size_ = 30;
-        uint32_t            arrow_color_ = 0xFFFFFFFF;
-        uint32_t            color_ = 0xFFFFFFFF;
-        uint32_t            outline_color_ = 0x000000FF;
-        uint32_t            highlighted_color_ = 0xFFFFFFFF;
-        uint32_t            pressed_color_ = 0x666666FF;
+        component_event_t   m_onclick;
+        bool                m_mouse_inside = false;
+        bool                m_mouse_pressed = false;
+        arrow_direction_t   m_direction = arrow_up;
+        uint32_t            m_arrow_size = 30;
+        uint32_t            m_arrow_color = 0xFFFFFFFF;
+        uint32_t            m_color = 0xFFFFFFFF;
+        uint32_t            m_outline_color = 0x000000FF;
+        uint32_t            m_highlighted_color = 0xFFFFFFFF;
+        uint32_t            m_pressed_color = 0x666666FF;
 };
 
 };

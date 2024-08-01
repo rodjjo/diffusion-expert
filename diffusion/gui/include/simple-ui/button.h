@@ -27,7 +27,7 @@ namespace dfe_ui
             void character_size(int value);
             void text_color(uint32_t color);
             uint32_t text_color();
-            virtual void paint(void *render_window) override;
+            virtual void paint(sf::RenderTarget *render_target) override;
             void color(uint32_t value);
             uint32_t color();
             void outline_color(uint32_t value);
@@ -60,20 +60,20 @@ namespace dfe_ui
             void update_text_min_y();
 
         private:
-            icon_type_t             checked_icon_ = img_none;
-            bool                    checked_ = false;
-            bool                    mouse_pressed_ = false;
-            bool                    mouse_inside_ = false;
-            icon_position_t         icon_pos_ = icon_center;
-            icon_type_t             icon_type_ = img_none;
-            int                     text_min_y_ = 0;
-            std::shared_ptr<void>   text_;
-            int                     character_size_ = 30;
-            uint32_t                text_color_ = RGBA_TO_COLOR(255, 255, 255, 255);
-            uint32_t                color_ = 0xFFFFFFFF;
-            uint32_t                outline_color_ = 0x000000FF;
-            uint32_t                highlighted_color_ = 0xFFFFFFFF;
-            uint32_t                pressed_color_ = 0x666666FF;
-            cb_button_click_t       on_click_;
+            icon_type_t             m_checked_icon = img_none;
+            bool                    m_checked = false;
+            bool                    m_mouse_pressed = false;
+            bool                    m_mouse_inside = false;
+            icon_position_t         m_icon_pos = icon_center;
+            icon_type_t             m_icon_type = img_none;
+            int                     m_text_min_y = 0;
+            std::shared_ptr<void>   m_text;
+            int                     m_character_size = 30;
+            uint32_t                m_text_color = RGBA_TO_COLOR(255, 255, 255, 255);
+            uint32_t                m_color = 0xFFFFFFFF;
+            uint32_t                m_outline_color = 0x000000FF;
+            uint32_t                m_highlighted_color = 0xFFFFFFFF;
+            uint32_t                m_pressed_color = 0x666666FF;
+            cb_button_click_t       m_on_click;
     };
 } // namespace dfe_ui

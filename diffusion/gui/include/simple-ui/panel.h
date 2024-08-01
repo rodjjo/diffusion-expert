@@ -14,7 +14,7 @@ class Panel : public Component {
   public:
     Panel(Window * window, int x, int y, int w, int h);
     virtual ~Panel();
-    virtual void paint(void *render_window) override;
+    virtual void paint(sf::RenderTarget *render_target) override;
     void bg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     void fg_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
@@ -36,10 +36,10 @@ class Panel : public Component {
     void mouse_exit() override;
     
   private:
-    uint32_t fg_color_ = 0;
-    uint32_t bg_color_ = 0;
-    cb_event_t on_mouse_enter_;
-    cb_event_t on_mouse_exit_;
+    uint32_t m_fg_color = 0;
+    uint32_t m_bg_color = 0;
+    cb_event_t m_on_mouse_enter;
+    cb_event_t m_on_mouse_exit;
 };
     
 } // namespace dfe

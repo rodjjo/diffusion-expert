@@ -12,7 +12,7 @@ class Combobox : public Component {
   public:
     Combobox(Window * window, int x, int y, int w, int h);
     virtual ~Combobox();
-    virtual void paint(void *render_window) override;
+    virtual void paint(sf::RenderTarget *render_target) override;
     std::wstring text();
     int character_size();
     void character_size(int value);
@@ -23,7 +23,7 @@ class Combobox : public Component {
     void add(const std::wstring& value);
     void remove(size_t index);
     void clear();
-    std::wstring at(size_t index);
+    std::wstring item(size_t index);
     size_t size();
 
   private:
@@ -39,21 +39,21 @@ class Combobox : public Component {
     bool focusable() override;
 
   private:
-    vertical_text_alignment_t     text_valign_ = text_alignment_middle;
-    std::shared_ptr<void>         text_;
-    std::shared_ptr<Listbox>      list_;
-    std::shared_ptr<ArrowButton>  button_;
-    bool                          floatting_list_ = false;
-    int                           text_min_y_ = 0;
-    int                           character_size_ = 30;
-    uint32_t                      text_color_ = 0;
-    uint32_t                      fill_color_ = 0;
-    uint32_t                      outline_color_ = 0;
-    uint32_t                      arrow_color_ = 0xFFFFFFFF;
-    uint32_t                      highlighted_color_ = 0xFFFFFFFF;
-    uint32_t                      pressed_color_ = 0x666666FF;
-    uint32_t                      selected_color_ = 0x000000FF;
-    uint32_t                      selected_text_color_ = 0xFFFFFFFF;
+    vertical_text_alignment_t     m_text_valign = text_alignment_middle;
+    std::shared_ptr<void>         m_text;
+    std::shared_ptr<Listbox>      m_list;
+    std::shared_ptr<ArrowButton>  m_button;
+    bool                          m_floatting_list = false;
+    int                           m_text_min_y = 0;
+    int                           m_character_size = 30;
+    uint32_t                      m_text_color = 0;
+    uint32_t                      m_fill_color = 0;
+    uint32_t                      m_outline_color = 0;
+    uint32_t                      m_arrow_color = 0xFFFFFFFF;
+    uint32_t                      m_highlighted_color = 0xFFFFFFFF;
+    uint32_t                      m_pressed_color = 0x666666FF;
+    uint32_t                      m_selected_color = 0x000000FF;
+    uint32_t                      m_selected_text_color = 0xFFFFFFFF;
 
 };
 

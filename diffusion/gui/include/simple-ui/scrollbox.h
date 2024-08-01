@@ -22,9 +22,9 @@ class Scrollbox : public Component {
     void max_scroll_y(uint32_t value);
     uint32_t max_scroll_x();
     uint32_t max_scroll_y();
-   virtual void paint(void *render_window) override;
+   virtual void paint(sf::RenderTarget *render_target) override;
    void add(std::shared_ptr<Component> child) override;
-   ComponentList & scroll_items();
+   Component & scroll_component();
 
  private:
     void compute_autoscroll();
@@ -38,15 +38,15 @@ class Scrollbox : public Component {
     void handle_child_count_changed() override;
     
  private:
-    bool inside_scroll_callback_    = false;
-    std::shared_ptr<Component>     scroll_component_;
-    std::shared_ptr<Scrollbar>     vertical_sb_;
-    std::shared_ptr<Scrollbar>     horizontal_sb_;
-    bool        autoscroll_        = true;
-    uint32_t    fill_color_        = 0;
-    uint32_t    outline_color_     = 0;
-    int         max_scroll_x_      = 0;
-    int         max_scroll_y_      = 0;
+    bool m_inside_scroll_callback    = false;
+    std::shared_ptr<Component>     m_scroll_component;
+    std::shared_ptr<Scrollbar>     m_vertical_sb;
+    std::shared_ptr<Scrollbar>     m_horizontal_sb;
+    bool        m_autoscroll        = true;
+    uint32_t    m_fill_color        = 0;
+    uint32_t    m_outline_color     = 0;
+    int         m_max_scroll_x      = 0;
+    int         m_max_scroll_y      = 0;
 };
 
 }  // namespace dfe_ui

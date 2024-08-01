@@ -11,7 +11,7 @@ class ProgressBar : public Component {
   public:
     ProgressBar(Window * window, int x, int y, int w, int h);
     virtual ~ProgressBar();
-    virtual void paint(void *render_window) override;
+    virtual void paint(sf::RenderTarget *render_target) override;
 
     int64_t progress();
     void progress(int64_t value);
@@ -33,15 +33,15 @@ class ProgressBar : public Component {
     void update_text_min_y();
 
   private:
-    std::shared_ptr<void>         text_;
-    int                           text_min_y_ = 0;
-    int                           character_size_ = 30;
-    uint32_t                      fill_color_ = 0xFFFFFFFF;
-    uint32_t                      outline_color_ = 0x000000FF;
-    uint32_t                      progress_color_ = 0x000000FF;
-    uint32_t                      text_color_ = 0;
-    int64_t                       progress_ = 0;
-    int64_t                       progress_max_ = 100;
+    std::shared_ptr<void>         m_text;
+    int                           m_text_min_y = 0;
+    int                           m_character_size = 30;
+    uint32_t                      m_fill_color = 0xFFFFFFFF;
+    uint32_t                      m_outline_color = 0x000000FF;
+    uint32_t                      m_progress_color = 0x000000FF;
+    uint32_t                      m_text_color = 0;
+    int64_t                       m_progress = 0;
+    int64_t                       m_progress_max = 100;
 };    
 
 } // namespace dfe_gui
