@@ -106,6 +106,9 @@ class TextEditor : public Component {
         void wrap_cursor(size_t value);
         wchar_t latest_character(size_t line_number);
         void insert_character(wchar_t unicode);
+        bool update_measurement_item();
+        std::pair<size_t, size_t> find_cursor_from_mouse_coords(int x, int y);
+
     private:
         size_t m_scroll_top = 0;
         size_t m_cursor_x = 0;

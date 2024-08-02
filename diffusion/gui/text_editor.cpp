@@ -463,7 +463,9 @@ void TextEditor::handle_focus_got() {
 }
 
 void TextEditor::handle_mouse_left_pressed(int x, int y) {
-
+    auto cursor = find_cursor_from_mouse_coords(x, y);
+    m_cursor_x = cursor.first;
+    m_cursor_y = cursor.second;
 }
 
 void TextEditor::handle_mouse_left_released(int x, int y) {
@@ -473,6 +475,50 @@ void TextEditor::handle_mouse_left_released(int x, int y) {
 void TextEditor::handle_mouse_moved(int x, int y) {
 
 }
+
+std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y) {
+    std::pair<size_t, size_t> result(0, 0);
+    if (!update_measurement_item() || m_lines.empty()) {
+        return result;
+    }
+    float scale = abs_scale();
+    x *= scale;
+    y *= scale;
+    int line_height = (m_character_size + theme::editor_line_spacing()) * scale;
+    result.second = m_scroll_top + y / line_height;
+    if (result.second >= m_lines.size()) {
+        result.second = m_lines.size() - 1;
+    }
+    auto text = m_lines[result.second];
+    m_text_measure->setString(text);
+    size_t distance = (size_t)-1;
+    for (size_t i = 0; i < text.size(); i++) {
+        auto p = m_text_measure->findCharacterPos(i);
+        if (abs((double)p.x - (double)x) < distance) {
+            result.first = i;
+            distance = abs((double)p.x - (double)x);
+        }
+    }
+    auto p = m_text_measure->getGlobalBounds();
+    auto x2 = p.position.x + p.size.x;
+    if (abs((double)x2 - (double)x) < distance) {
+        result.first = text.size();
+    }
+    
+    if (text.size() > 0 && result.first > 0) {
+        if (result.first >= text.size())  {
+            result.first--;
+        }
+        if (result.first > 0 && text[result.first - 1] == U'\n') {
+            result.first--;
+        }
+    } else {
+        result.first = 0;
+    }
+
+    return result;
+}
+
 
 std::wstring TextEditor::content() {
     std::wstring result;
@@ -518,6 +564,18 @@ void TextEditor::apply_format(sf::Text *txt) {
     }
 }
 
+bool TextEditor::update_measurement_item() {
+    if (!m_text_measure) {
+        auto fnt = load_default_font();
+        if (!fnt) {
+            return false;
+        }
+        m_text_measure.reset(new sf::Text(*fnt));
+    }
+    apply_format(m_text_measure.get());
+    return true;
+}
+
 void TextEditor::wrap_text() {
     if (m_type != editor_type_t::editor_multiline_wrap) {
         return;
@@ -525,12 +583,9 @@ void TextEditor::wrap_text() {
     if (!m_need_update) {
         return;
     }
-    if (!m_text_measure) {
-        auto fnt = load_default_font();
-        if (!fnt) {
-            return;
-        }
-        m_text_measure.reset(new sf::Text(*fnt));
+
+    if (!update_measurement_item()) {
+        return;
     }
 
     select_nothing();
@@ -539,7 +594,8 @@ void TextEditor::wrap_text() {
     content(content());
     m_need_update = false;
 
-    apply_format(m_text_measure.get());
+    
+
     size_t i = 0;
     size_t limit_w = abs_w() - (theme::editor_margin() * 2) * abs_scale();
     sf::Vector2f location;
