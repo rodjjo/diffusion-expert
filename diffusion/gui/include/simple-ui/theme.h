@@ -13,6 +13,8 @@ uint32_t editor_cursor_color();
 uint32_t editor_selection_color();
 void     editor_color(uint32_t text_color, uint32_t fill_color, uint32_t outline_color, 
     uint32_t cursor_color, uint32_t selection_color);
+uint32_t editor_line_spacing();
+uint32_t editor_margin();
 
 // label
 uint32_t label_text_color();
@@ -51,6 +53,8 @@ uint32_t scrollbox_margin();
 uint32_t scrollbox_scrollbar_size();
 uint32_t scrollbox_color();
 uint32_t scrollbox_outline_color();
+
+// text_editor
 
 };
 

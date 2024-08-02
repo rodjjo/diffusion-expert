@@ -6,15 +6,18 @@
 #include <SFML/Window/Clipboard.hpp>
 #include <SFML/Graphics/Text.hpp>
 
+#include "drawings.h"
+#include "simple-ui/clock.h"
 #include "simple-ui/theme.h"
+#include "simple-ui/default_font.h"
+
 #include "simple-ui/text_editor.h"
 
-#include "drawings.h"
 
 namespace dfe_ui
 {
 
-TextEditor::TextEditor(Window * window, int x, int y, int w, int h, editor_type_t type) : Component(window) {
+TextEditor::TextEditor(Window * window, int x, int y, int w, int h, editor_type_t type) : Component(window), m_type(type) {
     text_color(dfe_ui::theme::editor_text_color());
     cursor_color(dfe_ui::theme::editor_cursor_color());
     selected_color(dfe_ui::theme::editor_selection_color());
@@ -23,16 +26,6 @@ TextEditor::TextEditor(Window * window, int x, int y, int w, int h, editor_type_
     this->coordinates(x, y, w, h);
 }
 
-void TextEditor::paint(sf::RenderTarget *render_target) {
-    Drawing dw(Drawing::drawing_flat_box);
-    dw.outline_color(m_outline_color);
-    dw.color(m_fill_color);
-    dw.size(abs_w(), abs_h());
-    dw.position(abs_x(), abs_y());
-    dw.margin(0);
-    dw.draw(render_target);
-    
-}
 
 void TextEditor::fill_color(uint32_t value) {
     m_fill_color = value;
@@ -114,7 +107,7 @@ void TextEditor::remove_selected_text() {
 
 }
 
-void TextEditor::handle_textentered(wchar_t unicode) {
+void TextEditor::handle_text_entered(wchar_t unicode) {
     if (m_readonly) return;
 
     char c[MB_CUR_MAX];
@@ -126,9 +119,28 @@ void TextEditor::handle_textentered(wchar_t unicode) {
         }
     }
 
+    insert_character(unicode);
+}
+
+void TextEditor::insert_character(wchar_t unicode) {
     remove_selected_text();
 
+    if (m_lines.size() < 1) {
+        m_lines.push_back(L"");
+    }
+    if (m_cursor_y > m_lines.size()) {
+        m_cursor_y = m_lines.size() - 1;
+    }
+    if (m_cursor_x > m_lines[m_cursor_y].size()) {
+        m_cursor_x = m_lines[m_cursor_y].size();
+    }
+    m_lines[m_cursor_y].insert(m_lines[m_cursor_y].begin() + m_cursor_x, unicode);
+    m_cursor_x++;
+    
+    m_need_update = true;
+    wrap_text();
 }
+
 
 bool TextEditor::is_control_pressed() {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RControl);
@@ -161,8 +173,14 @@ void TextEditor::handle_keypressed(int key) {
             break;
 
             case sf::Keyboard::Key::Up:
+                up_pressed();
+            break;
             case sf::Keyboard::Key::Down:
+                down_pressed();
+            break;
             case sf::Keyboard::Key::Enter:
+                enter_pressed();
+            break;
             case sf::Keyboard::Key::Tab:
                 //if (m_listener)
                 // m_listener->fireEditSpecKeyPressed(ev);
@@ -185,17 +203,146 @@ void TextEditor::handle_keypressed(int key) {
 }
 
 void TextEditor::backspace_pressed() {
+    if (m_readonly || m_lines.empty()) {
+        return;
+    }
 
+    remove_selected_text();
+
+    if (m_cursor_y >= m_lines.size()) {
+        m_cursor_y = m_lines.size() - 1;
+        m_cursor_x = m_lines[m_cursor_y].size();
+    }
+
+    if (m_cursor_x > 0) {
+        m_cursor_x--;
+        if (m_cursor_x < m_lines[m_cursor_y].size()) {
+            m_lines[m_cursor_y].erase(m_cursor_x, 1);
+        }
+    } else if (m_cursor_y < m_lines.size() && m_cursor_y > 0) {
+        m_cursor_y--;
+        m_cursor_x = m_lines[m_cursor_y].size();
+        if (m_cursor_x > 0) {
+            m_cursor_x--;
+            m_lines[m_cursor_y].erase(m_cursor_x, 1);
+        }
+    }
+
+    m_need_update = true;
+    wrap_text();
+}
+
+void TextEditor::enter_pressed() {
+    if (m_readonly || (m_type != editor_multiline_wrap && m_type != editor_multiline)) {
+        return;
+    }
+
+    remove_selected_text();
+
+    if (m_lines.empty()) {
+        m_lines.push_back(std::wstring(L"\n"));
+        m_cursor_x = 0;
+        m_cursor_y = 0;
+    } else {
+        insert_character(U'\n');
+        m_cursor_x = 0;
+        m_cursor_y++;
+        if (m_cursor_y >= m_lines.size()) {
+            m_cursor_y = m_lines.size() - 1;
+        }
+    }
 }
 
 void TextEditor::left_pressed() {
     if (m_cursor_x > 0) {
         m_cursor_x--;
+    } else if (m_cursor_y > 0) {
+        m_cursor_y--;
+        if (m_cursor_y < m_lines.size()) {
+            m_cursor_x = m_lines[m_cursor_y].size();
+            if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+                m_cursor_x--;
+            }
+        } else {
+            m_cursor_x = 0;
+        }
     }
 }
 
 void TextEditor::right_pressed() {
+    if (m_cursor_y >= m_lines.size() || m_lines.empty()) {
+        return;
+    }
+    if (m_cursor_x < m_lines[m_cursor_y].size()) {
+        if (m_lines[m_cursor_y][m_cursor_x] == U'\n') {
+            m_cursor_x = 0;
+            m_cursor_y++;
+        } else {
+            m_cursor_x += 1;
+        }
+    } else if (m_cursor_y + 1 < m_lines.size()) {
+        m_cursor_x = 0;
+        m_cursor_y++;
+    }
+
+    if (m_cursor_y >= m_lines.size()) {
+        m_cursor_y--;
+        m_cursor_x = m_lines[m_cursor_y].size();
+        if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+            m_cursor_x--;
+        }
+    }
+}
+
+void TextEditor::up_pressed() {
+    if (m_type != editor_multiline && m_type != editor_multiline_wrap) {
+        return;
+    }
+
+    if (m_lines.empty()) {
+        m_cursor_y = 0;
+        m_cursor_x = 0;
+        return;
+    }
+
+    if (m_cursor_y > 0) {
+        if (m_cursor_y >= m_lines.size()) {
+            m_cursor_y = m_lines.size() - 1;
+        } else {
+            m_cursor_y--;
+        }
+    }
+    if (m_cursor_x > m_lines[m_cursor_y].size()) {
+        m_cursor_x = m_lines[m_cursor_y].size();
+        if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+            m_cursor_x--;
+        }
+    }
+}
+
+void TextEditor::down_pressed() {
+    if (m_type != editor_multiline && m_type != editor_multiline_wrap) {
+        return;
+    }
+
+    if (m_lines.empty()) {
+        m_cursor_y = 0;
+        m_cursor_x = 0;
+        return;
+    }
+
+    if (m_cursor_y >= m_lines.size()) {
+        m_cursor_y = m_lines.size() - 1;
+    } else if (m_cursor_y < m_lines.size() - 1) {
+        m_cursor_y++;
+    }
     
+    if (m_cursor_x > m_lines[m_cursor_y].size()) {
+        m_cursor_x = m_lines[m_cursor_y].size();
+        if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+            m_cursor_x--;
+        }
+    }
 }
 
 void TextEditor::home_pressed() {
@@ -286,20 +433,33 @@ void TextEditor::copy_to_clipboard() {
 void TextEditor::paste_from_clipboard() {
     auto value = sf::Clipboard::getString();
     if (!value.isEmpty()) {
-        
+        remove_selected_text();
+        auto cursor = unwrap_cursor();
+        auto content = this->content();
+        if (cursor < content.size()) {
+            content.insert(cursor, value);
+        } else {
+            content += value;
+        }
+        cursor += value.getSize();
+        this->content(content);
+        wrap_cursor(cursor);
     }
 }
 
 void TextEditor::delete_pressed() {
-
+    if (is_shift_pressed()) {
+        backspace_pressed();
+        return;
+    }
 }
 
 void TextEditor::handle_focus_lost() {
-
+    m_focused = false;
 }
 
 void TextEditor::handle_focus_got() {
-
+    m_focused = true;
 }
 
 void TextEditor::handle_mouse_left_pressed(int x, int y) {
@@ -327,10 +487,198 @@ void TextEditor::content(const std::wstring &value) {
     std::wstring tmp;
     m_lines.clear();
     while(std::getline<wchar_t>(f, tmp, U'\n')) {
-        m_lines.push_back(tmp);
+        if (m_type == editor_multiline || m_type == editor_multiline_wrap) {
+            m_lines.push_back(tmp + L"\n");
+        } else {
+            m_lines.push_back(tmp);
+        }
+        
         tmp.clear();
+    }
+    m_need_update = true;
+}
+
+sf::Text *TextEditor::text_display(size_t index) {
+    auto font = load_default_font();
+    if (!font) {
+        return NULL;
+    }
+    while (m_texts.size() <= index) {
+        m_texts.push_back(std::make_shared<sf::Text>(*font));
+    }
+    return m_texts[index].get();
+}
+
+void TextEditor::apply_format(sf::Text *txt) {
+    if (txt) {
+        int new_charsize = m_character_size * abs_scale();        
+        if (txt->getCharacterSize() != new_charsize) {
+            txt->setCharacterSize(new_charsize);
+        }
     }
 }
 
+void TextEditor::wrap_text() {
+    if (m_type != editor_type_t::editor_multiline_wrap) {
+        return;
+    }
+    if (!m_need_update) {
+        return;
+    }
+    if (!m_text_measure) {
+        auto fnt = load_default_font();
+        if (!fnt) {
+            return;
+        }
+        m_text_measure.reset(new sf::Text(*fnt));
+    }
+
+    select_nothing();
+    
+    auto unwrapped_cursor = unwrap_cursor();
+    content(content());
+    m_need_update = false;
+
+    apply_format(m_text_measure.get());
+    size_t i = 0;
+    size_t limit_w = abs_w() - (theme::editor_margin() * 2) * abs_scale();
+    sf::Vector2f location;
+    bool should_continue = false;
+    while (i < m_lines.size()) {
+        should_continue = false;
+        m_text_measure->setString(m_lines[i]);
+        for (size_t char_pos = 0; char_pos < m_lines[i].size(); char_pos++) {
+            location = m_text_measure->findCharacterPos(char_pos);
+            if (location.x >= limit_w) {
+                if (char_pos > 0) {
+                    char_pos--;
+                }
+                for (auto i2 = char_pos; i2 > 0; i2--) {
+                    if (m_lines[i][i2] == U' ' || m_lines[i][i2] == U'\t') {
+                        char_pos = i2 + 1;
+                        break;
+                    }
+                }
+                should_continue = true;
+                auto left = m_lines[i].substr(0, char_pos);
+                if (char_pos > 0) {
+                    m_text_measure->setString(left);
+                    auto bounds = m_text_measure->getGlobalBounds();
+                    if (bounds.size.x + bounds.position.x >= limit_w) {
+                        char_pos--;
+                        left = m_lines[i].substr(0, char_pos);
+                    }
+                }
+                auto right = m_lines[i].substr(char_pos);
+                m_lines[i] = left;
+                i++;
+                m_lines.insert(m_lines.begin() + i, right);
+                break;
+            }
+        }
+        if (!should_continue) {
+            i++;
+        }    
+    }
+
+    wrap_cursor(unwrapped_cursor);
+}
+
+wchar_t TextEditor::latest_character(size_t line_number) {
+    if (m_lines[line_number].rbegin() != m_lines[line_number].rend()) {
+        return *m_lines[line_number].rbegin();
+    }
+    return U'\0';
+}
+
+size_t TextEditor::unwrap_cursor() {
+    size_t result = 0;
+    size_t py = 0;
+    while (py < m_lines.size()) {
+        if (py == m_cursor_y) {
+            result += m_cursor_x;
+            break;
+        }
+        result += m_lines[py].size();
+        py++;
+    }
+    return result;
+}
+
+void TextEditor::wrap_cursor(size_t value) {
+    m_cursor_x = 0;
+    m_cursor_y = 0;
+    while (value > 0 && m_cursor_y < m_lines.size()) {
+        if (m_lines[m_cursor_y].size() < value) {
+            value -= m_lines[m_cursor_y].size();
+        } else {
+            m_cursor_x = value;
+            value = 0;
+            break;
+        }
+        m_cursor_y++;
+    }
+
+}
+
+void TextEditor::paint(sf::RenderTarget *render_target) {
+    auto scale = abs_scale();
+    wrap_text();
+
+    // the component area
+    Drawing dw(Drawing::drawing_flat_box);
+    dw.outline_color(m_outline_color);
+    dw.color(m_fill_color);
+    dw.size(abs_w(), abs_h());
+    dw.position(abs_x(), abs_y());
+    dw.margin(0);
+    dw.draw(render_target);
+    // the selection
+
+    // the text
+    int line_height = m_character_size + theme::editor_line_spacing();
+    size_t disp_count = m_character_size > 0 ? (h() / line_height) + 1 : 0;
+    int new_charsize = m_character_size * scale;
+    int left_coord = abs_x() + theme::editor_margin() * scale;
+    int top_coord = abs_y();
+    int coordinate = 0;
+    line_height = line_height * scale;
+
+    for (size_t i = 0; i < disp_count; i++) {
+        if (i + m_scroll_top >= m_lines.size()) {
+            break;
+        }
+        const auto & current_content = m_lines[i + m_scroll_top];
+        auto text_display = this->text_display(i);
+        if (!text_display) break;
+        
+        if (new_charsize < 1) {
+            new_charsize = 1;
+        }
+        if (text_display->getCharacterSize() != new_charsize) {
+            text_display->setCharacterSize(new_charsize);
+            // update_font_min_y_coord();
+        }
+
+        text_display->setFillColor(sf::Color(m_text_color));
+        text_display->setOutlineColor(sf::Color(m_text_color));
+        text_display->setPosition({(float)left_coord, (float)top_coord});
+        text_display->setString(current_content);
+        top_coord += line_height;
+        render_target->draw(*text_display);
+        if (m_cursor_y == i + m_scroll_top && abs_enabled() && m_focused && clock::editor_cursor_visible())  {
+            auto p = text_display->getPosition();
+            p.x = text_display->findCharacterPos(m_cursor_x).x;
+            sf::Vertex line[] = {
+                {sf::Vector2f(p.x, p.y), sf::Color(m_cursor_color)},
+                {sf::Vector2f(p.x, p.y + line_height), sf::Color(m_cursor_color)}
+            };
+            render_target->draw(line, 2, sf::PrimitiveType::Lines);
+        }
+    }
+    
+    // the cursor
+   
+}
 
 } // namespace dfe_ui

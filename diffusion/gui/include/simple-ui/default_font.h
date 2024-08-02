@@ -1,8 +1,14 @@
 #pragma once
 
+namespace sf
+{
+    class Font;
+} // namespace sf
+
+
 namespace dfe_ui
 {
-    void *load_default_font();    
+    sf::Font *load_default_font();    
 } // namespace dfe_ui
 
 

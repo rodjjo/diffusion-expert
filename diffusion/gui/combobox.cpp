@@ -11,7 +11,7 @@ namespace dfe_ui
 {
 
 Combobox::Combobox(Window * window, int x, int y, int w, int h) : Component(window) {
-    auto font = static_cast<sf::Font *>(load_default_font());
+    auto font = load_default_font();
     if (font) {
         m_text.reset(new sf::Text(*font));
         update_text_min_y();

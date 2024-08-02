@@ -56278,7 +56278,7 @@ namespace dfe_ui {
     std::shared_ptr<sf::Font> default_font;
   }
 
-  void *load_default_font() {
+  sf::Font *load_default_font() {
     if (!default_font) {
       if (auto fnt = sf::Font::openFromMemory(my_font, sizeof(my_font))) {
         default_font.reset(new sf::Font(std::move(*fnt)));

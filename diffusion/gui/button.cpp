@@ -12,7 +12,7 @@ namespace dfe_ui
 
 Button::Button(Window * window, int x, int y, int w, int h, const std::wstring &text, icon_type_t icon_type) : Component(window), m_icon_type(icon_type) {
     this->coordinates(x, y, w, h);
-    auto font = static_cast<sf::Font *>(load_default_font());
+    auto font = load_default_font();
     if (font) {
         m_text.reset(new sf::Text(*font));
         update_text_min_y();

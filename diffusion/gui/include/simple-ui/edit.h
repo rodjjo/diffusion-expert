@@ -44,7 +44,7 @@ class Edit : public Component {
     bool clickable() override;
     bool editable() override;
     bool focusable() override;
-    void handle_textentered(wchar_t unicode) override;
+    void handle_text_entered(wchar_t unicode) override;
     void handle_keypressed(int key) override;
     void delete_pressed(bool shift_pressed);
     void handle_focus_lost() override;  

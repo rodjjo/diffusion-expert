@@ -131,7 +131,7 @@ class Component : public std::enable_shared_from_this<Component>  {
    public:
     virtual void handle_parent_resized() {};
     virtual void handle_child_count_changed() {};
-    virtual void handle_textentered(wchar_t unicode) {};
+    virtual void handle_text_entered(wchar_t unicode) {};
     virtual void handle_mouse_left_pressed(int x, int y) {};
     virtual void handle_mouse_middle_pressed(int x, int y) {};
     virtual void handle_mouse_right_pressed(int x, int y) {};

@@ -70,7 +70,7 @@ class TextEditor : public Component {
         bool clickable() override;
         bool editable() override;
         bool focusable() override;
-        void handle_textentered(wchar_t unicode) override;
+        void handle_text_entered(wchar_t unicode) override;
         void handle_keypressed(int key) override;
         void handle_focus_lost() override;  
         void handle_focus_got() override;
@@ -79,8 +79,8 @@ class TextEditor : public Component {
         void handle_mouse_left_released(int x, int y) override;
         void handle_mouse_moved(int x, int y) override;
 
-
     private:
+        sf::Text *text_display(size_t index);
         size_t cursor_x();
         size_t cursor_y();
         void select_all();
@@ -92,14 +92,22 @@ class TextEditor : public Component {
         void backspace_pressed();
         void left_pressed();
         void right_pressed();
+        void up_pressed();
+        void down_pressed();
         void home_pressed();
         void end_pressed();
+        void enter_pressed();
         bool is_control_pressed();
         bool is_shift_pressed();
         void fix_selection();
-        
-
+        void wrap_text();
+        void apply_format(sf::Text *txt);
+        size_t unwrap_cursor();
+        void wrap_cursor(size_t value);
+        wchar_t latest_character(size_t line_number);
+        void insert_character(wchar_t unicode);
     private:
+        size_t m_scroll_top = 0;
         size_t m_cursor_x = 0;
         size_t m_cursor_y = 0;
         size_t m_selection_x1 = 0;
@@ -109,9 +117,11 @@ class TextEditor : public Component {
 
     private:
         bool m_readonly = false;
+        bool m_need_update = true;
+        bool m_focused = false;
         std::vector<std::wstring> m_lines;
+        std::shared_ptr<sf::Text>  m_text_measure;
         std::vector<std::shared_ptr<sf::Text> > m_texts;
-        std::wstring m_text;
         editor_vertical_aligment_t m_valign = text_center;
         editor_horizontal_aligment_t m_halign = text_left;
         editor_type_t m_type = editor_type_t::editor_text;

@@ -12,7 +12,7 @@ namespace dfe_ui
 
 Edit::Edit(Window * window, int x, int y, int w, int h) : Component(window) {
     this->coordinates(x, y, w, h);
-    auto font = static_cast<sf::Font *>(load_default_font());
+    auto font = load_default_font();
     if (font) {
         m_text.reset(new sf::Text(*font));
         update_font_min_y_coord();
@@ -249,7 +249,7 @@ void Edit::character_size(int value) {
     m_character_size = value;
 }
 
-void Edit::handle_textentered(wchar_t unicode) {
+void Edit::handle_text_entered(wchar_t unicode) {
     if (m_readonly || !m_text.get()) return;
 
     char c[MB_CUR_MAX];

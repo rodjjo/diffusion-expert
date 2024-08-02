@@ -21,7 +21,7 @@ class Window : public Component {
 
   protected:
     void handle_parent_resized() override;
-    void handle_textentered(wchar_t unicode) override;
+    void handle_text_entered(wchar_t unicode) override;
     void handle_mouse_left_pressed(int x, int y) override;
     void handle_mouse_middle_pressed(int x, int y) override;
     void handle_mouse_right_pressed(int x, int y) override;

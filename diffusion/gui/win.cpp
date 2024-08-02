@@ -47,7 +47,7 @@ void Window::run() {
                 window->setView(sf::View(sf::FloatRect(sf::Vector2f(0, 0), sf::Vector2f(resized_event->size.x, resized_event->size.y))));
                 this->size(resized_event->size.x, resized_event->size.y);
             } else if (const auto* const pressed_event = event->getIf<sf::Event::TextEntered>()) {
-                this->handle_textentered(pressed_event->unicode);
+                this->handle_text_entered(pressed_event->unicode);
             } else if (const auto* const mouse_pressed_event = event->getIf<sf::Event::MouseButtonPressed>()) {
                 if (mouse_pressed_event->button == sf::Mouse::Button::Left) {
                     this->m_mouse_left_pressed = true;
@@ -117,9 +117,9 @@ void Window::handle_parent_resized() {
     // this windows has no parent, so it was resized instead.
 }
 
-void Window::handle_textentered(wchar_t unicode) {
+void Window::handle_text_entered(wchar_t unicode) {
     if (this->m_component_in_focus) {
-        this->m_component_in_focus->handle_textentered(unicode);
+        this->m_component_in_focus->handle_text_entered(unicode);
     }
 }
 
