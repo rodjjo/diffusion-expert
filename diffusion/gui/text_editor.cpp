@@ -209,25 +209,17 @@ void TextEditor::backspace_pressed() {
 
     remove_selected_text();
 
-    if (m_cursor_y >= m_lines.size()) {
-        m_cursor_y = m_lines.size() - 1;
-        m_cursor_x = m_lines[m_cursor_y].size();
+    auto cx = m_cursor_x;
+    auto cy = m_cursor_y;
+    left_pressed();
+    if (cx == m_cursor_x && cy == m_cursor_y) {
+        return;
     }
 
-    if (m_cursor_x > 0) {
-        m_cursor_x--;
-        if (m_cursor_x < m_lines[m_cursor_y].size()) {
-            m_lines[m_cursor_y].erase(m_cursor_x, 1);
-        }
-    } else if (m_cursor_y < m_lines.size() && m_cursor_y > 0) {
-        m_cursor_y--;
-        m_cursor_x = m_lines[m_cursor_y].size();
-        if (m_cursor_x > 0) {
-            m_cursor_x--;
-            m_lines[m_cursor_y].erase(m_cursor_x, 1);
-        }
+    if (m_cursor_y < m_lines.size() && m_cursor_x < m_lines[m_cursor_y].size()) {
+        m_lines[m_cursor_y].erase(m_cursor_x, 1);
     }
-
+    
     m_need_update = true;
     wrap_text();
 }
@@ -356,10 +348,24 @@ void TextEditor::end_pressed() {
     if (is_control_pressed()) {
         m_cursor_y = m_lines.size() - 1;
     }
+    if (m_lines.empty()) {
+        return;
+    }
+    if (m_cursor_y >= m_lines.size()) {
+        m_cursor_y--;
+        m_cursor_x = m_lines[m_cursor_x].size();
+        if (m_cursor_x > 0) {
+            m_cursor_x--;
+        }
+    }
     if (m_cursor_y < m_lines.size()) {
         m_cursor_x = m_lines[m_cursor_y].size();
     } else {
         m_cursor_x = 0;
+    }
+
+    if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+        m_cursor_x--;
     }
 }
 
@@ -448,9 +454,21 @@ void TextEditor::paste_from_clipboard() {
 }
 
 void TextEditor::delete_pressed() {
+    if (m_lines.empty()) 
+        return;
+    
+    remove_selected_text();
+
     if (is_shift_pressed()) {
         backspace_pressed();
         return;
+    } else {
+        auto cx = m_cursor_x;
+        auto cy = m_cursor_y;
+        right_pressed();
+        if (cx != m_cursor_x || cy != m_cursor_y) {
+            backspace_pressed();
+        }
     }
 }
 
@@ -638,6 +656,12 @@ void TextEditor::wrap_text() {
     }
 
     wrap_cursor(unwrapped_cursor);
+
+    if (m_cursor_y < m_lines.size() && !m_lines[m_cursor_y].empty()) {
+        if (m_cursor_x > 0 && m_lines[m_cursor_y][m_cursor_x - 1] == U'\n')  {
+            m_cursor_x--;
+        }
+    }
 }
 
 wchar_t TextEditor::latest_character(size_t line_number) {
