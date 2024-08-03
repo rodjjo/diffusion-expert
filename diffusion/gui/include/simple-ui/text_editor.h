@@ -100,9 +100,14 @@ class TextEditor : public Component {
         bool is_control_pressed();
         bool is_shift_pressed();
         void fix_selection();
+        bool has_selection();
+        void begin_selection();
+        void end_selection();
         void wrap_text();
         void apply_format(sf::Text *txt);
+        size_t unwrap_cursor(size_t x, size_t y);
         size_t unwrap_cursor();
+        void wrap_cursor(size_t value, size_t *x, size_t *y);
         void wrap_cursor(size_t value);
         wchar_t latest_character(size_t line_number);
         void insert_character(wchar_t unicode);
@@ -117,11 +122,12 @@ class TextEditor : public Component {
         size_t m_selection_y1 = 0;
         size_t m_selection_x2 = 0;
         size_t m_selection_y2 = 0;
-
+        size_t m_sel_started_at = 0;
     private:
         bool m_readonly = false;
         bool m_need_update = true;
         bool m_focused = false;
+        bool m_mouse_left_pressed = false;
         std::vector<std::wstring> m_lines;
         std::shared_ptr<sf::Text>  m_text_measure;
         std::vector<std::shared_ptr<sf::Text> > m_texts;
