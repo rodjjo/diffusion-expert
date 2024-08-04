@@ -134,6 +134,28 @@ void TextEditor::handle_text_entered(wchar_t unicode) {
 }
 
 void TextEditor::insert_character(wchar_t unicode) {
+    if (m_type == editor_integer || m_type == editor_float) {
+        if ((unicode < u'0' || unicode > u'9') && unicode != u'-' && unicode != u'.') {
+            return;
+        }
+    }
+    if (m_type == editor_integer && unicode == u'.') {
+        return;
+    }
+    if (m_type == editor_float && unicode == u'.') {
+        if (content().find_first_of(u'.') != std::wstring::npos) {
+            return;
+        }
+        if (content().empty() || content() == L"-") {
+            insert_character(u'0');
+        }
+    }
+    if ((m_type == editor_integer || m_type == editor_float) && unicode == u'-') {
+        if (m_cursor_x != 0 || content().find_first_of(u'-') != std::wstring::npos) {
+            return;
+        }
+    }
+    
     remove_selected_text();
 
     if (m_lines.size() < 1) {
@@ -702,7 +724,57 @@ std::wstring TextEditor::content() {
     return result;
 }
 
+double TextEditor::float_content() {
+    double vdouble = 0;
+    if (swscanf(content().c_str(), L"%lf", &vdouble) == 1) {
+        return vdouble;
+    }
+    return 0;
+}
+
+int64_t TextEditor::integer_content() {
+    uint32_t v64 = 0;
+    if (swscanf(content().c_str(), L"%lld", &v64) == 1) {
+        return v64;
+    }
+    return 0;
+}
+
 void TextEditor::content(const std::wstring &value) {
+    if (m_type == editor_integer) {
+        uint32_t v64 = 0;
+        if (swscanf(value.c_str(), L"%lld", &v64) != 1) {
+            return;
+        }
+        wchar_t buffer[64] = L"";
+        swprintf(buffer, sizeof(buffer)/2, L"%lld", v64);
+        m_lines.clear();
+        m_lines.push_back(buffer);
+        return;
+    };
+    if (m_type == editor_float) {
+        std::wstring tmp;
+        for (size_t i = 0; i < value.size(); i++) {
+            if (value[i] == u'.') { 
+                if (tmp.find_first_of(u'.')) {
+                    return;
+                }
+                if (tmp.empty() || tmp == L"-") {
+                    tmp.push_back(u'0');
+                }
+                tmp.push_back(value[i]);
+            } else if (value[i] < u'0' || value[i] > u'9') {
+                return;
+            } else {
+                tmp.push_back(value[i]);
+            }
+        }
+
+        m_lines.clear();
+        m_lines.push_back(tmp);
+        return;
+    }
+
     std::wstringstream f(value);
     std::wstring tmp;
     m_lines.clear();

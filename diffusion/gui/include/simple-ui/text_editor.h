@@ -65,6 +65,8 @@ class TextEditor : public Component {
         std::wstring get_selected_text();
         std::wstring content();
         void content(const std::wstring &value);
+        double float_content();
+        int64_t integer_content();
 
     private:
         bool clickable() override;
