@@ -105,6 +105,17 @@ bool TextEditor::focusable() {
 
 void TextEditor::remove_selected_text() {
     if (!has_selection()) return;
+    fix_selection();
+    auto sel_start = unwrap_cursor(m_selection_x1, m_selection_y1);
+    auto sel_end = unwrap_cursor(m_selection_x2, m_selection_y2);
+    auto content = this->content();
+    if (sel_start < content.size()) {
+        content.erase(sel_start, sel_end - sel_start);
+    }
+    this->content(content);
+    wrap_cursor(sel_start);
+    select_nothing();
+    wrap_text();
 }
 
 void TextEditor::handle_text_entered(wchar_t unicode) {
@@ -207,7 +218,10 @@ void TextEditor::backspace_pressed() {
         return;
     }
 
-    remove_selected_text();
+    if (has_selection()) {
+        remove_selected_text();
+        return;
+    }
 
     auto cx = m_cursor_x;
     auto cy = m_cursor_y;
@@ -310,7 +324,7 @@ void TextEditor::right_pressed() {
 }
 
 void TextEditor::up_pressed() {
-    if (m_type != editor_multiline && m_type != editor_multiline_wrap) {
+    if (m_type != editor_multiline && m_type != editor_multiline_wrap && m_type != editor_text_wrap) {
         return;
     }
 
@@ -349,7 +363,7 @@ void TextEditor::up_pressed() {
 }
 
 void TextEditor::down_pressed() {
-    if (m_type != editor_multiline && m_type != editor_multiline_wrap) {
+    if (m_type != editor_multiline && m_type != editor_multiline_wrap && m_type != editor_text_wrap) {
         return;
     }
 
@@ -411,16 +425,17 @@ void TextEditor::end_pressed() {
         select_nothing();
     }
 
-
     if (is_control_pressed()) {
         m_cursor_y = m_lines.size() - 1;
     }
+
     if (m_lines.empty()) {
         if (is_shift_pressed()) {
             end_selection();
         }
         return;
     }
+
     if (m_cursor_y >= m_lines.size()) {
         m_cursor_y--;
         m_cursor_x = m_lines[m_cursor_x].size();
@@ -428,6 +443,7 @@ void TextEditor::end_pressed() {
             m_cursor_x--;
         }
     }
+
     if (m_cursor_y < m_lines.size()) {
         m_cursor_x = m_lines[m_cursor_y].size();
     } else {
@@ -456,6 +472,8 @@ void TextEditor::select_all() {
     if (m_lines.size()) {
         m_selection_y2 = m_lines.size() - 1;
         m_selection_x2 = m_lines[m_selection_y2].size() - 1;
+        m_cursor_x = m_selection_x2;
+        m_cursor_y = m_selection_y2;
     }
 }
 
@@ -496,6 +514,12 @@ void TextEditor::fix_selection() {
             m_selection_x2 = m_selection_x1;
             m_selection_x1 = tmp;
         }
+    }
+    if (m_selection_x2 > 0 && m_selection_x2 >= m_lines[m_selection_y2].size()) {
+        m_selection_x2 = m_lines[m_selection_y2].size() - 1;
+    }
+    if (m_selection_x1 > 0 && m_selection_x1 >= m_lines[m_selection_y1].size()) {
+        m_selection_x1 = m_lines[m_selection_y1].size() - 1;
     }
 }
 
@@ -562,8 +586,11 @@ void TextEditor::paste_from_clipboard() {
 void TextEditor::delete_pressed() {
     if (m_lines.empty()) 
         return;
-    
-    remove_selected_text();
+
+    if (has_selection()) {
+        remove_selected_text();
+        return;
+    }
 
     if (is_shift_pressed()) {
         backspace_pressed();
@@ -724,9 +751,10 @@ bool TextEditor::update_measurement_item() {
 }
 
 void TextEditor::wrap_text() {
-    if (m_type != editor_type_t::editor_multiline_wrap) {
+    if (m_type != editor_type_t::editor_multiline_wrap && m_type != editor_type_t::editor_text_wrap) {
         return;
     }
+
     if (!m_need_update) {
         return;
     }
@@ -891,16 +919,29 @@ void TextEditor::paint(sf::RenderTarget *render_target) {
         } else if (line_number == m_selection_y1) {
             // first line of the selection
             if (m_selection_x1 < m_lines[line_number].size()) {
+
                 auto p = text_display->findCharacterPos(m_selection_x1);
+
                 if (m_selection_y1 == m_selection_y2) {
+
                     if (m_selection_x2 < m_lines[line_number].size()) {
                         auto p2 = text_display->findCharacterPos(m_selection_x2);
                         dw.size(p2.x - p.x, line_height);
                     } else {
-                        dw.size(0, line_height);
+                        if (m_lines[line_number].empty()) {
+                            dw.size(0, line_height);
+                        } else if (latest_character(line_number) == u'\n' && m_lines[line_number].size() > 1) {
+                            auto p2 =  text_display->findCharacterPos(m_lines[line_number].size() - 2);
+                            dw.size(p2.x, line_height);
+                        } else {
+                            auto p2 =  text_display->findCharacterPos(m_lines[line_number].size() - 1);
+                            dw.size(p2.x, line_height);
+                        }
                     }
+
                 } else {
-                    dw.size((left_coord + line_width) - p.x, line_height);
+                    auto p2 = text_display->getGlobalBounds();
+                    dw.size((p2.size.x + p2.position.x) - p.x, line_height);
                 }
                 dw.position(p.x, top_coord);    
                 dw.draw(render_target);
