@@ -601,7 +601,9 @@ std::wstring TextEditor::get_selected_text() {
 }
 
 void TextEditor::copy_to_clipboard() {
-    sf::Clipboard::setString(get_selected_text());
+    if (m_type != editor_password) {
+        sf::Clipboard::setString(get_selected_text());
+    }
 }
 
 void TextEditor::paste_from_clipboard() {
@@ -721,7 +723,7 @@ std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y
     }
 
     auto text = m_lines[result.second];
-    m_text_measure->setString(text);
+    m_text_measure->setString(m_type == editor_password ? std::wstring(text.size(), U'*') : text);
     
     int left_coord = 0;
     int line_width = (abs_w() - theme::editor_margin() * 2) * scale;
@@ -1155,7 +1157,7 @@ void TextEditor::paint_text_editor(sf::RenderTarget *render_target) {
 
         text_display->setFillColor(sf::Color(m_text_color));
         text_display->setOutlineColor(sf::Color(m_text_color));
-        text_display->setString(current_content);
+        text_display->setString(m_type == editor_password ? std::wstring(current_content.size(), U'*') : current_content);
 
         if (m_halign == text_right) {
             left_coord = text_display->getLocalBounds().size.x;
