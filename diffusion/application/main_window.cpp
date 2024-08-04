@@ -26,7 +26,7 @@ namespace dfe
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(win.get(), -5, 25, 180 + 10, 50);
         auto panel4 = std::make_shared<dfe_ui::DragDrop>(win.get(), 300, 25, 180 + 10, 50);
 
-        auto editor = std::make_shared<dfe_ui::TextEditor>(win.get(), 65 + 185, 50, 300, 50, dfe_ui::editor_type_t::editor_password);
+        auto editor = std::make_shared<dfe_ui::TextEditor>(win.get(), 65 + 185, 50, 300, 50, dfe_ui::editor_type_t::editor_text);
         auto label = std::make_shared<dfe_ui::Label>(win.get(), 65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
         auto button = std::make_shared<dfe_ui::Button>(win.get(), 65 + 185, 50 + 55 + 55, 300, 100, std::wstring(L"Button"), dfe_ui::img_24x24_open);
         auto arrow_button = std::make_shared<dfe_ui::ArrowButton>(win.get(), 65 + 185, 270, 45, 45, dfe_ui::ArrowButton::arrom_right);

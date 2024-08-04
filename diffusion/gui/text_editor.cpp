@@ -510,6 +510,9 @@ void TextEditor::select_all() {
     if (m_lines.size()) {
         m_selection_y2 = m_lines.size() - 1;
         m_selection_x2 = m_lines[m_selection_y2].size() - 1;
+        if (m_type != editor_multiline && m_type != editor_multiline_wrap) {
+            m_selection_x2++;
+        }
         m_cursor_x = m_selection_x2;
         m_cursor_y = m_selection_y2;
     }
@@ -524,17 +527,20 @@ void TextEditor::fix_selection() {
         select_nothing();
         return;
     }
+    bool multiline = m_type == (editor_multiline || editor_multiline_wrap);
 
     if (m_selection_y1 >= m_lines.size()) {
         m_selection_y1 = m_lines.size() - 1;
         m_selection_x1  = m_lines[m_selection_y1].size();
-        if (m_selection_x1) m_selection_x1--;
+        if (m_selection_x1 && !multiline) {
+            m_selection_x1--;
+        }
     }
 
     if (m_selection_y2 >= m_lines.size()) {
         m_selection_y2 = m_lines.size() - 1;
         m_selection_x2  = m_lines[m_selection_y2].size();
-        if (m_selection_x2) m_selection_x2--;
+        if (m_selection_x2 && !multiline) m_selection_x2--;
     }
 
     if (m_selection_y1 > m_selection_y2) {
@@ -545,6 +551,14 @@ void TextEditor::fix_selection() {
         m_selection_x1 = m_selection_x2;
         m_selection_x2 = tmp;
     } 
+   
+    if (m_selection_x2 > 0 && m_selection_x2 >= m_lines[m_selection_y2].size() + (multiline ? 0 : 1)) {
+        m_selection_x2 = m_lines[m_selection_y2].size() - (multiline ? 1 : 0);
+        if (!multiline) m_selection_x2++;
+    }
+    if (m_selection_x1 > 0 && m_selection_x1 >= m_lines[m_selection_y1].size() + (multiline ? 0 : 1)) {
+        m_selection_x1 = m_lines[m_selection_y1].size() - (multiline ? 1 : 0);
+    }
 
     if (m_selection_y1 == m_selection_y2) {
         if (m_selection_x2 < m_selection_x1) {
@@ -553,13 +567,9 @@ void TextEditor::fix_selection() {
             m_selection_x1 = tmp;
         }
     }
-    if (m_selection_x2 > 0 && m_selection_x2 >= m_lines[m_selection_y2].size()) {
-        m_selection_x2 = m_lines[m_selection_y2].size() - 1;
-    }
-    if (m_selection_x1 > 0 && m_selection_x1 >= m_lines[m_selection_y1].size()) {
-        m_selection_x1 = m_lines[m_selection_y1].size() - 1;
-    }
-}
+
+    // printf("Selection x1 %d  x2 %d  Cursor %d\n", (int)m_selection_x1, (int)m_selection_x2, (int)m_cursor_x);
+ }
 
 void TextEditor::begin_selection() {
     if (has_selection()) {
@@ -752,7 +762,7 @@ std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y
     }
     
     if (text.size() > 0 && result.first > 0) {
-        if (result.first >= text.size())  {
+        if (result.first >= text.size() && (m_type == editor_multiline || m_type == editor_multiline_wrap))  {
             result.first--;
         }
         if (result.first > 0 && text[result.first - 1] == U'\n') {
@@ -1191,8 +1201,8 @@ void TextEditor::paint_text_editor(sf::RenderTarget *render_target) {
                             auto p2 =  text_display->findCharacterPos(m_lines[line_number].size() - 2);
                             dw.size(p2.x, line_height);
                         } else {
-                            auto p2 =  text_display->findCharacterPos(m_lines[line_number].size() - 1);
-                            dw.size(p2.x, line_height);
+                            auto p2 =  text_display->getGlobalBounds();
+                            dw.size((p2.size.x + p2.position.x) - p.x, line_height);
                         }
                     }
 
