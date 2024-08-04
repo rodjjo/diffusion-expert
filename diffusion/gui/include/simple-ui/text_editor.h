@@ -69,6 +69,8 @@ class TextEditor : public Component {
         // scrollbar
         void vertical_scrollbar(scrollbar_t value);
         scrollbar_t vertical_scrollbar();
+        void horizontal_scrollbar(scrollbar_t value);
+        scrollbar_t horizontal_scrollbar();
 
     private:
         bool clickable() override;
@@ -85,6 +87,7 @@ class TextEditor : public Component {
         void handle_parent_resized() override;
 
     private:
+        void painting_metrics(int &line_width, int &line_height, int &disp_count);
         void paint_text_editor(sf::RenderTarget *render_target);
         sf::Text *text_display(size_t index);
         size_t cursor_x();
@@ -118,7 +121,8 @@ class TextEditor : public Component {
         wchar_t latest_character(size_t line_number);
         void insert_character(wchar_t unicode);
         bool update_measurement_item();
-        void update_vertical_scroll();
+        void update_scroll();
+        void vertical_scrollbar_changed();
         std::pair<size_t, size_t> find_cursor_from_mouse_coords(int x, int y);
 
     private:
@@ -133,11 +137,14 @@ class TextEditor : public Component {
 
     private:
         scrollbar_t m_vertical_scrollbar = scrollbar_auto;
+        scrollbar_t m_horizontal_scrollbar = scrollbar_auto;
         bool m_readonly = false;
         bool m_need_update = true;
         bool m_focused = false;
         bool m_mouse_left_pressed = false;
+        bool m_updating_scroll = false;
         std::shared_ptr<Scrollbar> m_vscrollbar;
+        std::shared_ptr<Scrollbar> m_hscrollbar;
         std::vector<std::wstring> m_lines;
         std::shared_ptr<sf::Text>  m_text_measure;
         std::vector<std::shared_ptr<sf::Text> > m_texts;

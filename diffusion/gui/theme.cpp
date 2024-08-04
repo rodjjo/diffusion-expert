@@ -10,7 +10,7 @@ namespace {
     uint32_t editor_cursor_color_           = 0x000000FF;
     uint32_t editor_selection_color_        = 0x11111133;
     uint32_t editor_line_spacing_           = 1;
-    uint32_t editor_margin_                 = 2;
+    uint32_t editor_margin_                 = 4;
     // button
     uint32_t button_text_color_             = 0x111111FF;
     uint32_t button_fill_color_             = 0x444444FF;

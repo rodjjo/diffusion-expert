@@ -39,8 +39,9 @@ namespace dfe
         auto combo = std::make_shared<dfe_ui::Combobox>(win.get(), 65 + 185 + 310, 50, 300, 35);
 
         auto edito_wrap = std::make_shared<dfe_ui::TextEditor>(win.get(), combo->x() + combo->w() + 5, 50, 300, 300, dfe_ui::editor_type_t::editor_multiline_wrap);
-        edito_wrap->halign(dfe_ui::text_right);
-        edito_wrap->vertical_scrollbar(dfe_ui::scrollbar_allways);
+        edito_wrap->halign(dfe_ui::text_left);
+        edito_wrap->vertical_scrollbar(dfe_ui::scrollbar_auto);
+        // edito_wrap->horizontal_scrollbar(dfe_ui::scrollbar_allways);
         edito_wrap->content(std::wstring(L"Esse é um texto muito longo com quebra de linha"));
 
         button->icon_position(dfe_ui::Button::icon_center);

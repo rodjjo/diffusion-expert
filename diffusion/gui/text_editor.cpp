@@ -24,9 +24,15 @@ TextEditor::TextEditor(Window * window, int x, int y, int w, int h, editor_type_
     outline_color(dfe_ui::theme::editor_outline_color());
     fill_color(dfe_ui::theme::editor_fill_color());
     m_vscrollbar.reset(new Scrollbar(window, 0, 0, theme::scrollbox_scrollbar_size(), h, true));
+    m_hscrollbar.reset(new Scrollbar(window, 0, 0, w, theme::scrollbox_scrollbar_size(), false));
     m_vscrollbar->visible(this->m_vertical_scrollbar == scrollbar_allways);
+    m_hscrollbar->visible(this->m_horizontal_scrollbar == scrollbar_allways);
     add(m_vscrollbar);
+    add(m_hscrollbar);
     this->coordinates(x, y, w, h);
+    m_vscrollbar->onchange([this](Component *self) {
+        vertical_scrollbar_changed();
+    });
 }
 
 
@@ -126,6 +132,7 @@ void TextEditor::handle_text_entered(wchar_t unicode) {
     }
 
     insert_character(unicode);
+    update_scroll();
 }
 
 void TextEditor::insert_character(wchar_t unicode) {
@@ -265,6 +272,7 @@ void TextEditor::enter_pressed() {
         m_lines.push_back(std::wstring(L"\n"));
         m_cursor_x = 0;
         m_cursor_y = 0;
+        update_scroll();
     } else {
         insert_character(U'\n');
         m_cursor_x = 0;
@@ -272,6 +280,7 @@ void TextEditor::enter_pressed() {
         if (m_cursor_y >= m_lines.size()) {
             m_cursor_y = m_lines.size() - 1;
         }
+        update_scroll();
     }
 }
 
@@ -356,6 +365,7 @@ void TextEditor::up_pressed() {
         if (is_shift_pressed()) {
             end_selection();
         }
+        update_scroll();
         return;
     }
 
@@ -376,6 +386,8 @@ void TextEditor::up_pressed() {
     if (is_shift_pressed()) {
         end_selection();
     }
+
+    update_scroll();
 }
 
 void TextEditor::down_pressed() {
@@ -395,6 +407,7 @@ void TextEditor::down_pressed() {
         if (is_shift_pressed()) {
             end_selection();
         }
+        update_scroll();
         return;
     }
 
@@ -414,6 +427,8 @@ void TextEditor::down_pressed() {
     if (is_shift_pressed()) {
         end_selection();
     }
+
+    update_scroll();
 }
 
 void TextEditor::home_pressed() {
@@ -426,12 +441,15 @@ void TextEditor::home_pressed() {
 
     m_cursor_x = 0;
     if (is_control_pressed()) {
+        m_scroll_top = 0;
         m_cursor_y = 0;
     }
 
     if (is_shift_pressed()) {
         end_selection();
     }
+    
+    update_scroll();
 }
 
 void TextEditor::end_pressed() {
@@ -443,12 +461,14 @@ void TextEditor::end_pressed() {
 
     if (is_control_pressed()) {
         m_cursor_y = m_lines.size() - 1;
+        m_scroll_top = m_lines.size();
     }
 
     if (m_lines.empty()) {
         if (is_shift_pressed()) {
             end_selection();
         }
+        update_scroll();
         return;
     }
 
@@ -473,6 +493,8 @@ void TextEditor::end_pressed() {
     if (is_shift_pressed()) {
         end_selection();
     }
+
+    update_scroll();
 }
 
 void TextEditor::select_nothing() {
@@ -668,13 +690,18 @@ void TextEditor::handle_mouse_moved(int x, int y) {
 }
 
 void TextEditor::handle_parent_resized() {
-    if (m_vscrollbar) {
-        m_vscrollbar->coordinates(
-            w() - m_vscrollbar->w(),
-            0, theme::scrollbox_scrollbar_size(),
-            h()
-        );
-    }
+    m_vscrollbar->coordinates(
+        w() - theme::scrollbox_scrollbar_size(),
+        0, theme::scrollbox_scrollbar_size(),
+        h() - (m_hscrollbar->visible() ? theme::scrollbox_scrollbar_size() : 0)
+    );
+
+    m_hscrollbar->coordinates(
+        0, h() - theme::scrollbox_scrollbar_size(),
+        w() - (m_vscrollbar->visible() ? theme::scrollbox_scrollbar_size() : 0),
+        theme::scrollbox_scrollbar_size()
+    );
+
 }
 
 std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y) {
@@ -846,8 +873,57 @@ bool TextEditor::update_measurement_item() {
     return true;
 }
 
-void TextEditor::update_vertical_scroll() {
+void TextEditor::update_scroll() {
+    if (m_updating_scroll) return;
+    m_updating_scroll = true;
+    int disp_count = 0;
+    int line_w, line_h;
 
+    painting_metrics(line_w, line_h, disp_count);
+
+    if (m_lines.size() < disp_count) {
+        m_scroll_top = 0;
+        m_vscrollbar->max(0);
+        if (m_vertical_scrollbar == scrollbar_auto) {
+            m_vscrollbar->visible(false);
+        }
+    } else {
+        m_vscrollbar->max(m_lines.size() - disp_count);
+        if (m_vertical_scrollbar == scrollbar_auto) {
+            m_vscrollbar->visible(m_vscrollbar->max() > 0);
+        }
+    }
+
+    if (m_scroll_top + disp_count <= m_cursor_y) {
+        m_scroll_top = (m_cursor_y - disp_count) + 1;
+    }
+    if (m_cursor_y < m_scroll_top ) {
+        m_scroll_top = m_cursor_y;
+    }
+    if (m_scroll_top > m_vscrollbar->max()) {
+        m_scroll_top = m_vscrollbar->max();
+    }
+    m_vscrollbar->page_size(disp_count - 1);
+    m_vscrollbar->value((int)m_scroll_top);
+    m_updating_scroll = false;
+}
+
+void TextEditor::vertical_scrollbar_changed() {
+    if (m_updating_scroll) return;
+    int value = m_vscrollbar->value();
+    int disp_count = 0;
+    int line_w, line_h;
+    painting_metrics(line_w, line_h, disp_count);
+    int max_scroll = 0;
+    if (m_lines.size() < disp_count) {
+        max_scroll = 0;
+    } else {
+        max_scroll = m_lines.size() - disp_count;
+    }
+    if (value > max_scroll) {
+        value = max_scroll;
+    }
+    m_scroll_top = value;
 }
 
 void TextEditor::wrap_text() {
@@ -915,6 +991,8 @@ void TextEditor::wrap_text() {
             m_cursor_x--;
         }
     }
+
+    update_scroll();
 }
 
 wchar_t TextEditor::latest_character(size_t line_number) {
@@ -962,25 +1040,63 @@ void TextEditor::wrap_cursor(size_t value) {
 }
 
 void TextEditor::vertical_scrollbar(scrollbar_t value) {
+    if (m_type != editor_multiline_wrap && m_type != editor_text_wrap && m_type != editor_multiline) {
+        value = scrollbar_none;
+    }
     m_vertical_scrollbar = value;
     if (value == scrollbar_none) {
+        puts("Not visible vertical!");
         m_vscrollbar->visible(false);
     } else if (value == scrollbar_allways) {
         m_vscrollbar->visible(true);
     } else {
-        update_vertical_scroll();
+        update_scroll();
     }
+    handle_parent_resized();
 }
 
 scrollbar_t TextEditor::vertical_scrollbar() {
     return m_vertical_scrollbar;
 }
 
+void TextEditor::horizontal_scrollbar(scrollbar_t value) {
+    if (m_type == editor_multiline_wrap || m_type == editor_text_wrap) {
+        value = scrollbar_none;
+    }
+    m_horizontal_scrollbar = value;
+    if (value == scrollbar_none) {
+        puts("Not visible horizontal!");
+        m_hscrollbar->visible(false);
+    } else if (value == scrollbar_allways) {
+        m_hscrollbar->visible(true);
+    } else {
+        update_scroll();
+    }
+    handle_parent_resized();
+}
+
+scrollbar_t TextEditor::horizontal_scrollbar() {
+    return m_horizontal_scrollbar;
+}
+
+void TextEditor::painting_metrics(int &line_width, int &line_height, int &disp_count ) {
+    float scale = abs_scale();
+    line_height = m_character_size + theme::editor_line_spacing();
+    int hcoord = h() - (m_hscrollbar->visible() ? m_hscrollbar->h() : 0);
+    disp_count = (m_character_size > 0 ? (hcoord / line_height) + 1 : 0) - 1;
+    line_height = line_height * scale;
+    line_width = (abs_w() - theme::editor_margin() * 2) * scale;
+    line_width -= m_vscrollbar->visible() ? m_vscrollbar->abs_w() : 0;
+}
+
+
 void TextEditor::paint(sf::RenderTarget *render_target) {
-    if (!m_vscrollbar || !m_vscrollbar->visible()) {
+    if (!m_vscrollbar->visible() && !m_hscrollbar->visible()) {
         paint_text_editor(render_target);
     } else {
-        paint_constraint(abs_x(), abs_y(), abs_w() - m_vscrollbar->abs_w(), abs_h(), render_target->getSize().y, [this, render_target]() {
+        auto w =  m_vscrollbar->visible() ? m_vscrollbar->abs_w() : 0;
+        auto h = m_hscrollbar->visible() ? m_hscrollbar->abs_h() : 0;
+        paint_constraint(abs_x(), abs_y(), abs_w() - w, abs_h() - h, render_target->getSize().y, [this, render_target]() {
             this->paint_text_editor(render_target);
         });
     }
@@ -999,15 +1115,15 @@ void TextEditor::paint_text_editor(sf::RenderTarget *render_target) {
     dw.margin(0);
     dw.draw(render_target);
 
-    int line_height = m_character_size + theme::editor_line_spacing();
-    size_t disp_count = m_character_size > 0 ? (h() / line_height) + 1 : 0;
+    int line_height = 0;
+    int disp_count = 0;
+    int line_width = 0;
+    painting_metrics(line_width, line_height, disp_count);
     line_height = line_height * scale;
     int new_charsize = m_character_size * scale;
     int left_coord_ref = abs_x() + theme::editor_margin() * scale;
     int left_coord = left_coord_ref;
     int top_coord = abs_y();
-    int line_width = (abs_w() - theme::editor_margin() * 2) * scale;
-    line_width -= (m_vscrollbar && m_vscrollbar->visible()) ? m_vscrollbar->abs_w() : 0;
 
     // the selection
     dw.size(line_width, line_height);
