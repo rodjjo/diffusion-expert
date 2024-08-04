@@ -23,6 +23,9 @@ TextEditor::TextEditor(Window * window, int x, int y, int w, int h, editor_type_
     selected_color(dfe_ui::theme::editor_selection_color());
     outline_color(dfe_ui::theme::editor_outline_color());
     fill_color(dfe_ui::theme::editor_fill_color());
+    m_vscrollbar.reset(new Scrollbar(window, 0, 0, theme::scrollbox_scrollbar_size(), h, true));
+    m_vscrollbar->visible(this->m_vertical_scrollbar == scrollbar_allways);
+    add(m_vscrollbar);
     this->coordinates(x, y, w, h);
 }
 
@@ -65,14 +68,6 @@ void TextEditor::selected_color(uint32_t value) {
 
 uint32_t TextEditor::selected_color() {
     return m_selected_color;
-}
-
-editor_vertical_aligment_t TextEditor::valign() {
-    return m_valign;
-}
-
-void TextEditor::halign(editor_vertical_aligment_t value) {
-    m_valign = value;
 }
 
 editor_horizontal_aligment_t TextEditor::halign() {
@@ -184,7 +179,6 @@ bool TextEditor::is_shift_pressed() {
 }
 
 void TextEditor::handle_keypressed(int key) {
-
     switch ((sf::Keyboard::Key)key) {
         case sf::Keyboard::Key::A:
             if (is_control_pressed())
@@ -635,6 +629,11 @@ void TextEditor::handle_focus_got() {
     m_focused = true;
 }
 
+component_cursor_t TextEditor::cursor() {
+    return cursor_edit;
+}
+
+
 void TextEditor::handle_mouse_left_pressed(int x, int y) {
     m_mouse_left_pressed = true;
     begin_selection();
@@ -668,6 +667,16 @@ void TextEditor::handle_mouse_moved(int x, int y) {
     }
 }
 
+void TextEditor::handle_parent_resized() {
+    if (m_vscrollbar) {
+        m_vscrollbar->coordinates(
+            w() - m_vscrollbar->w(),
+            0, theme::scrollbox_scrollbar_size(),
+            h()
+        );
+    }
+}
+
 std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y) {
     std::pair<size_t, size_t> result(0, 0);
     if (!update_measurement_item() || m_lines.empty()) {
@@ -686,6 +695,18 @@ std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y
 
     auto text = m_lines[result.second];
     m_text_measure->setString(text);
+    
+    int left_coord = 0;
+    int line_width = (abs_w() - theme::editor_margin() * 2) * scale;
+    line_width -= (m_vscrollbar && m_vscrollbar->visible()) ? m_vscrollbar->abs_w() : 0;
+    if (m_halign == text_right) {
+        auto p = m_text_measure->getLocalBounds();
+        if (p.size.x < line_width) {
+            left_coord += line_width - p.size.x;
+        }
+    }
+    m_text_measure->setPosition({left_coord, 0});
+
     size_t distance = (size_t)-1;
     for (size_t i = 0; i < text.size(); i++) {
         auto p = m_text_measure->findCharacterPos(i);
@@ -711,6 +732,8 @@ std::pair<size_t, size_t> TextEditor::find_cursor_from_mouse_coords(int x, int y
     } else {
         result.first = 0;
     }
+
+    m_text_measure->setPosition({0, 0});
 
     return result;
 }
@@ -806,6 +829,7 @@ void TextEditor::apply_format(sf::Text *txt) {
         int new_charsize = m_character_size * abs_scale();        
         if (txt->getCharacterSize() != new_charsize) {
             txt->setCharacterSize(new_charsize);
+            txt->setPosition({0, 0});
         }
     }
 }
@@ -820,6 +844,10 @@ bool TextEditor::update_measurement_item() {
     }
     apply_format(m_text_measure.get());
     return true;
+}
+
+void TextEditor::update_vertical_scroll() {
+
 }
 
 void TextEditor::wrap_text() {
@@ -933,7 +961,32 @@ void TextEditor::wrap_cursor(size_t value) {
     wrap_cursor(value, &m_cursor_x, &m_cursor_y);
 }
 
+void TextEditor::vertical_scrollbar(scrollbar_t value) {
+    m_vertical_scrollbar = value;
+    if (value == scrollbar_none) {
+        m_vscrollbar->visible(false);
+    } else if (value == scrollbar_allways) {
+        m_vscrollbar->visible(true);
+    } else {
+        update_vertical_scroll();
+    }
+}
+
+scrollbar_t TextEditor::vertical_scrollbar() {
+    return m_vertical_scrollbar;
+}
+
 void TextEditor::paint(sf::RenderTarget *render_target) {
+    if (!m_vscrollbar || !m_vscrollbar->visible()) {
+        paint_text_editor(render_target);
+    } else {
+        paint_constraint(abs_x(), abs_y(), abs_w() - m_vscrollbar->abs_w(), abs_h(), render_target->getSize().y, [this, render_target]() {
+            this->paint_text_editor(render_target);
+        });
+    }
+}
+
+void TextEditor::paint_text_editor(sf::RenderTarget *render_target) {
     auto scale = abs_scale();
     wrap_text();
 
@@ -950,9 +1003,11 @@ void TextEditor::paint(sf::RenderTarget *render_target) {
     size_t disp_count = m_character_size > 0 ? (h() / line_height) + 1 : 0;
     line_height = line_height * scale;
     int new_charsize = m_character_size * scale;
-    int left_coord = abs_x() + theme::editor_margin() * scale;
+    int left_coord_ref = abs_x() + theme::editor_margin() * scale;
+    int left_coord = left_coord_ref;
     int top_coord = abs_y();
     int line_width = (abs_w() - theme::editor_margin() * 2) * scale;
+    line_width -= (m_vscrollbar && m_vscrollbar->visible()) ? m_vscrollbar->abs_w() : 0;
 
     // the selection
     dw.size(line_width, line_height);
@@ -965,6 +1020,7 @@ void TextEditor::paint(sf::RenderTarget *render_target) {
     auto has_selection = this->has_selection();
 
     for (size_t i = 0; i < disp_count; i++) {
+        left_coord = left_coord_ref;
         line_number = i + m_scroll_top;
         if (line_number >= m_lines.size()) {
             break;
@@ -983,8 +1039,19 @@ void TextEditor::paint(sf::RenderTarget *render_target) {
 
         text_display->setFillColor(sf::Color(m_text_color));
         text_display->setOutlineColor(sf::Color(m_text_color));
-        text_display->setPosition({(float)left_coord, (float)top_coord});
         text_display->setString(current_content);
+
+        if (m_halign == text_right) {
+            left_coord = text_display->getLocalBounds().size.x;
+            if (left_coord >= line_width) {
+                left_coord = left_coord_ref;
+            } else {
+                left_coord = left_coord_ref + (line_width - left_coord);
+            }
+            text_display->setPosition({(float)left_coord, (float)top_coord});
+        } else {
+            text_display->setPosition({(float)left_coord, (float)top_coord});
+        }
 
         if (!has_selection) {
             // does nothing

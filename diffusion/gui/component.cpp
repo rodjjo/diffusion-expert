@@ -19,19 +19,13 @@ namespace {
 
 // Stackable Scissor context
 class ScissorContext {
-  public:
-    ScissorContext(int target_h, Component *component) {
+    void init(int target_h, int nx, int ny, int nw, int nh) {
         int sz[4];
         glGetIntegerv(GL_SCISSOR_BOX, &sz[0]);
         m_view_x = sz[0];
         m_view_y = sz[1];
         m_view_w = sz[2];
         m_view_h = sz[3];
-
-        int nx = component->abs_x();
-        int ny = target_h - (component->abs_y() + component->abs_h());
-        int nw = component->abs_w();
-        int nh = component->abs_h();
 
         if (!glIsEnabled(GL_SCISSOR_TEST)) {
             m_disable_scissor = true;
@@ -64,8 +58,27 @@ class ScissorContext {
                 }
             }
         }
-        
         glScissor(nx, ny, nw, nh);
+    }
+
+  public:
+    ScissorContext(int target_h, int nx, int ny, int nw, int nh) {
+        init(
+            target_h, 
+            nx, 
+            target_h - (ny + nh),
+            nw,
+            nh
+        );
+    }
+    ScissorContext(int target_h, Component *component) {
+        init(
+            target_h, 
+            component->abs_x(), 
+            target_h - (component->abs_y() + component->abs_h()),
+            component->abs_w(),
+            component->abs_h()
+        );
     }
 
     ~ScissorContext() {
@@ -408,6 +421,13 @@ void Component::paint_children(sf::RenderTarget *render_target, bool check_statu
     }
 }
 
+void Component::paint_constraint(int x, int y, int w, int h, int render_y, std::function<void()> cb) {
+    ScissorContext context(render_y, x, y, w, h);
+    if (context.visible()) {
+        cb();
+    }
+}
+
 int Component::abs_x() {
     int dx = status() == component_status_dragging ? m_drag_x : 0;
     float scale = abs_scale();
@@ -486,7 +506,6 @@ int Component::abs_scrolly() {
         p = p->m_parent;
     }
     return sy * abs_scale();
-
 }
 
 

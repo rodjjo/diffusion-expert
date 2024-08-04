@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <memory>
 
@@ -127,6 +128,8 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     static int compute_text_min_y(void *text_shape);
     bool is_floatting();
+
+    void paint_constraint(int x, int y, int w, int h, int render_y, std::function<void()> cb);
 
    public:
     virtual void handle_parent_resized() {};

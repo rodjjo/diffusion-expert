@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include "simple-ui/component.h"
-
+#include "simple-ui/scrollbar.h"
 
 namespace dfe_ui
 {
@@ -19,12 +19,6 @@ typedef enum {
 } editor_type_t; 
 
 typedef enum {
-    text_top,
-    text_center,
-    text_bottom
-} editor_vertical_aligment_t;
-
-typedef enum {
     text_left,
     text_right
 } editor_horizontal_aligment_t;
@@ -35,6 +29,12 @@ typedef enum {
     label_place_holder,
     label_inside
 } editor_label_position_t;
+
+typedef enum {
+    scrollbar_none,
+    scrollbar_auto,
+    scrollbar_allways
+} scrollbar_t;
 
 
 class TextEditor : public Component {
@@ -56,8 +56,6 @@ class TextEditor : public Component {
         uint32_t selected_color();
 
         // aligment
-        editor_vertical_aligment_t valign();
-        void halign(editor_vertical_aligment_t value);
         editor_horizontal_aligment_t halign();
         void halign(editor_horizontal_aligment_t value);
 
@@ -68,20 +66,26 @@ class TextEditor : public Component {
         double float_content();
         int64_t integer_content();
 
+        // scrollbar
+        void vertical_scrollbar(scrollbar_t value);
+        scrollbar_t vertical_scrollbar();
+
     private:
         bool clickable() override;
         bool editable() override;
         bool focusable() override;
+        component_cursor_t cursor() override;
         void handle_text_entered(wchar_t unicode) override;
         void handle_keypressed(int key) override;
         void handle_focus_lost() override;  
         void handle_focus_got() override;
-
         void handle_mouse_left_pressed(int x, int y) override;
         void handle_mouse_left_released(int x, int y) override;
         void handle_mouse_moved(int x, int y) override;
+        void handle_parent_resized() override;
 
     private:
+        void paint_text_editor(sf::RenderTarget *render_target);
         sf::Text *text_display(size_t index);
         size_t cursor_x();
         size_t cursor_y();
@@ -114,6 +118,7 @@ class TextEditor : public Component {
         wchar_t latest_character(size_t line_number);
         void insert_character(wchar_t unicode);
         bool update_measurement_item();
+        void update_vertical_scroll();
         std::pair<size_t, size_t> find_cursor_from_mouse_coords(int x, int y);
 
     private:
@@ -125,15 +130,17 @@ class TextEditor : public Component {
         size_t m_selection_x2 = 0;
         size_t m_selection_y2 = 0;
         size_t m_sel_started_at = 0;
+
     private:
+        scrollbar_t m_vertical_scrollbar = scrollbar_auto;
         bool m_readonly = false;
         bool m_need_update = true;
         bool m_focused = false;
         bool m_mouse_left_pressed = false;
+        std::shared_ptr<Scrollbar> m_vscrollbar;
         std::vector<std::wstring> m_lines;
         std::shared_ptr<sf::Text>  m_text_measure;
         std::vector<std::shared_ptr<sf::Text> > m_texts;
-        editor_vertical_aligment_t m_valign = text_center;
         editor_horizontal_aligment_t m_halign = text_left;
         editor_type_t m_type = editor_type_t::editor_text;
         int m_character_size = 30;
