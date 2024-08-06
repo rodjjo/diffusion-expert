@@ -249,9 +249,9 @@ size_t Listbox::selected() {
 
 void Listbox::handle_mouse_wheel(int8_t direction, int x, int y) {
     if (direction < 0) {
-        selected(selected() +1);
+        m_scrollbar->value(m_scrollbar->value() + 1);
     } else {
-        selected(selected() -1);
+        m_scrollbar->value(m_scrollbar->value() - 1);
     }
 }
 
