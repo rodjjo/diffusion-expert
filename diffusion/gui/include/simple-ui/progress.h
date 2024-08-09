@@ -3,6 +3,9 @@
 #include <string>
 #include "component.h"
 
+namespace sf {
+    class Text;
+}
 
 namespace dfe_ui
 {
@@ -33,7 +36,7 @@ class ProgressBar : public Component {
     void update_text_min_y();
 
   private:
-    std::shared_ptr<void>         m_text;
+    std::shared_ptr<sf::Text>         m_text;
     int                           m_text_min_y = 0;
     int                           m_character_size = 30;
     uint32_t                      m_fill_color = 0xFFFFFFFF;

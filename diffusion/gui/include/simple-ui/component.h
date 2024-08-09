@@ -5,11 +5,10 @@
 #include <memory>
 
 #define RGBA_TO_COLOR(r, g, b, a) ((r) << 24) | ((g) << 16) | ((b) << 8)  | (a)
-#define RGBA_R(color) ((color) >> 24) & 255
-#define RGBA_G(color) ((color) >> 16) & 255
-#define RGBA_B(color) ((color) >> 8) & 255
-#define RGBA_A(color) (color) & 255
-
+#define RGBA_R(color) (((color) >> 24) & 255)
+#define RGBA_G(color) (((color) >> 16) & 255)
+#define RGBA_B(color) (((color) >> 8) & 255)
+#define RGBA_A(color) ((color) & 255)
 
 namespace sf {
     // sfml forward class declarations

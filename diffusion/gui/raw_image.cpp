@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <SFML/Graphics/Image.hpp>
 #include <CImg.h>
 
 #include "simple-ui/raw_image.h"
@@ -57,6 +58,10 @@ RawImage::RawImage(uint32_t w, uint32_t h, uint32_t fill_color, bool rgba) {
 
 
 RawImage::~RawImage() {
+}
+
+uint64_t RawImage::version() {
+    return m_version;
 }
 
 uint32_t RawImage::w() {
@@ -143,6 +148,7 @@ image_ptr_t RawImage::to_blurred_image(uint32_t size) {
     self.permute_axes("cxyz");
     return result;
 }
+
 
 image_ptr_t RawImage::to_resized_image(uint32_t w, uint32_t h) {
     image_ptr_t result(new RawImage(w, h, m_rgba));
@@ -290,6 +296,7 @@ void RawImage::draw_image_at(int x, int y, RawImage *image) {
     }
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
+    m_version++;
 }
 
 void RawImage::draw_image_at(int x, int y, RawImage *mask, RawImage *image) {
@@ -307,6 +314,7 @@ void RawImage::draw_image_at(int x, int y, RawImage *mask, RawImage *image) {
     msk.permute_axes("cxyz");
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
+    m_version++;
 }
 
 void RawImage::draw_image_at(int x, int y, int w, int h, RawImage *image) {
@@ -322,6 +330,68 @@ void RawImage::draw_image_at(int x, int y, int w, int h, RawImage *image) {
     }
     img.permute_axes("cxyz");
     src.permute_axes("cxyz");
+    m_version++;
 }
+
+void RawImage::draw_circle(int x, int y, int radius, uint32_t color, uint32_t bgcolor, bool clear) {
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x >= m_w) x = m_w - 1;
+    if (y >= m_h) y = m_h - 1;
+    int src_channels = m_rgba ? 4 : 3;
+    CImg<unsigned char> img(m_buffer.get(), src_channels, m_w, m_h, 1, true);
+    uint8_t rgba_color[4] = {
+        RGBA_R(color),
+        RGBA_G(color),
+        RGBA_B(color),
+        RGBA_A(color)
+    };
+    uint8_t rgba_bgcolor[4] = {
+        RGBA_R(bgcolor),
+        RGBA_G(bgcolor),
+        RGBA_B(bgcolor),
+        RGBA_A(bgcolor)
+    };
+    img.permute_axes("yzcx");
+    if (clear) {
+        img.draw_circle(x, y, radius, rgba_bgcolor);
+    } else {
+        img.draw_circle(x, y, radius, rgba_color);
+    }
+    img.permute_axes("cxyz");
+    m_version++;
+}
+
+void RawImage::draw_circle(int x, int y, int radius, bool clear) {
+    if (clear) {
+        if (m_rgba)
+            draw_circle(x, y, radius, 0x000000FF, 0x0, true);
+        else
+            draw_circle(x, y, radius, 0x000000FF, 0xFFFFFFFF, true);
+    } else {
+        draw_circle(x, y, radius, 0x000000FF, 0xFFFFFFFF, false);
+    }
+}
+
+image_ptr_t RawImage::from_image(const sf::Image *img) {
+    image_ptr_t result(new RawImage(img->getSize().x, img->getSize().y, true));
+    memcpy(result->m_buffer.get(), img->getPixelsPtr(), result->m_size);
+    return result;
+}
+
+image_ptr_t RawImage::from_file(const std::wstring &path) {
+    auto img = sf::Image::loadFromFile(path);
+    if (img) {
+        return from_image(&(*img));
+    }
+    return image_ptr_t();
+}
+
+void RawImage::save(const std::wstring& path) {
+    auto rgba_image = to_rgba();
+    sf::Image img({rgba_image->m_w, rgba_image->m_h}, rgba_image->m_buffer.get());
+    (void)img.saveToFile(path);
+}
+
 
 } // namespace dfe_ui

@@ -3,6 +3,10 @@
 #include <string>
 #include "component.h"
 
+namespace sf {
+    class Text;
+}
+
 namespace dfe_ui
 {
 
@@ -23,7 +27,7 @@ class Label : public Component {
 
   private:
     vertical_text_alignment_t     m_text_valign = text_alignment_middle;
-    std::shared_ptr<void>         m_text;
+    std::shared_ptr<sf::Text>         m_text;
     int                           m_text_min_y = 0;
     int                           m_character_size = 30;
     uint32_t                      m_text_color = RGBA_TO_COLOR(255, 255, 255, 255);

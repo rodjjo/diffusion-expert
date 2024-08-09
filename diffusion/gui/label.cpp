@@ -24,7 +24,7 @@ Label::~Label() {
 
 void Label::paint(sf::RenderTarget *render_target) {
     if (!m_text.get()) return;
-    sf::Text &txt = *static_cast<sf::Text*>(m_text.get());
+    sf::Text &txt = *m_text.get();
     
     int new_charsize = m_character_size * abs_scale();
     if (new_charsize < 1) {
@@ -68,7 +68,7 @@ void Label::character_size(int value) {
 
 void Label::text(const std::wstring &value) {
     if (m_text) {
-        static_cast<sf::Text *>(m_text.get())->setString(value);
+        m_text->setString(value);
     }
 }
 

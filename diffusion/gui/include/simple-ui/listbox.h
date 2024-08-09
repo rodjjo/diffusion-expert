@@ -7,6 +7,10 @@
 #include "simple-ui/component.h"
 #include "simple-ui/scrollbar.h"
 
+namespace sf {
+    class Text;
+}
+
 namespace dfe_ui
 {
 
@@ -61,7 +65,7 @@ class Listbox : public Component {
    bool                          m_changing_scrollbar = false;
    uint32_t                      m_fill_color = 0xFFFFFFFF;
    uint32_t                      m_outline_color = 0x000000FF;
-   std::shared_ptr<void>         m_text;
+   std::shared_ptr<sf::Text>         m_text;
    size_t                        m_selected_index = 0;
    size_t                        m_top_element = 0;
    int                           m_text_min_y = 0;

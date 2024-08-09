@@ -5,6 +5,10 @@
 #include "simple-ui/icons.h"
 #include "simple-ui/component.h"
 
+namespace sf {
+    class Text;
+}
+
 namespace dfe_ui
 {
     typedef std::function<void(Component* self)> cb_button_click_t;
@@ -67,7 +71,7 @@ namespace dfe_ui
             icon_position_t         m_icon_pos = icon_center;
             icon_type_t             m_icon_type = img_none;
             int                     m_text_min_y = 0;
-            std::shared_ptr<void>   m_text;
+            std::shared_ptr<sf::Text>   m_text;
             int                     m_character_size = 30;
             uint32_t                m_text_color = RGBA_TO_COLOR(255, 255, 255, 255);
             uint32_t                m_color = 0xFFFFFFFF;

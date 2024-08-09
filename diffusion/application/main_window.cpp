@@ -12,6 +12,8 @@
 #include "simple-ui/combobox.h"
 #include "simple-ui/scrollbox.h"
 #include "simple-ui/text_editor.h"
+#include "simple-ui/image_viewer.h"
+
 
 namespace dfe
 {
@@ -35,12 +37,14 @@ namespace dfe
         auto progress = std::make_shared<dfe_ui::ProgressBar>(win.get(), 65 + 185 + 50, 270 + 50 + 55, 280, 45);
         auto listbox = std::make_shared<dfe_ui::Listbox>(win.get(), 65 + 185 + 50, 270 + 110 + 55, 280, 45 * 5);
         auto combo = std::make_shared<dfe_ui::Combobox>(win.get(), 65 + 185 + 310, 50, 300, 35);
-
         auto edito_wrap = std::make_shared<dfe_ui::TextEditor>(win.get(), combo->x() + combo->w() + 5, 50, 300, 300, dfe_ui::editor_type_t::editor_multiline_wrap);
         edito_wrap->halign(dfe_ui::text_left);
         edito_wrap->vertical_scrollbar(dfe_ui::scrollbar_auto);
         // edito_wrap->horizontal_scrollbar(dfe_ui::scrollbar_allways);
         edito_wrap->content(std::wstring(L"Esse é um texto muito longo com quebra de linha"));
+        auto image = std::make_shared<dfe_ui::ImageViewer>(win.get(), edito_wrap->x(), edito_wrap->y() + edito_wrap->h(), edito_wrap->w(), edito_wrap->h());
+        image->fit_image(false);
+        image->image(dfe_ui::RawImage::from_file(L"/home/rodrigo/Downloads/istockphoto-1173223823-612x612.jpg"));
 
         button->icon_position(dfe_ui::Button::icon_center);
         button->checked_icon(dfe_ui::img_24x24_bee);
@@ -147,6 +151,7 @@ namespace dfe
         scrolb->add(listbox);
         scrolb->add(combo);
         scrolb->add(edito_wrap);
+        scrolb->add(image);
 
         win->scale(1.0);
 
