@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <list>
 #include "component.h"
 
@@ -44,6 +45,7 @@ class Window : public Component {
     void update_cursor(sf::RenderTarget *render_target);
     Component *component_at_mouse(int &x, int &y, Component **floatting);
     Component *component_at_mouse(int &x, int &y);
+    void fix_mouse_coords(int &x, int &y);
     void pop_front_floatting_components(Component *floatting);
 
   private:
@@ -63,7 +65,6 @@ class Window : public Component {
     std::shared_ptr<Component> m_component_in_mouse_down_left;
     std::shared_ptr<Component> m_component_in_mouse_down_middle;
     std::shared_ptr<Component> m_component_in_mouse_down_right;
-
 };
 
 

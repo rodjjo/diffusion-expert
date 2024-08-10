@@ -44,6 +44,9 @@ namespace {
     uint32_t scrollbox_scrollbar_size_       = 20;
     uint32_t scrollbox_color_                = 0xBCBCBCFF;
     uint32_t scrollbox_outline_color_        = 0xCCCCCCFF;
+
+    // modal
+    uint32_t modal_fill_color_               = 0x000000CC;
     
 }
 
@@ -179,6 +182,10 @@ uint32_t editor_line_spacing() {
 
 uint32_t editor_margin() {
     return editor_margin_;
+}
+
+uint32_t modal_fill_color() {
+    return modal_fill_color_;
 }
     
 } // namespace theme

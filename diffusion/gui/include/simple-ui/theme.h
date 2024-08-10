@@ -54,7 +54,8 @@ uint32_t scrollbox_scrollbar_size();
 uint32_t scrollbox_color();
 uint32_t scrollbox_outline_color();
 
-// text_editor
+// modal
+uint32_t modal_fill_color();
 
 };
 

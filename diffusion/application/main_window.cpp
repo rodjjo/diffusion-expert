@@ -1,18 +1,6 @@
 #include <stdio.h>
 
-#include "simple-ui/win.h"
-#include "simple-ui/panel.h"
-#include "simple-ui/dragdrop.h"
-#include "simple-ui/label.h"
-#include "simple-ui/button.h"
-#include "simple-ui/arrow_button.h"
-#include "simple-ui/scrollbar.h"
-#include "simple-ui/progress.h"
-#include "simple-ui/listbox.h"
-#include "simple-ui/combobox.h"
-#include "simple-ui/scrollbox.h"
-#include "simple-ui/text_editor.h"
-#include "simple-ui/image_viewer.h"
+#include "simple-ui/dfe_ui.h"
 
 
 namespace dfe
@@ -20,13 +8,15 @@ namespace dfe
     void run_application() {
         auto win = dfe_ui::window_new(1280, 720, "Stable Diffusion");
         auto scrolb = std::make_shared<dfe_ui::Scrollbox>(win.get(), 50, 50, win->w() / 2, win->h() / 2);
+
         scrolb->autoscroll(true);
         win->add(scrolb);
+        auto modal = std::make_shared<dfe_ui::Modal>(win.get());
 
         auto panel = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 50, 180, 180);
         auto panel2 = std::make_shared<dfe_ui::DragDrop>(win.get(), 65, 180 + 51, 180, 180);
         auto panel3 = std::make_shared<dfe_ui::DragDrop>(win.get(), -5, 25, 180 + 10, 50);
-        auto panel4 = std::make_shared<dfe_ui::DragDrop>(win.get(), 300, 25, 180 + 10, 50);
+        // auto panel4 = std::make_shared<dfe_ui::DragDrop>(win.get(), 300, 25, 180 + 10, 50);
 
         auto editor = std::make_shared<dfe_ui::TextEditor>(win.get(), 65 + 185, 50, 300, 50, dfe_ui::editor_type_t::editor_text);
         auto label = std::make_shared<dfe_ui::Label>(win.get(), 65 + 185, 50 + 55, 300, 50, std::wstring(L"Label"));
@@ -64,7 +54,7 @@ namespace dfe
 
         progress->progress(45);
 
-        button->onclick([comp{panel4.get()}] (dfe_ui::Component *self){
+        button->onclick([comp{modal.get()}] (dfe_ui::Component *self){
             comp->float_on();
         });
         

@@ -23,13 +23,13 @@ namespace dfe_ui {
 
 
 typedef enum {
-  component_status_normal = 0,
+  component_status_normal,
   component_status_dragging,
   component_status_dropping
 } component_status_t;
 
 typedef enum {
-  text_alignment_top = 0,
+  text_alignment_top,
   text_alignment_middle,
   text_alligment_bottom
 } vertical_text_alignment_t;
@@ -41,11 +41,7 @@ typedef enum {
   cursor_edit
 } component_cursor_t;
 
-class Component;
 class Window;
-
-typedef std::vector<std::shared_ptr<Component> > component_list_t;
-
 
 class Component : public std::enable_shared_from_this<Component>  {
   public:
@@ -54,7 +50,6 @@ class Component : public std::enable_shared_from_this<Component>  {
     std::shared_ptr<Component> share();
     int zorder() const;
     void zorder(int value);
-    virtual void paint(sf::RenderTarget *render_target);
     bool visible();
     void visible(bool value);
     bool enabled();
@@ -85,25 +80,25 @@ class Component : public std::enable_shared_from_this<Component>  {
 
     virtual void parent_changed() {};
 
+    float scale();
+    void scale(float value);
     int x();
+    void x(int value);
     int y();
+    void y(int value);
     int w();
+    void w(int value);
     int h();
+    void h(int value);
     int scroll_x();
     int scroll_y();
-    float scale();
+    virtual void scroll_x(int value);
+    virtual void scroll_y(int value);
     float abs_scale();
-    void x(int value);
-    void y(int value);
-    void w(int value);
-    void h(int value);
     int abs_x();
     int abs_y();
     int abs_w();
     int abs_h();
-    virtual void scroll_x(int value);
-    virtual void scroll_y(int value);
-    void scale(float value);
     void size(int w, int h);
     void coordinates(int x, int y, int w, int h);
     virtual bool clickable();
@@ -122,15 +117,20 @@ class Component : public std::enable_shared_from_this<Component>  {
     virtual component_status_t status();
     virtual component_cursor_t cursor();
     
-    void float_on(Component *parent = NULL);
-    void float_off();
+    virtual void float_on(Component *parent = NULL);
+    virtual void float_off();
 
     static int compute_text_min_y(void *text_shape);
     bool is_floatting();
 
     void paint_constraint(int x, int y, int w, int h, int render_y, std::function<void()> cb);
 
-   public:
+    Window *window();
+
+   protected:
+    friend class Window;
+    virtual void paint(sf::RenderTarget *render_target);
+    
     virtual void handle_parent_resized() {};
     virtual void handle_child_count_changed() {};
     virtual void handle_text_entered(wchar_t unicode) {};
@@ -161,7 +161,7 @@ class Component : public std::enable_shared_from_this<Component>  {
     void sort_components();
 
   private:
-    component_list_t          m_items;
+    std::vector<std::shared_ptr<Component> > m_items;
     Window                    *m_window = NULL;
     bool                      m_enabled = true;
     bool                      m_visible = true;

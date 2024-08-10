@@ -176,7 +176,6 @@ void TextEditor::insert_character(wchar_t unicode) {
     wrap_text();
 }
 
-
 bool TextEditor::is_control_pressed() {
     return sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::RControl);
 }

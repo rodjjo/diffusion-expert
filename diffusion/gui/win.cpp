@@ -213,8 +213,23 @@ void Window::complete_drag(Component *component) {
     }
 }
 
+void Window::fix_mouse_coords(int &x, int &y) {
+    if (x >= w()) {
+        x = w() - 1;
+    }
+    if (y >= h()) {
+        y = h() - 1;
+    }
+    if (x < 0) {
+        x = 0;
+    }
+    if (y < 0) {
+        y = 0;
+    }
+}
 
 void Window::handle_mouse_left_released(int x, int y) {
+    fix_mouse_coords(x, y);
     auto released_ptr = m_component_in_mouse_down_left.get();
     if (m_component_in_mouse_down_left) {
         m_component_in_mouse_down_left->handle_mouse_left_released(x - m_component_in_mouse_down_left->abs_x(), y - m_component_in_mouse_down_left->abs_y());
@@ -238,6 +253,7 @@ void Window::handle_mouse_left_released(int x, int y) {
 
 
 void Window::handle_mouse_middle_released(int x, int y) {
+    fix_mouse_coords(x, y);
     auto released_ptr = m_component_in_mouse_down_middle.get();
     if (m_component_in_mouse_down_middle) {
         m_component_in_mouse_down_middle->handle_mouse_middle_released(x - m_component_in_mouse_down_middle->abs_x(), y - m_component_in_mouse_down_middle->abs_y());
@@ -256,6 +272,7 @@ void Window::handle_mouse_middle_released(int x, int y) {
 }
 
 void Window::handle_mouse_right_released(int x, int y) {
+    fix_mouse_coords(x, y);
     auto released_ptr = m_component_in_mouse_down_right.get();
     if (m_component_in_mouse_down_right) {
         m_component_in_mouse_down_right->handle_mouse_middle_released(x - m_component_in_mouse_down_right->abs_x(), y - m_component_in_mouse_down_right->abs_y());

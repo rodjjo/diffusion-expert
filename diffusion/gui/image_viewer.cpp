@@ -181,19 +181,22 @@ void ImageViewer::handle_mouse_left_pressed(int x, int y)  {
 }
 
 void ImageViewer::handle_mouse_left_released(int x, int y) {
-    m_mouse_control = false;
-    int w = m_image->w() * m_image_scale;
-    int h = m_image->h() * m_image_scale;
-    if (m_image_scroll_x < - w * 0.5) {
-        m_image_scroll_x = - w * 0.5;
-    } else if (m_image_scroll_x > w * 0.5) {
-        m_image_scroll_x =  w * 0.5;
+    if (m_mouse_control) {
+        int w = m_image->w() * m_image_scale;
+        int h = m_image->h() * m_image_scale;
+        if (m_image_scroll_x < - w * 0.5) {
+            m_image_scroll_x = - w * 0.5;
+        } else if (m_image_scroll_x > w * 0.5) {
+            m_image_scroll_x =  w * 0.5;
+        }
+        if (m_image_scroll_y < - h * 0.5) {
+            m_image_scroll_y = - h * 0.5;
+        } else if (m_image_scroll_y > h * 0.5) {
+            m_image_scroll_y =  h * 0.5;
+        }
+        m_mouse_control = false;
     }
-    if (m_image_scroll_y < - h * 0.5) {
-        m_image_scroll_y = - h * 0.5;
-    } else if (m_image_scroll_y > h * 0.5) {
-        m_image_scroll_y =  h * 0.5;
-    }
+
 }
 
 component_cursor_t ImageViewer::cursor() {

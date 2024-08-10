@@ -610,6 +610,9 @@ void Component::fire_child_count_changed() {
     handle_child_count_changed();
 }
 
+Window *Component::window() {
+    return m_window;
+}
 
 
 }  // namespace dfe 
