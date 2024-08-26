@@ -38,7 +38,7 @@
 #define READ read
 #define WRITE write
 #define FILENO fileno
-#define MAKE_PIPE(X) _pipe((X), OUT_BUFF_SIZE, O_BINARY)
+#define MAKE_PIPE(X) pipe((X))
 #define NULL_DEVICE "/dev/null"
 #endif
 
@@ -151,6 +151,10 @@ namespace dexpert
 
     bool EmulatedTerminal::init_console()
     {
+        #ifndef _WIN32
+            LOG("err CONSOLE INITIALIZE 1.");
+            return false;
+        #endif
         LOG("CONSOLE INITIALIZE.");
         const char *stream_name = src_type == log_source_stdout ? "stdout" : "stderr";
 
@@ -940,6 +944,9 @@ namespace dexpert
 
     void EmulatedTerminal::draw(Fl_Widget *target, int font_face, int font_size, int font_height)
     {
+        #ifndef _WIN32
+            return;
+        #endif
         std::unique_lock<std::mutex> lk(mtx_);
         
         fl_push_clip(target->x(), target->y(), target->w(), target->h());

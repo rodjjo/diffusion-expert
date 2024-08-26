@@ -28,6 +28,10 @@ from diffusers.models.attention_processor import AttnProcessor2_0
 from safetensors.torch import load_file as load_safetensors
 
 import torch
+from diffusers import FluxTransformer2DModel, FluxPipeline
+from transformers import T5EncoderModel, CLIPTextModel
+from optimum.quanto import freeze, qfloat8, quantize
+
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting, settings_version
 from utils.downloader import download_file
@@ -40,6 +44,14 @@ from external.free_lunch import register_free_upblock2d, register_free_crossattn
 CURRENT_MODEL_PARAMS = {}
 CURRENT_PIPELINE = {}
 CURRENT_CASCADE = {}
+CURRENT_FLUX = {}
+
+
+def unload_flux_models():
+    global CURRENT_FLUX
+    CURRENT_FLUX = {}
+    gc.collect()
+
 
 def uload_sd_models():
     global CURRENT_MODEL_PARAMS
@@ -55,6 +67,7 @@ def uload_cascade_model():
 
 def create_cascade_pipeline():
     uload_sd_models()
+    unload_flux_models()
     prior = CURRENT_CASCADE.get('PRIOR') 
         # StableCascadePriorPipeline.from_pretrained("stabilityai/stable-cascade-prior", variant="bf16", torch_dtype=torch.bfloat16)
     decoder = CURRENT_CASCADE.get('DECODER') 
@@ -71,6 +84,44 @@ def create_cascade_pipeline():
     prior.to('cpu')
     decoder.to('cpu')
     return prior, decoder
+
+def create_flux_pipeline():
+    uload_sd_models()
+    uload_cascade_model()
+    
+    global CURRENT_FLUX
+
+    if CURRENT_FLUX.get('PIPELINE'):
+        return CURRENT_FLUX['PIPELINE']
+    
+    print("Loading Flux model")
+
+    bfl_repo = "black-forest-labs/FLUX.1-schnell"
+    dtype = torch.bfloat16
+    config = os.path.join(MODELS_DIR, "../../python_stuff/configurations/flux")
+    transformer = FluxTransformer2DModel.from_single_file(os.path.join(MODELS_DIR, "..", "flux1-dev-fp8.safetensors"), torch_dtype=dtype, config=config)
+    
+    print("Quantizing Flux model")
+   
+    quantize(transformer, weights=qfloat8)
+    freeze(transformer)
+
+    print("Loading Flux text encoder")
+    text_encoder_2 = T5EncoderModel.from_pretrained(bfl_repo, subfolder="text_encoder_2", torch_dtype=dtype, cache_dir=CACHE_DIR)
+    quantize(text_encoder_2, weights=qfloat8)
+    freeze(text_encoder_2)
+
+    print("Loading Flux pipeline")
+
+    pipe = FluxPipeline.from_pretrained(bfl_repo, transformer=None, text_encoder_2=None, torch_dtype=dtype, cache_dir=CACHE_DIR)
+    pipe.transformer = transformer
+    pipe.text_encoder_2 = text_encoder_2
+    
+    pipe.enable_model_cpu_offload()
+
+    CURRENT_FLUX['PIPELINE'] = pipe
+
+    return pipe
 
 # if the model does not load see: https://github.com/d8ahazard/sd_dreambooth_extension/discussions/794
 
@@ -104,6 +155,8 @@ usefp16 = {
 
 def create_pipeline(mode: str, model_path: str, controlnets = None, lora_list=[], reload_model=False, free_lunch=False, face_image=False, adapter_image=False, leditpp=False):
     uload_cascade_model()
+    unload_flux_models()
+
     current_mode = mode
     if mode.startswith('lcm_'):
         use_lcm = True

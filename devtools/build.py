@@ -175,7 +175,8 @@ def publish_binaries():
         shutil.copyfile(f, os.path.join(python_dir(), os.path.basename(f)))
 
 def main(args):
-    ensure_have_7zip()
+    if not os.path.exists('/etc'):
+        ensure_have_7zip()
     ensure_have_cmake()
     download_toolset()
     download_python()

@@ -305,6 +305,7 @@ namespace dexpert
                     add("Segmind Small-SD", "/hugging-xl/segmind/small-sd");
                     add("SimianLuo LCM_Dreamshaper_v7", "/hugging-xl/SimianLuo/LCM_Dreamshaper_v7");
                     add("Stable Cascade", "/hugging-xl/stabilityai/stable-cascade");
+                   // add("Flux", "/hugging-xl/black-forest-labs/flux");
                     add("Playground v2", "/hugging-xl/playgroundai/playground-v2-1024px-aesthetic");
                     add("SDXL Turbo 1Step", "/hugging-xl/stabilityai/sdxl-turbo");
                     

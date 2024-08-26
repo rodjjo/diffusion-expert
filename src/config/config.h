@@ -4,6 +4,7 @@
 #ifndef SRC_CONFIG_CONFIG_H_
 #define SRC_CONFIG_CONFIG_H_
 
+#include <inttypes.h>
 #include <string>
 
 namespace dexpert
@@ -16,13 +17,16 @@ namespace dexpert
     ~Config();
 
     const std::wstring &executableDir();
+#ifdef _WIN32
     const std::wstring &librariesDir();
+#endif
     const std::wstring &pyExePath();
     const std::wstring &pythonStuffDir();
     const std::wstring &pythonMainPy();
     const std::wstring &modelsRootDir();
     const std::wstring &sdModelsDir();
     const std::wstring &getConfigDir();
+    const std::wstring &getPythonVenvDir();
 
     int screenWidth();
     int screenHeight();
@@ -84,6 +88,7 @@ namespace dexpert
     std::wstring configDir_;
     std::wstring librariesDir_;
     std::wstring executableDir_;
+    std::wstring pythonVenvDir_;
     std::wstring pythonStuffDir_;
     std::wstring pyExePath_;
     std::wstring pythonMainPy_;

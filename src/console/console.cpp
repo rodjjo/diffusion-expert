@@ -24,22 +24,26 @@ namespace dexpert
 
     void Console::validate(void *ud) {
         static bool console_closed = true;
-        if (!console_closed) {
-            HWND hconsole = GetConsoleWindow();
-            if (hconsole != NULL) {
-                DWORD pid = 0;
-                GetWindowThreadProcessId(hconsole, &pid);
-                if (pid == GetCurrentProcessId()) {
-                    ShowWindow(hconsole, SW_HIDE);
+        #ifndef _WIN32
+            puts("Console::validate - Not implemented");
+        #else 
+            if (!console_closed) {
+                HWND hconsole = GetConsoleWindow();
+                if (hconsole != NULL) {
+                    DWORD pid = 0;
+                    GetWindowThreadProcessId(hconsole, &pid);
+                    if (pid == GetCurrentProcessId()) {
+                        ShowWindow(hconsole, SW_HIDE);
+                    }
+                    console_closed = true;
                 }
-                console_closed = true;
             }
-        }
-        Fl::repeat_timeout(0.33, Console::validate, ud); // retrigger timeout
-        Console *c = (Console *)ud;
-        if (c->version_ != c->terminal_->version()) {
-            c->redraw();
-        }
+            Fl::repeat_timeout(0.33, Console::validate, ud); // retrigger timeout
+            Console *c = (Console *)ud;
+            if (c->version_ != c->terminal_->version()) {
+                c->redraw();
+            }
+        #endif
     }
 
     void Console::draw()

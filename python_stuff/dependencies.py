@@ -1,115 +1,70 @@
 import os
 import sys
 import subprocess
-import urllib.request
+import json
 
 PRINT_PREFIX = 'dependencies.installer:'
 
-
-def install_local_dependencies():
-    basedir = os.path.join(os.path.dirname(sys.executable), '..', 'python_deps')
-    subprocess.check_call([
-        sys.executable, '-m', 'pip', 'install', os.path.join(basedir, 'python-future')
-    ])
-    subprocess.check_call([
-        sys.executable, '-m', 'pip', 'install', os.path.join(basedir, 'filterpy')
-    ])
+base_dir = os.path.dirname(os.path.abspath(__file__))
+requirements_path = os.path.join(base_dir, 'requirements.txt')
+requirements_torch = os.path.join(base_dir, 'requirements-torch.txt')    
 
 
-def have_pip():
-    try:
-        import pip
-        return True
-    except ImportError:
-        return False
+def fix_dependency_name(name):
+    return name.strip().lower().replace('-', '_')
 
 
-def have_dependencies():
-    exe_dir = os.path.dirname(sys.executable)
-    lib_dir = os.path.join(exe_dir, 'Lib', 'site-packages')
-    lib_names = [
-        'torch',
-        'torchvision',
-        'numpy',
-        'diffusers',
-        'transformers',
-        'xformers',
-        'cv2',
-        'controlnet_aux',
-        'omegaconf',
-        'gfpgan',
-        'realesrgan',
-        'pynvml',
-        'PIL',
-        'accelerate',
-        'pytorch_lightning',
-        'safetensors',
-        'torchdiffeq',
-        'cv2',
-        'filterpy',
-        'future',
-        'rembg',
-        'spandrel',
-        # 'codeformer',
+def requirements_contents():
+    with open(requirements_path, 'r') as f:
+        contents1 = f.read()
+    with open(requirements_torch, 'r') as f:
+        contents2 = f.read()
+    result = (contents1 + '\n' + contents2).split('\n')
+    return [
+        fix_dependency_name(r.split('=', maxsplit=1)[0]) 
+        for r in result if r.strip() and not r.strip().startswith('#') and not r.strip().startswith('-')
     ]
+
+
+def any_missing_dependency():
+    exe_dir = os.path.dirname(sys.executable)
+    pip_output = subprocess.check_output([
+        sys.executable, '-m', 'pip', 'list', '--format', 'json'
+    ]).decode('utf-8')
+    installed_libs = set(fix_dependency_name(l['name']) for l in json.loads(pip_output))
+    lib_names = requirements_contents()
+
     for l in lib_names:
-        if not os.path.exists(os.path.join(lib_dir, l)):
+        if l not in installed_libs:
             sys.stderr.write(f'Missing dependency: {l}\n')
             sys.stderr.flush()
-            return False
-    return True
+            return True
+    return False
 
-
-def download_get_pip():
-    url = 'https://bootstrap.pypa.io/get-pip.py'
-    filepath = os.path.join(os.path.dirname(__file__), 'get-pip.py')
-    print('Downloading get-pip.py')
-    urllib.request.urlretrieve(url, filepath)
-
+def have_dependencies():
+    return not any_missing_dependency()
 
 def _install_dependencies():
-    base_dir = os.path.dirname(sys.executable)
-    requirements_path = os.path.join(base_dir, '..', 'python_stuff', 'requirements.txt')
-    requirements_torch = os.path.join(base_dir, '..', 'python_stuff', 'requirements-torch.txt')
-    get_pip = os.path.join(base_dir, '..', 'python_stuff', 'get-pip.py')
-    
-    path = os.environ['PATH']
-    path = path.split(os.pathsep)
-    path.append(os.path.join(base_dir, 'Scripts'))
-    os.environ['PATH'] = os.pathsep.join(path)
-
-    if not have_pip():
-        print(f'{PRINT_PREFIX} It does not have pip. Installing it')
-        sys.stdout.flush()
-        download_get_pip()
-        subprocess.check_call([
-            sys.executable, get_pip
-        ])
-        subprocess.check_call([
-            sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'
-        ])
-    else:
-        print(f'{PRINT_PREFIX} It has pip. Skipping pip installation')    
-        sys.stdout.flush()
-    if not have_dependencies():
+    if any_missing_dependency():
         print(f'{PRINT_PREFIX} It does not have the dependencies. Installing them')
         sys.stdout.flush()
-        install_local_dependencies()
+        subprocess.check_call([
+            sys.executable, '-m', 'pip', 'install', 'setuptools'
+        ])
         subprocess.check_call([
             sys.executable, '-m', 'pip', 'install', '-r', requirements_path
         ])
         subprocess.check_call([
             sys.executable, '-m', 'pip', 'install', '-r', requirements_torch
         ])
-    else:
-        print(f'{PRINT_PREFIX} It already has the dependencies installed.')
-        sys.stdout.flush()
 
 
 def install_dependencies():
     subprocess.check_call([
         sys.executable, __file__
     ])
+    import importlib
+    importlib.invalidate_caches()
 
 
 if __name__ == '__main__':

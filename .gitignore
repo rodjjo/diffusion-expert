@@ -62,3 +62,4 @@ install_manifest.txt
 exception.txt
 *.png
 *.jpg
+output/

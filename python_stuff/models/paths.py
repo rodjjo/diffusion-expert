@@ -1,7 +1,7 @@
 import os
 import sys
 
-BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(sys.executable), '..'))
+BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(sys.executable), '..', '..'))
 CONFIG_DIR = os.path.join(BASE_DIR, 'python_stuff','configurations')
 MODELS_DIR = os.path.join(BASE_DIR, 'models', 'stable-diffusion')
 ELLA_MODELS_DIR = os.path.join(BASE_DIR, 'models', 'ella')

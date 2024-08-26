@@ -67,7 +67,8 @@ def convert_ldm_clip_checkpoint(checkpoint):
     for key in keys:
         if key.startswith('cond_stage_model.transformer'):
             text_model_dict[key[len('cond_stage_model.transformer.') :]] = checkpoint[key]
-
+    if "text_model.embeddings.position_ids" in text_model_dict:
+        del text_model_dict["text_model.embeddings.position_ids"]
     text_model.load_state_dict(text_model_dict)
 
     return text_model

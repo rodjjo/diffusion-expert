@@ -2,6 +2,11 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <limits.h>
 #endif
 
 #include <FL/Fl.H>
@@ -17,6 +22,17 @@ namespace {
 const wchar_t *kCONFIG_FILE = L"/dexpert.json";
 }
 
+#ifdef _WIN32
+void create_directory(const std::wstring &path) {
+    create_directory(path.c_str());
+} 
+#else 
+void create_directory(const std::wstring &path) {
+    std::string pathStr(path.begin(), path.end());
+    mkdir(pathStr.c_str(), 0777); // 0777 is the permission level
+}
+#endif
+
 Config::Config() {
     load();
 }
@@ -27,12 +43,20 @@ Config::~Config() {
 const std::wstring& Config::executableDir() {
     if (executableDir_.empty()) {
 #ifdef _WIN32
-    wchar_t path[1024] = { 0, };
-    if (GetModuleFileNameW(NULL, path, (sizeof(path) / sizeof(wchar_t)) -1) != 0) {
-        executableDir_ = path;
-    }
+        wchar_t path[1024] = { 0, };
+        if (GetModuleFileNameW(NULL, path, (sizeof(path) / sizeof(wchar_t)) -1) != 0) {
+            executableDir_ = path;
+        }
 #else
-    //TODO: create linux implementation
+        //TODO: create linux implementation
+        if (executableDir_.empty()) {
+            char buffer[PATH_MAX];
+            ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+            if (len != -1) {
+                buffer[len] = '\0';
+                executableDir_ = std::wstring(buffer, buffer + len);
+            }
+        }
 #endif
         size_t latest = executableDir_.find_last_of(L"/\\");
         if (latest != std::wstring::npos) {
@@ -45,19 +69,21 @@ const std::wstring& Config::executableDir() {
     return executableDir_;
 }
 
+#ifdef _WIN32
 const std::wstring& Config::librariesDir() {
     if (librariesDir_.empty()) {
         librariesDir_ = executableDir() + L"/Lib";
-        _wmkdir(librariesDir_.c_str());
+        create_directory(librariesDir_.c_str());
         librariesDir_ += L"/site-packages";
-        _wmkdir(librariesDir_.c_str());
+        create_directory(librariesDir_.c_str());
     }
     return librariesDir_;
 }
+#endif
 
 const std::wstring& Config::pythonStuffDir() {
     if (pythonStuffDir_.empty()) {
-        pythonStuffDir_ = executableDir() + L"/../python_stuff";
+        pythonStuffDir_ = executableDir() + L"/python_stuff";
     }
     return pythonStuffDir_;
 }
@@ -71,15 +97,22 @@ const std::wstring& Config::pythonMainPy() {
 
 const std::wstring& Config::pyExePath() {
     if (pyExePath_.empty()) {
-        pyExePath_ = executableDir() + L"/python.exe";
+        pyExePath_ = getPythonVenvDir() + L"/bin/python3";
     }
     return pyExePath_;
 }
 
+const std::wstring &Config::getPythonVenvDir() {
+    if (pythonVenvDir_.empty()) {
+        pythonVenvDir_ = executableDir() + L"/venv";
+    }
+    return pythonVenvDir_;
+}
+
 const std::wstring& Config::modelsRootDir() {
     if (modelsRootDir_.empty()) {
-        modelsRootDir_ = executableDir() + L"/../models";
-        _wmkdir(modelsRootDir_.c_str());
+        modelsRootDir_ = executableDir() + L"/models";
+        create_directory(modelsRootDir_.c_str());
     }
     return modelsRootDir_;
 }
@@ -87,15 +120,15 @@ const std::wstring& Config::modelsRootDir() {
 const std::wstring& Config::sdModelsDir() {
     if (sdModelsDir_.empty()) {
         sdModelsDir_ = modelsRootDir() + L"/stable-diffusion";
-        _wmkdir(sdModelsDir_.c_str());
+        create_directory(sdModelsDir_.c_str());
     }
     return sdModelsDir_;
 }
 
 const std::wstring& Config::getConfigDir() {
     if (configDir_.empty()) {
-        configDir_ = executableDir() + L"/../config";
-        _wmkdir(configDir_.c_str());
+        configDir_ = executableDir() + L"/config";
+        create_directory(configDir_.c_str());
     }
     return configDir_;
 }
@@ -309,7 +342,7 @@ bool Config::save() {
         general["privacy_mode"] = privacy_mode_;
         data["general"] = general;
         const std::wstring path = getConfigDir() + kCONFIG_FILE;
-        std::ofstream f(path.c_str());
+        std::ofstream f(std::string(path.begin(), path.end()).c_str());
         f << std::setw(2) << data << std::endl;
         return true;
     } catch (json::exception& e) {
@@ -326,7 +359,7 @@ int Config::getMaxGeneratedImages() {
 
 bool Config::load() {
     const std::wstring path = getConfigDir() + kCONFIG_FILE;
-    std::ifstream f(path.c_str());
+    std::ifstream f(std::string(path.begin(), path.end()).c_str());
     try {
         if (!f.good()) {
             fprintf(stderr, "Diffusion Expert's configuration file does not exist\n");

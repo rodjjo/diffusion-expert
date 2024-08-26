@@ -26,7 +26,10 @@ add_executable(diffusion-exp-win WIN32 ${SourcesEntry})
 endif(WIN32)
 
 target_include_directories(diffusion-exp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(WIN32)
 target_include_directories(diffusion-exp-win PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+endif(WIN32)
 
 target_link_libraries(
     diffusion-exp 
@@ -35,18 +38,42 @@ target_link_libraries(
     fltk_forms 
     fltk_images 
     fltk_jpeg 
-    fltk_png 
-    fltk_z 
     fltk_gl 
+    pybind11::embed
 #   python3.lib
-    python310.lib
-    opengl32
-    user32
-    comctl32
-    gdiplus
-    ws2_32
-    glu32
+#    python310.lib
+
 )
+
+if(WIN32)
+    target_link_libraries(
+        diffusion-exp 
+        fltk
+        fltk_forms 
+        fltk_images 
+        fltk_jpeg 
+        fltk_png 
+        fltk_z 
+        fltk_gl 
+        python3.lib
+        python310.lib
+        opengl32
+        user32
+        comctl32
+        gdiplus
+        ws2_32
+        glu32
+        Shcore
+    )
+    set(SUBSYSTEM_LINKER_OPTIONS "-mconsole")
+    target_link_options(${APP_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
+else(WIN32)
+    target_link_libraries(
+        diffusion-exp 
+        X11
+    )
+endif(WIN32)
+
 
 set_target_properties(diffusion-exp
     PROPERTIES

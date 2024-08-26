@@ -6,10 +6,10 @@
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Tabs.H>
-#include <Fl/Fl_Check_Button.H>
-#include <Fl/Fl_Input.H>
-#include <Fl/Fl_Choice.H>
-#include <Fl/Fl_Float_Input.H>
+#include <FL/Fl_Check_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Float_Input.H>
 
 #include "src/controls/button.h"
 #include "src/windows/modal_window.h"

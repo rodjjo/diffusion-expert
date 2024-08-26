@@ -3,9 +3,10 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include <Python.h>
+#include <filesystem>
+// #include <Python.h>
 
-#include <Fl/Fl.H>
+#include <FL/Fl.H>
 
 #include <pybind11/embed.h> 
 
@@ -46,6 +47,16 @@ PYBIND11_EMBEDDED_MODULE(dexpert, m) {
     });
 }
 
+void create_python_venv() {
+    std::wstring venv_dir = getConfig().getPythonVenvDir();
+    std::string command = "python3 -m venv " + std::string(venv_dir.begin(), venv_dir.end());
+    if (!std::filesystem::exists(venv_dir)) {
+        std::system(command.c_str());
+    } else {
+        puts("Virtual environment directory already exists.");
+    }
+}
+
 } // unnamed namespace 
 
 
@@ -65,6 +76,13 @@ py11::module_ *depsModule() {
 }
 
 void PythonMachine::run_machine() {
+    puts("Creating python environment");
+    create_python_venv();
+
+
+    // putenv(strdup("PYTHONHOME=/home/rodrigo/projects/diffusion-expert/output/venv"));
+    // putenv(strdup("PYTHONPATH=/home/rodrigo/projects/diffusion-expert/output/venv/bin/python3"));
+
     puts("Initializing Python");
 
     py11::scoped_interpreter guard{};

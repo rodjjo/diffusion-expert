@@ -4,7 +4,7 @@ import torch
 import os
 import numpy as np
 from datetime import datetime
-from models.models import create_pipeline,  create_cascade_pipeline
+from models.models import create_pipeline,  create_cascade_pipeline, create_flux_pipeline
 from images.latents import create_latents_noise, latents_to_pil, latents_to_pil_image
 from exceptions.exceptions import CancelException
 from utils.settings import get_setting
@@ -465,12 +465,65 @@ def _run_cascade(pipeline_type: str, params: dict):
 
     return [pil_as_dict(r) for r in result]
 
+
+def _run_flux_pipeline(pipeline_type: str, params: dict):
+    if 'txt2img' != pipeline_type:
+        raise CancelException()
+    restore_faces = params.get('restore_faces')
+    if restore_faces:
+        gfpgan_dwonload_model()
+        restore_faces = True
+    prompt, _ = parse_prompt_loras(params['prompt'])
+    negative = params['negative']
+
+    if len(negative or '') < 2:
+        negative = None
+
+    seed = params['seed']
+    # model = params["model"]
+    cfg = params["cfg"]
+    steps = params["steps"]
+    width = params["width"]
+    height = params["height"]
+    # batch_size = params.get('batch_size', 1)
+    input_image = params.get("image")
+    input_mask = None # params.get("mask")
+    inpaint_mode = params.get("inpaint_mode", "original")
+
+
+    if width % 8 != 0:
+        width += 8 - width % 8
+
+    if height % 8 != 0:
+        height += 8 - height % 8
+
+    generator = None if seed == -1  else [
+        torch.Generator(device='cuda').manual_seed(seed)
+    ]
+
+    pipe = create_flux_pipeline()
+    result = pipe(
+        prompt,
+        guidance_scale=cfg,
+        output_type="pil",
+        num_inference_steps=steps,
+        generator=generator
+    )
+    if restore_faces:
+        for i, r in enumerate(result):
+            progress(99, 100, pil_as_dict(r)) 
+            result[i] = gfpgan_restore_faces(r)
+
+    return [pil_as_dict(r) for r in result]
+
 def run_pipeline(mode: str, params: dict):
     progress(0, 100, {})
 
     try:
         time_start = datetime.utcnow()
-        if 'cascade' in params["model"].lower():
+        if 'flux' in params["model"].lower():
+            _run_flux_pipeline(mode, params)
+        elif 'cascade' in params["model"].lower():
             data = _run_cascade(mode, params)
         else:
             data = _run_pipeline(mode, params)   

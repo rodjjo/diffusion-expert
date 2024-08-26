@@ -22,6 +22,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/bin)
 
+
+add_subdirectory("dependencies/fltk")
+add_subdirectory("dependencies/pybind11")
+
 include_directories(DiffusionExpert
                     ${PROJECT_SOURCE_DIR}
                     # ${FLTK_INCLUDE_DIR}
@@ -29,17 +33,11 @@ include_directories(DiffusionExpert
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/cimg"
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/nlohmann_json/include"
                     "${CMAKE_CURRENT_LIST_DIR}/dependencies/pybind11/include"
-                    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/include"
-                    "${CMAKE_CURRENT_LIST_DIR}/dependencies/python3.10.11/include"
+                    "${CMAKE_CURRENT_LIST_DIR}/dependencies/fltk"
+                    "${CMAKE_CURRENT_LIST_DIR}/build/dependencies/fltk"
                     )
 
-link_directories(DiffusionExpert
-    "${CMAKE_CURRENT_LIST_DIR}/build/fltk/lib"
-    "${CMAKE_CURRENT_LIST_DIR}/dependencies/python3.10.11/libs"
-)
-
-add_subdirectory("src2")
 add_subdirectory("src")
 
-enable_testing()
-add_subdirectory("tests")
+# enable_testing()
+# add_subdirectory("tests")

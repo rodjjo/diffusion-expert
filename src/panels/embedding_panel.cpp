@@ -1,4 +1,4 @@
-#include <Fl/Fl.H>
+#include <FL/Fl.H>
 
 #include "src/dialogs/common_dialogs.h"
 #include "src/data/event_manager.h"
