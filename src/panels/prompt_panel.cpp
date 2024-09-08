@@ -62,6 +62,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
     control_inpaint_ = new Fl_Check_Button(0, 0, 1, 1, "Inpaint with controlnet");
     leditpp_ = new Fl_Check_Button(0, 0, 1, 1, "LEdit++");
     use_ella_ = new Fl_Check_Button(0, 0, 1, 1, "Use Ella");
+    use_linfusion_ = new Fl_Check_Button(0, 0, 1, 1, "Use Linfusion");
 
     textualPanel_ = new EmbeddingPanel(embedding_textual_inv, 0, 0, 1, 1);
 
@@ -104,6 +105,7 @@ PromptPanel::PromptPanel(int x, int y, int w, int h) : EventListener(), Fl_Group
 
     leditpp_->value(0);
     use_ella_->value(0);
+    use_linfusion_->value(0);
 
     if (last_use_lcm) {
         use_lcm_->value(1);
@@ -446,6 +448,12 @@ void PromptPanel::alignComponents() {
         100,
         25
     );
+    use_linfusion_->resize(
+        use_ella_->x() + use_ella_->w() + 5,
+        use_ella_->y(),
+        100,
+        25
+    );
     face_button_->size(75, 24);
     adapter_button_->size(75, 24);
     face_button_->position(leditpp_->x() +  leditpp_->w() + 5,
@@ -624,6 +632,10 @@ bool PromptPanel::shouldInpaintControlnet() {
 
 bool PromptPanel::shouldUseElla() {
     return use_ella_->value() != 0;
+}
+
+bool PromptPanel::shouldUseLinfusion() {
+    return use_linfusion_->value() != 0;
 }
 
 } // namespace dexpert

@@ -7,6 +7,7 @@ OmegaConf==2.3.0
 accelerate==0.33.0
 numpy==1.26.4
 diffusers
+# git+https://github.com/huggingface/diffusers.git@main#egg=diffusers
 transformers==4.40.0
 safetensors
 invisible-watermark==0.1.5
@@ -14,7 +15,7 @@ GitPython==3.1.37
 pytorch_lightning==2.0.2
 torchdiffeq==0.2.3
 tdqm
-xformers==0.0.27
+xformers
 opencv-contrib-python==4.7.0.72
 controlnet_aux==0.0.3
 # basicsr==1.4.2

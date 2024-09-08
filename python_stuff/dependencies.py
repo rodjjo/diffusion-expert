@@ -11,6 +11,8 @@ requirements_torch = os.path.join(base_dir, 'requirements-torch.txt')
 
 
 def fix_dependency_name(name):
+    if 'egg=' in name:
+        name = name.split('egg=')[-1]
     return name.strip().lower().replace('-', '_')
 
 

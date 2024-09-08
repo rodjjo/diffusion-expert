@@ -77,12 +77,12 @@ namespace dexpert
         image_orig_w_ = image_->w();
         image_orig_h_ = image_->h();
 
-        if (controlnets.empty() && image_ && (image_->w() > 1024 || image_->h() > 1024))
+        if (controlnets.empty() && image_ && (image_->w() > 2048 || image_->h() > 2048))
         {
-            image_ = image_->fit1024();
+            image_ = image_->fit2048();
             if (mask_)
             {
-                mask_ = mask_->fit1024();
+                mask_ = mask_->fit2048();
             }
             image_orig_w2_ = image_->w();
             image_orig_h2_ = image_->h();

@@ -14,6 +14,7 @@ from models.paths import LORA_DIR
 from ella.inference import create_ella_prompts, inject_ella, offload_ella_for_pipe
 from PIL import Image
 from torchvision.transforms.functional import pil_to_tensor
+from external.linfusion import LinFusion
 
 
 from dexpert import progress, progress_canceled, progress_title
@@ -176,7 +177,16 @@ def _run_pipeline(pipeline_type, params):
         adapter_image=adapter_image is not None,
         leditpp=leditpp
     ) 
+        
     report("pipeline created")
+
+    if params.get("use_linfusion", "no") == "yes":
+        if not hasattr(pipeline, 'have_linfusion'):
+            linfusion = LinFusion.construct_for(pipeline)
+            pipeline.have_linfusion = True
+    # elif not hasattr(pipeline, 'have_linfusion') and pipeline.have_linfusion:
+        
+
 
     '''
     if pipeline_type == 'inpaint2img':
@@ -467,7 +477,7 @@ def _run_cascade(pipeline_type: str, params: dict):
 
 
 def _run_flux_pipeline(pipeline_type: str, params: dict):
-    if 'txt2img' != pipeline_type:
+    if pipeline_type not in ('txt2img', 'img2img'):
         raise CancelException()
     restore_faces = params.get('restore_faces')
     if restore_faces:
@@ -487,9 +497,44 @@ def _run_flux_pipeline(pipeline_type: str, params: dict):
     height = params["height"]
     # batch_size = params.get('batch_size', 1)
     input_image = params.get("image")
-    input_mask = None # params.get("mask")
+    input_mask = params.get("mask")
     inpaint_mode = params.get("inpaint_mode", "original")
 
+    if 'img2img' in pipeline_type  and input_mask is not None:
+        pipeline_type = pipeline_type.replace('img2img', 'inpaint2img')
+
+    if 'inpaint2img' in pipeline_type and  inpaint_mode == "img2img":
+        pipeline_type = pipeline_type.replace('inpaint2img', 'img2img')
+
+    if width % 8 != 0:
+        width += 8 - width % 8
+
+    if height % 8 != 0:
+        height += 8 - height % 8
+
+
+    additional_args = {}
+    if pipeline_type == 'img2img':
+        additional_args = {
+            'image': pil_from_dict(input_image),
+            'strength': params['strength'],
+        }
+    elif pipeline_type == 'inpaint2img':
+        image = pil_from_dict(input_image)
+        mask = pil_from_dict(input_mask)
+        
+        if inpaint_mode != 'original' and inpaint_mode != 'img2img':
+            if inpaint_mode == 'noise':
+                temp = inpaint_noise(image, mask, latents_to_pil_image(0, pipeline.vae, latents_noise))
+                if temp: 
+                    image = temp
+            else:
+                image = inpaint_fill_image(image, mask)
+
+        additional_args = {
+            'image': image,
+            'mask_image': mask,
+        }
 
     if width % 8 != 0:
         width += 8 - width % 8
@@ -501,14 +546,17 @@ def _run_flux_pipeline(pipeline_type: str, params: dict):
         torch.Generator(device='cuda').manual_seed(seed)
     ]
 
-    pipe = create_flux_pipeline()
+    pipe = create_flux_pipeline(pipeline_type)
     result = pipe(
         prompt,
         guidance_scale=cfg,
         output_type="pil",
-        num_inference_steps=steps,
-        generator=generator
-    )
+        num_inference_steps=round(steps / 6.25),
+        generator=generator,
+        width=width,
+        height=height,
+        **additional_args
+    ).images
     if restore_faces:
         for i, r in enumerate(result):
             progress(99, 100, pil_as_dict(r)) 
@@ -522,7 +570,7 @@ def run_pipeline(mode: str, params: dict):
     try:
         time_start = datetime.utcnow()
         if 'flux' in params["model"].lower():
-            _run_flux_pipeline(mode, params)
+            data = _run_flux_pipeline(mode, params)
         elif 'cascade' in params["model"].lower():
             data = _run_cascade(mode, params)
         else:
@@ -532,7 +580,7 @@ def run_pipeline(mode: str, params: dict):
         report(f"Image generation took {dur} seconds")
     except CancelException:
         print("Image generation canceled")
-        data = {"error": "Operation canceled by the user"}
+        data = [{"error": "Operation canceled by the user"}]
     
     torch.cuda.empty_cache()
     gc.collect()

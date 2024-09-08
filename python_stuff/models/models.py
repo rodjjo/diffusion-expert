@@ -28,9 +28,9 @@ from diffusers.models.attention_processor import AttnProcessor2_0
 from safetensors.torch import load_file as load_safetensors
 
 import torch
-from diffusers import FluxTransformer2DModel, FluxPipeline
+from diffusers import FluxTransformer2DModel, FluxPipeline, FluxImg2ImgPipeline, FluxInpaintPipeline
 from transformers import T5EncoderModel, CLIPTextModel
-from optimum.quanto import freeze, qfloat8, quantize
+# from optimum.quanto import freeze, qfloat8, qint8, quantize
 
 from models.paths import CACHE_DIR, MODELS_DIR, EMBEDDING_DIR, LORA_DIR
 from utils.settings import get_setting, settings_version
@@ -51,6 +51,7 @@ def unload_flux_models():
     global CURRENT_FLUX
     CURRENT_FLUX = {}
     gc.collect()
+    torch.cuda.empty_cache()
 
 
 def uload_sd_models():
@@ -59,11 +60,13 @@ def uload_sd_models():
     CURRENT_MODEL_PARAMS = {}
     CURRENT_PIPELINE = {}
     gc.collect()
+    torch.cuda.empty_cache()
 
 def uload_cascade_model():
     global CURRENT_CASCADE
     CURRENT_CASCADE = {}
     gc.collect()
+    torch.cuda.empty_cache()
 
 def create_cascade_pipeline():
     uload_sd_models()
@@ -85,41 +88,49 @@ def create_cascade_pipeline():
     decoder.to('cpu')
     return prior, decoder
 
-def create_flux_pipeline():
+def create_flux_pipeline(pipeline_type='txt2img'):
     uload_sd_models()
     uload_cascade_model()
     
     global CURRENT_FLUX
 
-    if CURRENT_FLUX.get('PIPELINE'):
+    if CURRENT_FLUX.get('PIPELINE') and CURRENT_FLUX.get('PIPELINE_TYPE') == pipeline_type:
         return CURRENT_FLUX['PIPELINE']
+
+    unload_flux_models()
     
     print("Loading Flux model")
 
     bfl_repo = "black-forest-labs/FLUX.1-schnell"
-    dtype = torch.bfloat16
-    config = os.path.join(MODELS_DIR, "../../python_stuff/configurations/flux")
-    transformer = FluxTransformer2DModel.from_single_file(os.path.join(MODELS_DIR, "..", "flux1-dev-fp8.safetensors"), torch_dtype=dtype, config=config)
     
-    print("Quantizing Flux model")
-   
-    quantize(transformer, weights=qfloat8)
-    freeze(transformer)
-
-    print("Loading Flux text encoder")
-    text_encoder_2 = T5EncoderModel.from_pretrained(bfl_repo, subfolder="text_encoder_2", torch_dtype=dtype, cache_dir=CACHE_DIR)
-    quantize(text_encoder_2, weights=qfloat8)
-    freeze(text_encoder_2)
-
-    print("Loading Flux pipeline")
-
-    pipe = FluxPipeline.from_pretrained(bfl_repo, transformer=None, text_encoder_2=None, torch_dtype=dtype, cache_dir=CACHE_DIR)
-    pipe.transformer = transformer
-    pipe.text_encoder_2 = text_encoder_2
+    if pipeline_type == 'img2img':
+        pipe = FluxImg2ImgPipeline.from_pretrained(
+            bfl_repo, 
+            torch_dtype=torch.float16, 
+            cache_dir=CACHE_DIR)
+    elif pipeline_type == 'inpaint2img':
+        pipe = FluxInpaintPipeline.from_pretrained(
+            bfl_repo, 
+            torch_dtype=torch.bfloat16, 
+            cache_dir=CACHE_DIR)
+    else:
+        pipe = FluxPipeline.from_pretrained(
+            bfl_repo, 
+            torch_dtype=torch.bfloat16, 
+            cache_dir=CACHE_DIR)
+    # pipe.transformer = transformer
+    # pipe.text_encoder_2 = text_encoder_2
     
-    pipe.enable_model_cpu_offload()
+    pipe.vae.enable_tiling()
+    pipe.vae.enable_slicing()
+    pipe.enable_sequential_cpu_offload()     
+    # pipe.enable_model_cpu_offload()
 
     CURRENT_FLUX['PIPELINE'] = pipe
+    CURRENT_FLUX['PIPELINE_TYPE'] = pipeline_type
+
+    gc.collect()
+    torch.cuda.empty_cache()
 
     return pipe
 

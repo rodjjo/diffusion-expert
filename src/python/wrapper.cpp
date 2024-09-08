@@ -75,6 +75,19 @@ py11::module_ *depsModule() {
     return deeps_module;
 }
 
+bool is_this_process_64_bit() {
+    return sizeof(void *) == 8;
+}
+
+void activate_pyton_venv() {
+    std::wstring venv_dir = getConfig().getPythonVenvDir();
+    std::wstring lib_dir = venv_dir + (is_this_process_64_bit() ? L"/lib64" :  L"/lib");
+    std::wstring site_packages = lib_dir + L"/python3.12/site-packages";
+    py11::module_ site = py11::module_::import("site");
+    site.attr("addsitedir")(site_packages);
+}
+
+
 void PythonMachine::run_machine() {
     puts("Creating python environment");
     create_python_venv();
@@ -88,6 +101,8 @@ void PythonMachine::run_machine() {
     py11::scoped_interpreter guard{};
     py11::module_ sys = py11::module_::import("sys");
     
+    activate_pyton_venv();
+
     sys.attr("executable") = getConfig().pyExePath();
     sys.attr("_base_executable") = getConfig().pyExePath();
     py11::sequence sp = sys.attr("path").cast<py11::sequence>();

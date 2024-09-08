@@ -242,6 +242,7 @@ void Pages::textToImage() {
     bool reload = promptPanel_->shouldReload(true);
     extra_config_t extra_cfg;
     extra_cfg["use_ella"] = promptPanel_->shouldUseElla() ? "yes" : "no";
+    extra_cfg["use_linfusion"] = promptPanel_->shouldUseLinfusion() ? "yes" : "no";
 
     std::shared_ptr<GeneratorBase> g;
     if (inputImage_->getImg2ImgImage()) {

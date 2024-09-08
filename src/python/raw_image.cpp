@@ -520,14 +520,14 @@ image_ptr_t RawImage::ensureMultipleOf8() {
     return duplicate();
 }
 
-image_ptr_t RawImage::fit1024() {
+image_ptr_t RawImage::fit2048() {
     int nx, ny;
     if (this->h() > this->w()) {
-        ny = 1024;
-        nx = (int)((this->w() / (float)this->h()) * 1024.0);
+        ny = 2048;
+        nx = (int)((this->w() / (float)this->h()) * 2048.0);
     } else {
-        nx = 1024;
-        ny = (int)((this->h() / (float)this->w()) * 1024.0);
+        nx = 2048;
+        ny = (int)((this->h() / (float)this->w()) * 2048.0);
     }
     printf("Image resized from %dx%d to %dx%d\n", this->w(), this->h(), nx, ny);
     return this->resizeImage(nx, ny);
